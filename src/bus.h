@@ -24,3 +24,15 @@ protected:
 
     virtual void OnComponentsUpdated() {};
 }
+
+class Bus16 : public Bus<0x0000, 0x10000> {
+public:
+    Bus16();
+
+    void Write(unsigned int address, unsigned char value);
+    unsigned char Read(unsigned int address);
+
+protected:
+    busComponentBase* m_pagedComponents[64];
+    virtual void OnComponentsUpdated();
+}
