@@ -5,14 +5,16 @@
 #include "bus.h"
 
 template<unsigned int B, unsigned int S> class RAM: public BusComponent<B, S> {
-public:
-    RAM() { memset(data, 0, S); }
 
-    void Write(unsigned int address, unsigned char value) { data[address-B] = value; }
-    unsigned char Read(unsigned int address)              { return data[address-B]; }
-
-protected:
+  protected:
     unsigned char data[S];
+
+  public:
+    RAM();
+    ~RAM();
+
+    void Write(unsigned int address, unsigned char value);
+    unsigned char Read(unsigned int address);
 };
 
 #endif
