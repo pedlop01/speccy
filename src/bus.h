@@ -1,3 +1,6 @@
+#ifndef BUS_H
+#define BUS_H
+
 #include <vector>
 #include <cstring>
 
@@ -39,3 +42,5 @@ protected:
     BusComponentBase* m_pagedComponents[64];
     virtual void OnComponentsUpdated();
 };
+
+#endif

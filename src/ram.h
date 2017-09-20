@@ -1,5 +1,8 @@
+#ifndef RAM_H
+#define RAM_H
+
 #include <cstring>
-#include "bus_component.h"
+#include "bus.h"
 
 template<unsigned int B, unsigned int S> class RAM: public BusComponent<B, S> {
 public:
@@ -12,3 +15,4 @@ protected:
     unsigned char data[S];
 };
 
+#endif
