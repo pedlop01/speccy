@@ -3,7 +3,7 @@
 template<unsigned int B, unsigned int S>
 int Bus<B,S>::AddBusComponent(BusComponentBase *newComponent) {
 
-    for (unsigned int dd = 0; dd < m_components.size(); d++) {
+    for (unsigned int dd = 0; dd < m_components.size(); dd++) {
         if (m_components.at(dd) == newComponent )
           return -1;
     }
@@ -42,10 +42,10 @@ unsigned char Bus16::Read(unsigned int address) {
     return pComp ? pComp->Read(address) : 0xFF;
 }
 
-virtual void Bus16::OnComponentsUpdated() {
+void Bus16::OnComponentsUpdated() {
     // Build a quick lookup table for each component. Address
     // space is split in 1 KB segment (64 entries).
-    for (unsgined int dd = 0; dd < m_components.size(); dd++) {
+    for (unsigned int dd = 0; dd < m_components.size(); dd++) {
         BusComponentBase *pComp = m_components.at(dd);
         if (pComp) {
             unsigned int start = pComp->GetStartAddress() / 1024;

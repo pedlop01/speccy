@@ -1,7 +1,7 @@
-#include <stdio.h>
+#include <cstring>
 #include "bus_component.h"
 
-template<unsigned int B, unsigned int S> class RAM: public BusComponent {
+template<unsigned int B, unsigned int S> class RAM: public BusComponent<B, S> {
 public:
     RAM() { memset(data, 0, S); }
 
@@ -10,4 +10,5 @@ public:
 
 protected:
     unsigned char data[S];
-}
+};
+
