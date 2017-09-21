@@ -1,7 +1,6 @@
 #include <stdio.h>
 
-#include "bus.h"
-#include "ram.h"
+#include "z80.h"
 
 int main(int argc, char *argv[]) {
 // printf("\033[8;5Hhello");  // Move to (8, 5) and output hello

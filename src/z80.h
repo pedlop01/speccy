@@ -100,10 +100,10 @@ class Z80 {
     void EmulateOne();
 
   public:
+    unsigned int tStates;
+    Z80Registers regs;
     BusComponent<0x0000, 0x10000>* DataBus;
     BusComponent<0x0000, 0x10000>* IOBus;
-    Z80Registers regs;
-    unsigned int tStates;
-}
+};
 
 #endif
