@@ -2,8 +2,8 @@
 
 Z80::Z80 () {
     memset(&regs, 0, sizeof(regs));
-    DataBus = nullptr;
-    IOBus = nullptr;
+    DataBus = NULL;
+    IOBus = NULL;
     tStates = 0;    
 }
 
@@ -112,7 +112,6 @@ void Z80::SBC_R8(unsigned char &r, unsigned char v) {
   regs.PF = suboverflowTable[idx >> 4];
   regs.NF = 1;
   regs.CF = (aux & 0x100) != 0;
-}
 }
 
 void Z80::XOR_R8(unsigned char v) {
