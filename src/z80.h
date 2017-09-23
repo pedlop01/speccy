@@ -166,7 +166,7 @@ class Z80 {
     void SLA8(unsigned char &val);
     void SRA8(unsigned char &val);
     void SRL8(unsigned char &val);
-    void SRI8(unsigned char &val);
+    void SLI8(unsigned char &val);
 
     void BIT8(unsigned char val, unsigned char bit);
 
@@ -176,7 +176,7 @@ class Z80 {
     void Write16(unsigned short addr, unsigned short value);
 
     void Push16(unsigned short value);
-    unsigned short Pop16(unsigned short value);
+    unsigned short Pop16();
 
     void EmulateOneCB();
     void EmulateOneED();

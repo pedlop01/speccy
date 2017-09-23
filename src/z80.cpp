@@ -1,14 +1,14 @@
 #include "z80.h"
 
 Z80::Z80 () {
-    memset(&regs, 0, sizeof(regs));
-    DataBus = NULL;
-    IOBus = NULL;
-    tStates = 0;    
+  memset(&regs, 0, sizeof(regs));
+  DataBus = NULL;
+  IOBus = NULL;
+  tStates = 0;    
 }
 
 void Z80::INC_R8(unsigned char &r) {
-	r++;
+  r++;
   regs.SF = (r & 0x80) != 0;
   regs.ZF = (r == 0);
   regs.HF = ((r & 0x0F) == 0);
@@ -18,8 +18,8 @@ void Z80::INC_R8(unsigned char &r) {
 
 void Z80::DEC_R8(unsigned char &r) {
   regs.NF = 1;
-	regs.HF = (r & 0x0F ? 0 : 1);
-	r--;
+  regs.HF = (r & 0x0F ? 0 : 1);
+  r--;
   regs.SF = ((r & 0x80) != 0);
   regs.ZF = (r == 0);
   regs.PF = (r == 0x7F);
@@ -27,8 +27,8 @@ void Z80::DEC_R8(unsigned char &r) {
 
 void Z80::ADD_R8(unsigned char v) {
   unsigned short aux = regs.A + v;
-	unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
-	regs.A = (unsigned char)aux;
+  unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
+  regs.A = (unsigned char)aux;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = halfcarryTable[idx & 0x07];
@@ -39,8 +39,8 @@ void Z80::ADD_R8(unsigned char v) {
 
 void Z80::ADC_R8(unsigned char v) {
   unsigned short aux = regs.A + v + (regs.CF ? 1 : 0);
-	unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
-	regs.A = (unsigned char)aux;
+  unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
+  regs.A = (unsigned char)aux;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = halfcarryTable[idx & 0x07];
@@ -50,7 +50,7 @@ void Z80::ADC_R8(unsigned char v) {
 }
 
 void Z80::AND_R8(unsigned char v) {
-	regs.A &= v;
+  regs.A &= v;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = 1;
@@ -60,10 +60,10 @@ void Z80::AND_R8(unsigned char v) {
 
 void Z80::CMP_R8(unsigned char v) {
   unsigned short aux = regs.A-v;
-	unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
+  unsigned char idx = ((regs.A & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
   regs.SF = (aux & 0x80) != 0;
   regs.CF = (aux & 0x100) ? 1 : 0;
-	regs.ZF = (aux == 0);
+  regs.ZF = (aux == 0);
   regs.HF = subhalfcarryTable[idx & 0x07];
   regs.PF = suboverflowTable[idx >> 4];
   regs.NF = 1;
@@ -72,7 +72,7 @@ void Z80::CMP_R8(unsigned char v) {
 void Z80::CMP_R8_NOFLAGS(unsigned char r, unsigned char v) {
   // Same as CMP_R8 without updating the parity and carry flags
   unsigned short aux = r-v;
-	unsigned char idx = ((r & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
+  unsigned char idx = ((r & 0x88) >> 3) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 1);
   regs.SF = (aux & 0x80) != 0;
   regs.ZF = (aux == 0);
   regs.HF = subhalfcarryTable[idx & 0x07];
@@ -80,7 +80,7 @@ void Z80::CMP_R8_NOFLAGS(unsigned char r, unsigned char v) {
 }
 
 void Z80::OR_R8(unsigned char v) {
-	regs.A |= v;
+  regs.A |= v;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = regs.NF = regs.CF = 0;
@@ -89,8 +89,8 @@ void Z80::OR_R8(unsigned char v) {
 
 void Z80::SUB_R8(unsigned char v) {
   unsigned short aux = regs.A - v;
-	unsigned char idx = ((regs.A & 0x88) >> 1) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 3);
-	regs.A = (unsigned char)aux;
+  unsigned char idx = ((regs.A & 0x88) >> 1) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 3);
+  regs.A = (unsigned char)aux;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = subhalfcarryTable[idx & 0x07];
@@ -100,12 +100,12 @@ void Z80::SUB_R8(unsigned char v) {
 }
 
 void Z80::SBC_R8(unsigned char &r, unsigned char v) {
-	unsigned short aux = r - v;
-	if (regs.CF)
-		aux--;
-	
-	unsigned char idx = ((r & 0x88) >> 1) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 3);
-	r = (unsigned char)aux;
+  unsigned short aux = r - v;
+  if (regs.CF)
+    aux--;
+
+  unsigned char idx = ((r & 0x88) >> 1) | ((v & 0x88) >> 2) |	((aux & 0x88) >> 3);
+  r = (unsigned char)aux;
   regs.SF = (r & 0x80) != 0;
   regs.ZF = (r == 0);
   regs.HF = subhalfcarryTable[idx & 0x07];
@@ -115,7 +115,7 @@ void Z80::SBC_R8(unsigned char &r, unsigned char v) {
 }
 
 void Z80::XOR_R8(unsigned char v) {
-	regs.A ^= v;
+  regs.A ^= v;
   regs.SF = (regs.A & 0x80) != 0;
   regs.ZF = (regs.A == 0);
   regs.HF = regs.NF = regs.CF = 0;
@@ -135,18 +135,18 @@ void Z80::ADC_R16(unsigned short &r, unsigned short v) {
   unsigned int aux = r+v+(regs.CF ? 1 : 0);
   unsigned char idx = ((r & 0x8800) >> 11) | ((v & 0x8800) >> 10) | ((aux & 0x8800) >> 9);
   r = aux;
-	regs.SF = ((r & 0x8000) != 0);
-	regs.ZF = (r == 0);
+  regs.SF = ((r & 0x8000) != 0);
+  regs.ZF = (r == 0);
   regs.HF = halfcarryTable[idx & 0x7];
-	regs.PF = overflowTable[idx >> 4];
+  regs.PF = overflowTable[idx >> 4];
   regs.NF = false;
   regs.CF = (aux & 0x10000) != 0;
 }
 
 void Z80::SBC_R16(unsigned short &r, unsigned short v) {
   unsigned int aux = r - v - (regs.CF ? 1 : 0);
-	unsigned char idx = ((r & 0x8800) >> 9) | ((v & 0x8800) >> 10) |	((aux & 0x8800) >> 11);
-	r = (unsigned short)aux;
+  unsigned char idx = ((r & 0x8800) >> 9) | ((v & 0x8800) >> 10) |	((aux & 0x8800) >> 11);
+  r = (unsigned short)aux;
   regs.SF = (r & 0x8000) != 0;
   regs.ZF = (r == 0);
   regs.HF = subhalfcarryTable[idx & 0x07];
@@ -164,8 +164,8 @@ void Z80::RL8(unsigned char &val) {
 }
 
 void Z80::RLC8(unsigned char &val) {
-	val = (val << 1) | (val & 0x80 ? 0x01 : 0x00);
-	regs.CF = (val & 0x01) != 0;
+  val = (val << 1) | (val & 0x80 ? 0x01 : 0x00);
+  regs.CF = (val & 0x01) != 0;
   SHIFTFLAGS(val);
 }
 
@@ -202,7 +202,7 @@ void Z80::SRL8(unsigned char &val) {
   SHIFTFLAGS(val);
 }
 
-void Z80::SRI8(unsigned char &val) {
+void Z80::SLI8(unsigned char &val) {
   regs.CF = (val & 0x80) != 0;
   val = (val << 1) | 0x01;
   SHIFTFLAGS(val);
@@ -219,16 +219,16 @@ void Z80::BIT8(unsigned char val,unsigned char bit)
 }
 
 void Z80::IN8(unsigned char &val, unsigned short port) {
-	val = IOBus->Read(port);
-	regs.SF = (val & 0x80) != 0;
-	regs.ZF = (val == 0x00);
-	regs.HF = 0;
-	regs.PF = parityTable[val];
-	regs.NF = 0;
+  val = IOBus->Read(port);
+  regs.SF = (val & 0x80) != 0;
+  regs.ZF = (val == 0x00);
+  regs.HF = 0;
+  regs.PF = parityTable[val];
+  regs.NF = 0;
 }
 
 unsigned short Z80::Read16(unsigned short addr) {
-  return(Data->Read(addr) | DataBus->Read(addr+1) << 8);
+  return(DataBus->Read(addr) | DataBus->Read(addr+1) << 8);
 }
 
 void Z80::Write16(unsigned short addr, unsigned short value) {
@@ -2047,7 +2047,7 @@ void Z80::EmulateOne() {
     }
 }
 
-void Z80::EmulateOnceCB() {
+void Z80::EmulateOneCB() {
   // Fetch next instruction
   unsigned char op = DataBus->Read(regs.PC++);
 

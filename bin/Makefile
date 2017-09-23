@@ -1,5 +1,5 @@
-gomas: ../src/main.cpp bus.o ram.o
-	g++ -o gomas ../src/main.cpp bus.o
+gomas: ../src/main.cpp bus.o ram.o z80.o
+	g++ -o gomas ../src/main.cpp bus.o ram.o z80.o
 
 bus.o: ../src/bus.cpp
 	g++ -c ../src/bus.cpp
