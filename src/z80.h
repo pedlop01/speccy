@@ -4,6 +4,43 @@
 #include <cstring>
 #include "bus.h"
 
+#define SHIFTFLAGS(v) regs.SF = ((v & 0x80) != 0); \
+                      regs.ZF = (v == 0); \
+                      regs.HF = regs.NF = 0; \
+                      regs.PF = parityTable[(unsigned char)(v)];
+
+static bool halfcarryTable[] = { 
+    0, 1, 1, 1, 0, 0, 0, 1
+};
+static bool subhalfcarryTable[] = {
+    0, 0, 1, 0, 1, 0, 1, 1
+};
+static bool overflowTable[] = {
+    0, 0, 0, 1, 1, 0, 0, 0
+};
+static bool suboverflowTable[] = {
+    0, 1, 0, 0, 0, 0, 1, 0
+};
+static bool parityTable[] = {
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false,
+    true, false, false, true, false, true, true, false, false, true, true, false, true, false, false, true,
+};                      
+
+
 struct Z80Registers {
     // AF register pair
     union {
@@ -104,6 +141,43 @@ class Z80 {
     Z80Registers regs;
     BusComponent<0x0000, 0x10000>* DataBus;
     BusComponent<0x0000, 0x10000>* IOBus;
+
+  protected:
+    void INC_R8(unsigned char &r);
+    void DEC_R8(unsigned char &r);
+    void ADD_R8(unsigned char v);
+    void ADC_R8(unsigned char v);
+    void AND_R8(unsigned char v);
+    void CMP_R8(unsigned char v);
+    void CMP_R8_NOFLAGS(unsigned char r, unsigned char v);
+    void OR_R8(unsigned char v);
+    void SUB_R8(unsigned char v);
+    void SBC_R8(unsigned char &r, unsigned char v);
+    void XOR_R8(unsigned char v);
+
+    void ADD_R16(unsigned short &r, unsigned short v);
+    void ADC_R16(unsigned short &r, unsigned short v);
+    void SBC_R16(unsigned short &r, unsigned short v);
+
+    void RL8(unsigned char &val);
+    void RLC8(unsigned char &val);
+    void RR8(unsigned char &val);
+    void RRC8(unsigned char &val);
+    void SLA8(unsigned char &val);
+    void SRA8(unsigned char &val);
+    void SRL8(unsigned char &val);
+    void SRI8(unsigned char &val);
+
+    void BIT8(unsigned char val, unsigned char bit);
+
+    void IN8(unsigned char &val, unsigned short port);
+
+    void EmulateOneCB();
+    void EmulateOneED();
+    void EmulateOneXX();
+    void EmulateOneXXCB();
+
+
 };
 
 #endif
