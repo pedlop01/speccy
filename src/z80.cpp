@@ -227,7 +227,7 @@ void Z80::IN8(unsigned char &val, unsigned short port) {
 	regs.NF = 0;
 }
 
-void Z80::Read16(unsigned short addr) {
+unsigned short Z80::Read16(unsigned short addr) {
   return(Data->Read(addr) | DataBus->Read(addr+1) << 8);
 }
 
@@ -241,7 +241,7 @@ void Z80::Push16(unsigned short value) {
   Write16(regs.SP, value);
 }
 
-void Z80::Pop16() {
+unsigned short Z80::Pop16() {
   unsigned short retVal = Read16(regs.SP);
   regs.SP += 2;
   return(retVal);
