@@ -16,13 +16,14 @@ class ROM : public BusComponent<B,S> {
     ~ROM() {};
 
     int Load(char *romName) {
-      FILE *fd = null;
-      int err = fopen_s(&fd, romName, "rb");
-      if ((err == 0) && (fd != NULL)) {
+      FILE *fd = NULL;
+      fd = fopen(romName, "r");
+      if (fd != NULL) {
           fread(data, 1, S, fd);
           fclose(fd);
+          return 0;
       }
-      return err;
+      return -1;
     };
 
     void Write(unsigned int address, unsigned char value) {
@@ -32,6 +33,6 @@ class ROM : public BusComponent<B,S> {
     unsigned char Read(unsigned int address) {
       return (data[address-B]);
     };
-}
+};
 
 #endif

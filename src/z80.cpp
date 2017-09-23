@@ -253,6 +253,8 @@ void Z80::EmulateOne() {
     // Increment instruction counter register
     regs.R60++;
 
+    printf("Inst %04X\n", op);
+
     switch(op) {
         // nop
         case 0x00:
@@ -1935,11 +1937,11 @@ void Z80::EmulateOne() {
 				
         // di
         // REVISIT pedlop01
-			  case 0xF3:
-				  tStates += 4;
+        case 0xF3:
+	  tStates += 4;
           regs.iff1A = 0;
           regs.iff1B = 0;
-				  break;
+          break;
 				
 				// call p,NN
 			  case 0xF4:
