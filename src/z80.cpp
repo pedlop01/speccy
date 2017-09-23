@@ -228,6 +228,26 @@ void Z80::IN8(unsigned char &val, unsigned short port) {
 	regs.NF = 0;
 }
 
+void Z80::Read16(unsigned short addr) {
+  return(Data->Read(addr) | DataBus->Read(addr+1) << 8);
+}
+
+void Z80::Write16(unsigned short addr, unsigned short value) {
+  DataBus->Write(addr, value & 0xFF);
+  DataBus->Write(addr+1, value >> 8);
+}
+
+void Z80::Push16(unsigned short value) {
+  regs.SP -= 2;
+  Write16(regs.SP, value);
+}
+
+void Z80::Pop16() {
+  unsigned short retVal = Read16(regs.SP);
+  regs.SP += 2;
+  return(retVal);
+}
+
 void Z80::EmulateOne() {
     // Fetch next instruction
     unsigned char op = DataBus->Read(regs.PC++);

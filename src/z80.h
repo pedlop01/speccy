@@ -172,6 +172,12 @@ class Z80 {
 
     void IN8(unsigned char &val, unsigned short port);
 
+    unsigned short Read16(unsigned short addr);
+    void Write16(unsigned short addr, unsigned short value);
+
+    void Push16(unsigned short value);
+    unsigned short Pop16(unsigned short value);
+
     void EmulateOneCB();
     void EmulateOneED();
     void EmulateOneXX();
