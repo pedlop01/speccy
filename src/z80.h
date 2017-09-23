@@ -2,7 +2,7 @@
 #define Z80_H
 
 #include <cstring>
-#include "bus.h"
+#include "bus.hpp"
 
 #define SHIFTFLAGS(v) regs.SF = ((v & 0x80) != 0); \
                       regs.ZF = (v == 0); \
