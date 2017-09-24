@@ -1,6 +1,7 @@
 #ifndef RAM_H
 #define RAM_H
 
+#include <stdio.h>
 #include <cstring>
 #include "bus.hpp"
 

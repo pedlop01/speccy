@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   al_set_target_bitmap(bitmap);
 
-  al_clear_to_color(al_map_rgb(255,50,50));
+  al_clear_to_color(al_map_rgb(255,255,255));
 
   al_set_target_bitmap(al_get_backbuffer(display));
 
@@ -64,17 +64,41 @@ int main(int argc, char *argv[]) {
 
   cpu.regs.PC = 0;
 
+  unsigned int x = 0;
+
   // Main loop
   do {
     // Emulate instructions
     cpu.EmulateOne();
 
-    for(unsigned int i = 0x4000; i < 0x57FF; i++) {
-      printf("%c", ula.Read(i));
-      if((i%256) == 0) printf("\n");
-    }
-    printf("\n");
 
+    if((x%16192)==0) {
+      al_set_target_bitmap(bitmap);
+
+      al_clear_to_color(al_map_rgb(0,0,0));
+
+      for(unsigned int i = 0x4000; i < 0x5800; i++) {
+        unsigned int row = (i >> 5);
+        row = ((row & 0xC0) |
+               ((row & 0x38) >> 3) |
+               ((row & 0x07) << 3));
+
+        unsigned int column = (i % 32)*8;
+
+        for(unsigned int j = 0 ; j < 8; j++)
+          if(ula.MemRead(i) & (0x01 << (7-j))) {
+            printf("x=%d, y=%d\n", column+j+32, row+24);
+            al_put_pixel(column+j+32, row + 24, al_map_rgb(0x255, 0x255, 0x255));
+          }
+
+      }
+      //printf("pintado\n");
+  
+      al_set_target_bitmap(al_get_backbuffer(display));
+      al_draw_bitmap(bitmap, 0, 0, 0);
+      al_flip_display();
+    }
+    x++;
   } while(true);
 
   al_destroy_display(display);

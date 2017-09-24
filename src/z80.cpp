@@ -253,7 +253,7 @@ void Z80::EmulateOne() {
     // Increment instruction counter register
     regs.R60++;
 
-    printf("Inst %04X\n", op);
+    //printf("Inst %04X\n", op);
 
     switch(op) {
         // nop

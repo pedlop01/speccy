@@ -55,7 +55,7 @@ class ULAIO : public BusComponent<0xFE, 1> {
 
 class ULA : public ULAMemory, ULAIO {
   protected:
-    ALLEGRO_COLOR dwBorderRGBColor;
+    unsigned int dwBorderRGBColor;
 
   public:
     ULA();
@@ -64,6 +64,10 @@ class ULA : public ULAMemory, ULAIO {
     void MemoryWrite(unsigned int address, unsigned char value);
     void IOWrite(unsigned int address, unsigned char value);
     unsigned char IORead(unsigned int address);
+
+    unsigned char MemRead(unsigned int address) {
+      return ULAMemory::Read(address);
+    };
 };
 
 #endif
