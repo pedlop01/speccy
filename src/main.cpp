@@ -68,10 +68,13 @@ int main(int argc, char *argv[]) {
   do {
     // Emulate instructions
     cpu.EmulateOne();
-    printf("Cycles   PC\n");
-    printf("%d %04X\n",
-      cpu.tStates,
-      cpu.regs.PC);
+
+    for(unsigned int i = 0x4000; i < 0x57FF; i++) {
+      printf("%c", ula.Read(i));
+      if((i%256) == 0) printf("\n");
+    }
+    printf("\n");
+
   } while(true);
 
   al_destroy_display(display);

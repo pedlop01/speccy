@@ -1,7 +1,31 @@
 #ifndef ULA_H
 #define ULA_H
 
+#include <allegro5/allegro.h>
+
 #include "ram.hpp"
+
+// Spectrum color table to RGBA
+static const unsigned int dwColorTable[] =
+{
+  0x0000FF00,
+  0x0000FFCD,
+  0x00CDFF00,
+  0x00CDFFCD,
+  0xCD00FF00,
+  0xCD00FFCD,
+  0xCDCDFF00,
+  0xCDCDFFCD,
+
+  0x0000FF00,
+  0x0000FFFF,
+  0x00FFFF00,
+  0x00FFFFFF,
+  0xFF00FF00,
+  0xFF00FFFF,
+  0xFFFFFF00,
+  0xFFFFFFFF
+};
 
 class ULAMemory : public RAM<16384, 16*1024> {
   protected:
@@ -30,6 +54,9 @@ class ULAIO : public BusComponent<0xFE, 1> {
 };
 
 class ULA : public ULAMemory, ULAIO {
+  protected:
+    ALLEGRO_COLOR dwBorderRGBColor;
+
   public:
     ULA();
     ~ULA();
