@@ -5,6 +5,7 @@
 
 #include "ram.hpp"
 
+// REVISIT: need to be written in allegro format
 // Spectrum color table to RGBA
 static const unsigned int dwColorTable[] =
 {
@@ -31,7 +32,7 @@ class ULAMemory : public RAM<16384, 16*1024> {
   protected:
     void Write(unsigned int address, unsigned char value) {
         // First, store data
-        RAM::Write(address, value);
+        RAM<16384,16*1024>::Write(address, value);
         // and forward the data to the ULA
         MemoryWrite(address, value);
     };
