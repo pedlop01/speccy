@@ -1,5 +1,3 @@
-//REVISIT: to remove
-#include <stdio.h>
 #include "ula.h"
 
 ULA::ULA() {
@@ -11,18 +9,53 @@ ULA::~ULA() {
 }
 
 void ULA::MemoryWrite(unsigned int address, unsigned char value) {
-  unsigned int row = (address >> 5);
-  row = ((row & 0xC0) |
-         ((row & 0x38) >> 3) |
-         ((row & 0x07) << 3));
+  unsigned int ink;
+  unsigned int paper;
+  unsigned int row;
+  unsigned int column;
+  unsigned char attr;
 
-  unsigned int column = (address & 0x001F) << 3;
+  address &= 0x3FFF;
+  if(address > 0x1AFF)
+    return;
 
-  for (unsigned int p = 0; p < 8; p++)
-    if (value & (0x01 << (7 - p))) {
-      printf("ULA: x=%d, y=%d, value=%d\n", column + p + 32, row + 24, value);
-//            al_put_pixel(column+j+32, row + 24, al_map_rgb(0x255, 0x255, 0x255));
+  if(address < 0x1800) {  // Bitmap graphics
+
+    row = (address >> 5);
+    row = ((row & 0xC0) |
+           ((row & 0x38) >> 3) |
+           ((row & 0x07) << 3));
+
+    column = (address % 32) * 8;
+
+    // Get the attribute
+    attr = data[0x1800 + ((row >> 3) << 5) + (address & 0x001F)];
+
+    if((attr & 0x80) /* && blinkState*/) {
+      ink   = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
+      paper = dwColorTable[(attr & 0x78) >> 3];
+    } else {
+      ink   = dwColorTable[(attr & 0x78) >> 3];
+      paper = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
     }
+
+    for (unsigned int p = 0; p < 8; p++) {
+      bool is_ink = (value & (0x01 << (7 - p)));
+      unsigned char r = ((is_ink ? ink : paper) & 0xFF000000) >> 24;
+      unsigned char g = ((is_ink ? ink : paper) & 0x00FF0000) >> 16;
+      unsigned char b = ((is_ink ? ink : paper) & 0x0000FF00) >> 8;
+      unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
+
+      al_draw_pixel(column + p + 32, row + 24, al_map_rgb(r,g,a));
+      
+      printf("row=%d, column=%d, value=%x, is_ink=%d, ink=%x, paper=%x, r=%x, g=%x, b=%x, a=%x\n", row, column+p, value, is_ink, ink, paper, r, g, b, a);
+    }
+  } else {
+  }
+}
+
+void ULA::SetBitmap(ALLEGRO_BITMAP* _bitmap) {
+  bitmap = _bitmap;
 }
 
 void ULA::IOWrite(unsigned int address, unsigned char value) {

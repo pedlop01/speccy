@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   al_set_target_bitmap(bitmap);
 
-  al_clear_to_color(al_map_rgb(255,255,255));
+  al_clear_to_color(al_map_rgb(0x00, 0x00, 0x00));
 
   al_set_target_bitmap(al_get_backbuffer(display));
 
@@ -62,18 +62,29 @@ int main(int argc, char *argv[]) {
   cpu.DataBus = &bus;
   cpu.IOBus = (BusComponent<0, 0x10000>*)((ULAIO*)&ula);
 
+  // Add bitmap to ULA
+  ula.SetBitmap(bitmap);
+
   cpu.regs.PC = 0;
+
+  unsigned int x = 0;
+
+  al_set_target_bitmap(bitmap);
 
   // Main loop
   do {
-      al_set_target_bitmap(bitmap);
 
     // Emulate instructions
     cpu.EmulateOne();
 
+    if((x%(8*1024))==0) {
       al_set_target_bitmap(al_get_backbuffer(display));
       al_draw_bitmap(bitmap, 0, 0, 0);
       al_flip_display();
+      al_set_target_bitmap(bitmap);
+    }
+
+    x++;
   } while(true);
 
   al_destroy_display(display);

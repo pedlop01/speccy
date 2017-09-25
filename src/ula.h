@@ -56,11 +56,14 @@ class ULAIO : public BusComponent<0xFE, 1> {
 
 class ULA : public ULAMemory, ULAIO {
   protected:
+    ALLEGRO_BITMAP* bitmap;
     unsigned int dwBorderRGBColor;
 
   public:
     ULA();
     ~ULA();
+
+    void SetBitmap(ALLEGRO_BITMAP *_bitmap);
 
     void MemoryWrite(unsigned int address, unsigned char value);
     void IOWrite(unsigned int address, unsigned char value);
