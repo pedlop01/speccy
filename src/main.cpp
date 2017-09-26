@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
 #include <allegro5/allegro.h>
 
 #include "z80.h"
@@ -7,10 +9,19 @@
 #include "rom.hpp"
 #include "ula.h"
 
+unsigned long GetTickCount()
+{
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL) != 0)
+    return 0;
+
+  return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+}
+
 int main(int argc, char *argv[]) {
 
   ALLEGRO_DISPLAY* display = NULL;
-  ALLEGRO_BITMAP* bitmap = NULL;
+  ALLEGRO_BITMAP*  bitmap = NULL;
 
   // Components
   Z80 cpu;
@@ -21,6 +32,11 @@ int main(int argc, char *argv[]) {
 
   if(!al_init()) {
     printf("Error: failed to initialize allegro!\n");
+    return -1;
+  }
+
+  if(!al_init_primitives_addon()) {
+    printf("Error: failed to initialize allegro primitives!\n");
     return -1;
   }
 
@@ -45,7 +61,7 @@ int main(int argc, char *argv[]) {
 
   al_set_target_bitmap(bitmap);
 
-  al_clear_to_color(al_map_rgb(0x00, 0x00, 0x00));
+  al_clear_to_color(al_map_rgb(0xD7, 0xD7, 0xD7));
 
   al_set_target_bitmap(al_get_backbuffer(display));
 
@@ -67,24 +83,38 @@ int main(int argc, char *argv[]) {
 
   cpu.regs.PC = 0;
 
-  unsigned int x = 0;
-
   al_set_target_bitmap(bitmap);
+
+  unsigned long dwFrameStartTime = GetTickCount();
 
   // Main loop
   do {
+    cpu.tStates = 0;
 
     // Emulate instructions
     cpu.EmulateOne();
 
-    if((x%(8*1024))==0) {
+    bool irq = false;
+    ula.AddCycles(cpu.tStates, irq);
+
+    // 20ms has passed. Vertical screen sync triggered
+    if (irq) {
       al_set_target_bitmap(al_get_backbuffer(display));
       al_draw_bitmap(bitmap, 0, 0, 0);
       al_flip_display();
       al_set_target_bitmap(bitmap);
+
+      // If our code is faster than 20ms (expected to be),
+      // then wait for what is remaining.
+      unsigned long dwNow = GetTickCount();
+      unsigned long dwEllapsed = dwNow - dwFrameStartTime;
+      if (dwEllapsed < 20) {
+        usleep(20000 - dwEllapsed*1000);
+        dwNow = GetTickCount();
+      }
+      dwFrameStartTime = dwNow;
     }
 
-    x++;
   } while(true);
 
   al_destroy_display(display);
