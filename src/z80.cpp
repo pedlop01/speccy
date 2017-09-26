@@ -7,6 +7,28 @@ Z80::Z80 () {
   tStates = 0;    
 }
 
+void Z80::INT() {
+  if (regs.iff1A)
+  {
+    // If over a HALT instruction, increment PC
+    if (DataBus->Read(regs.PC) == 0x76)
+      regs.PC++;
+
+    regs.iff1A = regs.iff1B = 0;
+    Push16(regs.PC);
+    if (regs.IM == 0x02)
+    {
+      tStates += 19;
+      regs.PC = Read16((regs.I << 8) | 0xFF);
+    }
+    else
+    {
+      tStates += 13;
+      regs.PC = 0x0038;
+    }
+  }
+}
+
 void Z80::INC_R8(unsigned char &r) {
   r++;
   regs.SF = (r & 0x80) != 0;
@@ -3917,7 +3939,6 @@ void Z80::EmulateOneED() {
     case 0x70:
       tStates += 12;
       {
-        //IOBus->Read(regs.BC);
         unsigned char val;
         IN8(val,regs.BC);
       }

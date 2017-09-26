@@ -72,6 +72,8 @@ class ULA : public ULAMemory, ULAIO {
     unsigned long   dwScanLine;
     unsigned long   dwFrameCount;
 
+    unsigned char   keyMatrix[8];
+
   public:
     ULA();
     ~ULA();
@@ -84,6 +86,7 @@ class ULA : public ULAMemory, ULAIO {
     void MemoryWrite(unsigned int address, unsigned char value);
     void IOWrite(unsigned int address, unsigned char value);
     unsigned char IORead(unsigned int address);
+    void PressKey(unsigned int keyRow, unsigned int keyCol, bool down);
 };
 
 #endif

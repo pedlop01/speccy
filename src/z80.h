@@ -135,13 +135,14 @@ class Z80 {
   public:
     Z80();
 
+    void INT();
     void EmulateOne();
 
   public:
     unsigned int tStates;
     Z80Registers regs;
     BusComponent<0x0000, 0x10000>* DataBus;
-    BusComponent<0x0000, 0x10000>* IOBus;
+    BusComponent<0xFE, 1>* IOBus;
 
   protected:
     void INC_R8(unsigned char &r);

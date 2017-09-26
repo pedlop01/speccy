@@ -173,5 +173,38 @@ void ULA::IOWrite(unsigned int address, unsigned char value) {
 }
 
 unsigned char ULA::IORead(unsigned int address) {
-  return (0xFF); // pull up on bus
+  // ULA is selected by A0 being low
+  if ((address & 0x01) == 0) {
+    // Get the scancodes
+    unsigned char kData = 0xFF;   // Pull ups
+    unsigned char row = (address >> 8) ^ 0xFF;
+    for (int i = 0; i < 8; i++) {
+      if (row & (1 << i))         // travers all selected rows
+        kData &= ~keyMatrix[i];   // pull down bits representing pressed key
+    }
+    return kData;
+  }
+  return 0xFF; // pull up on bus
+}
+
+void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
+  if (keyCol > 9)
+    return;
+  if (keyRow > 3)
+    return;
+
+  int rowNdx;
+  int bitMask;
+  if (keyCol < 5) {  // Left bank
+    rowNdx  = 3 - keyRow;
+    bitMask = 0x01 << keyCol;
+  } else {
+    rowNdx  = 4 + keyRow;
+    bitMask = 0x01 << (9 - keyCol);
+  }
+
+  if (down)
+    keyMatrix[rowNdx] |= bitMask;
+  else
+    keyMatrix[rowNdx] &= ~bitMask;
 }
