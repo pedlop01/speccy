@@ -59,7 +59,6 @@ void ULA::ScanLine(bool& IRQ) {
   unsigned int bitmapLine;
 
   dwScanLineTStates %= TSTATES_PER_SCANLINE;
-  printf("Before %lu\n", dwScanLine);
   dwScanLine++;
 
 
@@ -107,6 +106,9 @@ void ULA::ScanLine(bool& IRQ) {
 }
 
 void ULA::UpdateBlink() {
+  for (unsigned int nChar = 0; nChar < 32*24; nChar++)
+    if (data[nChar + 0x1800] & 0x80)
+      UpdateChar(nChar);
 }
 
 void ULA::MemoryWrite(unsigned int address, unsigned char value) {
