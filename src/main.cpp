@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <fstream>
+#include <vector>
 #include <allegro5/allegro.h>
 
 #include "z80.h"
@@ -9,6 +11,8 @@
 #include "rom.hpp"
 #include "ula.h"
 
+using namespace std;
+
 unsigned long GetTickCount()
 {
   struct timeval tv;
@@ -16,6 +20,38 @@ unsigned long GetTickCount()
     return 0;
 
   return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+}
+
+int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::iterator &block) {
+
+  printf("LoadTrap\n");
+  // First byte of data contains value for the A register on return.
+  // Last byte is blocks checksum (not using it).
+  unsigned short nBytesLSB = *block;
+  block++;
+  unsigned short nBytesMSB = *block;
+  block++;
+
+  unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
+  unsigned short totalNBytes = nBytes - 2;
+
+  if (cpu.regs.DE < nBytes)
+    nBytes = cpu.regs.DE;  
+
+  printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
+
+  // We must place data read from tape at IX base address onwards
+  // DE is the number of bytes to read, IX increments with each byte read
+  block++;
+  for (; nBytes > 0; block++) {
+    printf("Line=%d value=%x, DE=%d\n", totalNBytes - nBytes, *block, cpu.regs.DE);
+    // Write block using cpu's data bus and cpu's registers
+    cpu.DataBus->Write(cpu.regs.IX++, *block);
+    nBytes--;
+    cpu.regs.DE--;
+  }
+  block++;
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -97,11 +133,35 @@ int main(int argc, char *argv[]) {
 
   al_set_target_bitmap(bitmap);
 
+  // REVISIT: read tap file at the begining
+  ifstream input("./army.tap", std::ios::binary);
+
+  // Read the next tape block
+  vector<unsigned char>::iterator block;
+  vector<unsigned char> data((std::istreambuf_iterator<char>(input)),
+                             (std::istreambuf_iterator<char>()));
+
   unsigned long dwFrameStartTime = GetTickCount();
+
+  block = data.begin();
 
   // Main loop
   do {
     cpu.tStates = 0;
+
+    if ((cpu.regs.PC == 0x056B)) {
+      if (LoadTrap(cpu, data, block) == 0) {
+        // set up register for success
+        cpu.regs.BC = 0xB001;
+        cpu.regs.altAF = 0x0145;
+        cpu.regs.CF = 1;
+      } else {
+        // set up registers for failure
+        cpu.regs.CF = 0;
+      }
+      // Return from the table block load routine
+      cpu.regs.PC = 0x05e2;
+    }
 
     // Keyboard routine. Needs to be moved elsewhere
     if(!al_is_event_queue_empty(event_queue)) {

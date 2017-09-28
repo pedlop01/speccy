@@ -85,10 +85,10 @@ void ULA::ScanLine(bool& IRQ) {
   if (dwCurrentScanLineBackColor[bitmapLine] == dwBorderRGBColor)
     return;
 
-  unsigned char r = 0x33;//(dwBorderRGBColor & 0xFF000000) >> 24;
-  unsigned char g = 0x33;//(dwBorderRGBColor & 0x00FF0000) >> 16;
-  unsigned char b = 0x33;//(dwBorderRGBColor & 0x0000FF00) >> 8;
-  unsigned char a = 0x33;//(dwBorderRGBColor & 0x000000FF);
+  unsigned char r = /*0x33;*/(dwBorderRGBColor & 0xFF000000) >> 24;
+  unsigned char g = /*0x33;*/(dwBorderRGBColor & 0x00FF0000) >> 16;
+  unsigned char b = /*0x33;*/(dwBorderRGBColor & 0x0000FF00) >> 8;
+  unsigned char a = /*0x33;*/(dwBorderRGBColor & 0x000000FF);
 
   // redraw current scanline with proper color
   if ((bitmapLine < 24) || (bitmapLine > 24+191)) {
