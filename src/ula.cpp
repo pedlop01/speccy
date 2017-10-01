@@ -1,7 +1,16 @@
 #include "ula.h"
 
 ULA::ULA() {
+  bitmap = NULL;
+  dwScanLineTStates = 0;
+  dwScanLine = 0;
+  isDirty = false;
+  blinkState = false;
+  dwFrameCount = 0;
+  dwBorderRGBColor = 0x0000000;
+  memset(dwCurrentScanLineBackColor, 0x00, sizeof(dwCurrentScanLineBackColor));
 
+  memset(keyMatrix, 0, sizeof(keyMatrix));
 }
 
 ULA::~ULA() {
@@ -179,8 +188,9 @@ unsigned char ULA::IORead(unsigned int address) {
     unsigned char kData = 0xFF;   // Pull ups
     unsigned char row = (address >> 8) ^ 0xFF;
     for (int i = 0; i < 8; i++) {
-      if (row & (1 << i))         // travers all selected rows
+      if (row & (1 << i)) {       // travers all selected rows
         kData &= ~keyMatrix[i];   // pull down bits representing pressed key
+      }
     }
     return kData;
   }
@@ -188,6 +198,7 @@ unsigned char ULA::IORead(unsigned int address) {
 }
 
 void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
+
   if (keyCol > 9)
     return;
   if (keyRow > 3)

@@ -24,14 +24,12 @@ unsigned long GetTickCount()
 
 int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::iterator &block) {
 
-  printf("LoadTrap\n");
   // First byte of data contains value for the A register on return.
   // Last byte is blocks checksum (not using it).
   unsigned short nBytesLSB = *block;
   block++;
   unsigned short nBytesMSB = *block;
   block++;
-
   unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
   unsigned short totalNBytes = nBytes - 2;
 
@@ -82,7 +80,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  display = al_create_display(320, 240);
+  display = al_create_display(640, 480);
   if(!display) {
     printf("Error: failed to create display!\n");
     return -1;
@@ -134,7 +132,7 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("./army.tap", std::ios::binary);
+  ifstream input("jumpjack.tap", std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
@@ -150,7 +148,7 @@ int main(int argc, char *argv[]) {
     cpu.tStates = 0;
 
     if ((cpu.regs.PC == 0x056B)) {
-      if (LoadTrap(cpu, data, block) == 0) {
+      if (LoadTrap(cpu, data, block) == 0) {        
         // set up register for success
         cpu.regs.BC = 0xB001;
         cpu.regs.altAF = 0x0145;
@@ -239,7 +237,7 @@ int main(int argc, char *argv[]) {
       cpu.INT();
 
       al_set_target_bitmap(al_get_backbuffer(display));
-      al_draw_bitmap(bitmap, 0, 0, 0);
+      al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
       al_flip_display();
       al_set_target_bitmap(bitmap);
 
@@ -248,7 +246,11 @@ int main(int argc, char *argv[]) {
       unsigned long dwNow = GetTickCount();
       unsigned long dwEllapsed = dwNow - dwFrameStartTime;
       if (dwEllapsed < 20) {
+#ifndef WIN32
         usleep(20000 - dwEllapsed*1000);
+#else
+        Sleep(20 - dwEllapsed);
+#endif
         dwNow = GetTickCount();
       }
       dwFrameStartTime = dwNow;
