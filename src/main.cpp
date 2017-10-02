@@ -4,6 +4,8 @@
 #include <fstream>
 #include <vector>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
 
 #include "z80.h"
 #include "bus.hpp"
@@ -54,9 +56,10 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
 
 int main(int argc, char *argv[]) {
 
-  ALLEGRO_DISPLAY* display = NULL;
-  ALLEGRO_BITMAP* bitmap = NULL;
+  ALLEGRO_DISPLAY*     display     = NULL;
+  ALLEGRO_BITMAP*      bitmap      = NULL;
   ALLEGRO_EVENT_QUEUE* event_queue = NULL;
+  ALLEGRO_SAMPLE*      sample      = NULL;
 
   // Components
   Z80 cpu;
@@ -93,6 +96,21 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  if(!al_install_audio()) {
+    printf("Error: failed to initialize audio!\n");
+    return -1;
+  }
+
+  if(!al_init_acodec_addon()) {
+    printf("Error: failed to initialize audio codecs!\n");
+    return -1;
+  }
+
+  if(!al_reserve_samples(1)) {
+    printf("Error: failed to reserve samples!\n");
+    return -1;
+  }
+
   event_queue = al_create_event_queue();
   if(!event_queue) {
     printf("Error: failted to create event_queue!\n");
@@ -106,6 +124,15 @@ int main(int argc, char *argv[]) {
     printf("Error: Unable to load rom\n");
     return(-1);
   }
+
+  sample = al_load_sample("sample.wav");
+
+  if(!sample) {
+    printf("Audio clip sample not loaded!\n");
+    return -1;
+  }
+
+  al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
 
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
