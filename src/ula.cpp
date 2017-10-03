@@ -11,6 +11,10 @@ ULA::ULA() {
   memset(dwCurrentScanLineBackColor, 0x00, sizeof(dwCurrentScanLineBackColor));
 
   memset(keyMatrix, 0, sizeof(keyMatrix));
+
+  memset(FrameAudio, 0, sizeof(FrameAudio));
+  audioOutput = 0;
+  dcAverage = 0;
 }
 
 ULA::~ULA() {
@@ -60,6 +64,30 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   dwFrameTStates += cycles;
   dwScanLineTStates += cycles;
 
+  // Update the analog audio output from ULA
+  // First, compute audio output value for this cycle
+  int signal = 0;
+  signal  = (ULAIOData & 0x10) ? +16384 : -16384;
+  signal += (ULAIOData & 0x08) ?  +8192 :  -8192;
+
+  // update DC average (DC removal)
+  dcAverage = (dcAverage + signal) / 2;
+
+  // Now, add audio output over an 8 tap filter:
+  // 1: Maintain 7/8ths of the original signal
+  audioOutput -= audioOutput / 8;
+  // 2: add 1/8th of the new one
+  audioOutput += signal / 8;
+
+  // Update the audio sample corresponding to this screen tState
+  unsigned int offset = (dwFrameTStates * SAMPLES_PER_FRAME) /
+                        (TSTATES_PER_SCANLINE * TVSCANLINES);
+  
+  // As clocks don't match and this is a quick approximation, limit
+  // offset output
+  if (offset < SAMPLES_PER_FRAME)    
+    FrameAudio[offset] = audioOutput/* - dcAverage*/;
+
   if (dwScanLineTStates > TSTATES_PER_SCANLINE)
     ScanLine(IRQ);
 }
@@ -106,7 +134,8 @@ void ULA::ScanLine(bool& IRQ) {
   } else {
     // screen contents
     al_draw_line(0,   bitmapLine, 31,  bitmapLine, al_map_rgb(r, g, b), 1);
-    al_draw_line(288, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
+    // REVISIT: 287 or 288?
+    al_draw_line(287, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
   }
 
   // Save border color for line
@@ -177,6 +206,10 @@ void ULA::IOWrite(unsigned int address, unsigned char value) {
   // ULA is selected when reading an even address
   if (address & 0x01)
     return;
+  
+  // save a copy of ULA's state
+  ULAIOData = value;
+
   // Update boder color
   dwBorderRGBColor = dwColorTable[value & 0x07];
 }
@@ -218,4 +251,8 @@ void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
     keyMatrix[rowNdx] |= bitMask;
   else
     keyMatrix[rowNdx] &= ~bitMask;
+}
+
+bool ULA::GetIsDirty() {
+  return isDirty;
 }

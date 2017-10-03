@@ -38,13 +38,13 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
   if (cpu.regs.DE < nBytes)
     nBytes = cpu.regs.DE;  
 
-  printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
+//  printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
 
   // We must place data read from tape at IX base address onwards
   // DE is the number of bytes to read, IX increments with each byte read
   block++;
   for (; nBytes > 0; block++) {
-    printf("Line=%d value=%x, DE=%d\n", totalNBytes - nBytes, *block, cpu.regs.DE);
+//    printf("Line=%d value=%x, DE=%d\n", totalNBytes - nBytes, *block, cpu.regs.DE);
     // Write block using cpu's data bus and cpu's registers
     cpu.DataBus->Write(cpu.regs.IX++, *block);
     nBytes--;
@@ -124,15 +124,18 @@ int main(int argc, char *argv[]) {
     printf("Error: Unable to load rom\n");
     return(-1);
   }
-
-  sample = al_load_sample("sample.wav");
+  
+  sample = al_create_sample(&ula.FrameAudio,
+                            960,
+                            48000,
+                            ALLEGRO_AUDIO_DEPTH_INT16,
+                            ALLEGRO_CHANNEL_CONF_2,
+                            false);
 
   if(!sample) {
     printf("Audio clip sample not loaded!\n");
     return -1;
   }
-
-  al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_LOOP, NULL);
 
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
@@ -159,7 +162,7 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("jumpjack.tap", std::ios::binary);
+  ifstream input("manic.tap", std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
@@ -263,24 +266,37 @@ int main(int argc, char *argv[]) {
     if (irq) {
       cpu.INT();
 
-      al_set_target_bitmap(al_get_backbuffer(display));
-      al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
-      al_flip_display();
-      al_set_target_bitmap(bitmap);
-
-      // If our code is faster than 20ms (expected to be),
-      // then wait for what is remaining.
-      unsigned long dwNow = GetTickCount();
-      unsigned long dwEllapsed = dwNow - dwFrameStartTime;
-      if (dwEllapsed < 20) {
-#ifndef WIN32
-        usleep(20000 - dwEllapsed*1000);
-#else
-        Sleep(20 - dwEllapsed);
-#endif
-        dwNow = GetTickCount();
+      if (ula.GetIsDirty()) {
+        al_set_target_bitmap(al_get_backbuffer(display));
+        al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
+        al_flip_display();
+        al_set_target_bitmap(bitmap);
       }
-      dwFrameStartTime = dwNow;
+
+      // Play audio
+ALLEGRO_SAMPLE_INSTANCE* i = al_create_sample_instance(sample);
+al_attach_sample_instance_to_mixer(i, al_get_default_mixer());
+al_set_sample_instance_playing(i, true);
+//      printf("play\n");
+//      for (int d = 0; d < 960; d++)
+//        printf("%d=%x, ", d, ula.FrameAudio[d]);
+//      printf("\n");    
+//      al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, 0);
+while(al_get_sample_instance_playing(i));
+
+//      // If our code is faster than 20ms (expected to be),
+//      // then wait for what is remaining.
+//      unsigned long dwNow = GetTickCount();
+//      unsigned long dwEllapsed = dwNow - dwFrameStartTime;
+//      if (dwEllapsed < 20) {
+//#ifndef WIN32
+//        usleep(20000 - dwEllapsed*1000);
+//#else
+//        Sleep(20 - dwEllapsed);
+//#endif
+//        dwNow = GetTickCount();
+//      }
+//      dwFrameStartTime = dwNow;
     }
 
   } while(true);
