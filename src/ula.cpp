@@ -67,17 +67,17 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   // Update the analog audio output from ULA
   // First, compute audio output value for this cycle
   int signal = 0;
-  signal  = (ULAIOData & 0x10) ? +16384 : -16384;
-  signal += (ULAIOData & 0x08) ?  +8192 :  -8192;
+  signal  = (ULAIOData & 0x10) ? +16384 : 0;
+  //signal += (ULAIOData & 0x08) ?  +8192 : 0;
 
   // update DC average (DC removal)
   dcAverage = (dcAverage + signal) / 2;
 
   // Now, add audio output over an 8 tap filter:
   // 1: Maintain 7/8ths of the original signal
-  audioOutput -= audioOutput / 8;
+  //audioOutput -= audioOutput / 8;
   // 2: add 1/8th of the new one
-  audioOutput += signal / 8;
+  audioOutput = signal / 8;
 
   // Update the audio sample corresponding to this screen tState
   unsigned int offset = (dwFrameTStates * SAMPLES_PER_FRAME) /
@@ -255,4 +255,10 @@ void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
 
 bool ULA::GetIsDirty() {
   return isDirty;
+}
+
+void ULA::ClearFrameAudio() {
+  for(unsigned int i = 0; i < SAMPLES_PER_FRAME; i++) {
+    FrameAudio[i] = 0;    
+  }
 }

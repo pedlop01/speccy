@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
   }
   
   sample = al_create_sample(&ula.FrameAudio,
-                            960,
-                            48000,
+                            SAMPLES_PER_FRAME,
+                            AUDIO_SAMPLE_RATE,
                             ALLEGRO_AUDIO_DEPTH_INT16,
-                            ALLEGRO_CHANNEL_CONF_2,
+                            ALLEGRO_CHANNEL_CONF_1,
                             false);
 
   if(!sample) {
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("manic.tap", std::ios::binary);
+  ifstream input("jumpjack.tap", std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
@@ -274,15 +274,25 @@ int main(int argc, char *argv[]) {
       }
 
       // Play audio
+//      printf("play\n");
+      int16_t* ptr = (int16_t*)al_get_sample_data(sample);
+            
 ALLEGRO_SAMPLE_INSTANCE* i = al_create_sample_instance(sample);
 al_attach_sample_instance_to_mixer(i, al_get_default_mixer());
 al_set_sample_instance_playing(i, true);
-//      printf("play\n");
-//      for (int d = 0; d < 960; d++)
-//        printf("%d=%x, ", d, ula.FrameAudio[d]);
-//      printf("\n");    
-//      al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, 0);
+
+      //al_play_sample(sample, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, 0);
+//Sleep(600);
+
 while(al_get_sample_instance_playing(i));
+//for (int d = 0; d < 960; d++)
+//if(ptr[d])
+//  printf("%d=%d, ", d, ptr[d]/*ula.FrameAudio[d]*/);
+//printf("\n");    
+//printf("stop\n");
+ula.ClearFrameAudio();
+
+
 
 //      // If our code is faster than 20ms (expected to be),
 //      // then wait for what is remaining.

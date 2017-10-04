@@ -67,7 +67,7 @@ class ULAIO : public BusComponent<0xFE, 1> {
 
 class ULA : public ULAMemory, ULAIO {
   public:
-    short FrameAudio[SAMPLES_PER_FRAME];
+    signed short FrameAudio[SAMPLES_PER_FRAME];
 
   protected:
     bool            isDirty;
@@ -100,6 +100,7 @@ class ULA : public ULAMemory, ULAIO {
     unsigned char IORead(unsigned int address);
     void PressKey(unsigned int keyRow, unsigned int keyCol, bool down);
     bool GetIsDirty();
+    void ClearFrameAudio();
 };
 
 #endif
