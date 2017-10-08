@@ -35,19 +35,21 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
   unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
   unsigned short totalNBytes = nBytes - 2;
 
-  if (cpu.regs.DE < nBytes)
-    nBytes = cpu.regs.DE;  
+  // Advance pointerto skip value for A
+  block++;
+
+  if (cpu.regs.DE < totalNBytes)
+    totalNBytes = cpu.regs.DE;
 
 //  printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
 
   // We must place data read from tape at IX base address onwards
   // DE is the number of bytes to read, IX increments with each byte read
-  block++;
-  for (; nBytes > 0; block++) {
+  for (; totalNBytes > 0; block++) {
 //    printf("Line=%d value=%x, DE=%d\n", totalNBytes - nBytes, *block, cpu.regs.DE);
     // Write block using cpu's data bus and cpu's registers
     cpu.DataBus->Write(cpu.regs.IX++, *block);
-    nBytes--;
+    totalNBytes--;
     cpu.regs.DE--;
   }
   block++;
@@ -162,7 +164,7 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("jumpjack.tap", std::ios::binary);
+  ifstream input("manic.tap", std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
