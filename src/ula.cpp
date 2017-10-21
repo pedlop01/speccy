@@ -75,9 +75,9 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
 
   // Now, add audio output over an 8 tap filter:
   // 1: Maintain 7/8ths of the original signal
-  //audioOutput -= audioOutput / 8;
+  audioOutput -= audioOutput / 8;
   // 2: add 1/8th of the new one
-  audioOutput = signal / 8;
+  audioOutput += signal / 8;
 
   // Update the audio sample corresponding to this screen tState
   unsigned int offset = (dwFrameTStates * SAMPLES_PER_FRAME) /
@@ -90,6 +90,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
 
   if (dwScanLineTStates > TSTATES_PER_SCANLINE)
     ScanLine(IRQ);
+
 }
 
 void ULA::ScanLine(bool& IRQ) {

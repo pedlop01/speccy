@@ -177,22 +177,6 @@ int main(int argc, char *argv[]) {
 
   // Main loop
   do {
-    cpu.tStates = 0;
-
-    if ((cpu.regs.PC == 0x056B)) {
-      if (LoadTrap(cpu, data, block) == 0) {        
-        // set up register for success
-        cpu.regs.BC = 0xB001;
-        cpu.regs.altAF = 0x0145;
-        cpu.regs.CF = 1;
-      } else {
-        // set up registers for failure
-        cpu.regs.CF = 0;
-      }
-      // Return from the table block load routine
-      cpu.regs.PC = 0x05e2;
-    }
-
     // Keyboard routine. Needs to be moved elsewhere
     if(!al_is_event_queue_empty(event_queue)) {
       bool keyEvent = false;
@@ -256,6 +240,22 @@ int main(int argc, char *argv[]) {
         }
       }
 
+    }
+
+    cpu.tStates = 0;
+
+    if ((cpu.regs.PC == 0x056B)) {
+      if (LoadTrap(cpu, data, block) == 0) {
+          // set up register for success
+          cpu.regs.BC = 0xB001;
+          cpu.regs.altAF = 0x0145;
+          cpu.regs.CF = 1;
+      } else {
+        // set up registers for failure
+        cpu.regs.CF = 0;
+      }
+      // Return from the table block load routine
+      cpu.regs.PC = 0x05e2;
     }
 
     // Emulate instructions
