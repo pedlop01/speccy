@@ -91,6 +91,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
 
   if (dwScanLineTStates > TSTATES_PER_SCANLINE)
     ScanLine(IRQ);
+
 }
 
 void ULA::ScanLine(bool& IRQ) {
