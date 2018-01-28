@@ -6,6 +6,8 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 
 #include "z80.h"
 #include "bus.hpp"
@@ -62,6 +64,7 @@ int main(int argc, char *argv[]) {
   ALLEGRO_BITMAP*      bitmap      = NULL;
   ALLEGRO_EVENT_QUEUE* event_queue = NULL;
   ALLEGRO_SAMPLE*      sample      = NULL;
+  unsigned long        dwEllapsed;
 
   // Components
   Z80 cpu;
@@ -97,6 +100,15 @@ int main(int argc, char *argv[]) {
     al_destroy_display(display);
     return -1;
   }
+
+  al_init_font_addon();
+  al_init_ttf_addon();
+
+//  ALLEGRO_FONT *font = al_load_ttf_font("dejavusans.ttf", 72, 0);
+//
+//  if (!font) {
+//    printf("Error: failed to load pirulen.ttf!\n");
+//  }
 
   if(!al_install_audio()) {
     printf("Error: failed to initialize audio!\n");
@@ -164,7 +176,7 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("army.tap", std::ios::binary);
+  ifstream input("manic.tap", std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
@@ -271,9 +283,14 @@ int main(int argc, char *argv[]) {
     if (irq) {
       cpu.INT();
 
-      if (ula.GetIsDirty()) {
+      if (ula.GetIsDirty()) {        
         al_set_target_bitmap(al_get_backbuffer(display));
         al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
+
+//        char buff[100];
+//        sprintf(buff, "%u\n", dwEllapsed);
+//        al_draw_text(font, al_map_rgb(255, 255, 255), 0, 0, ALLEGRO_ALIGN_LEFT, buff);  
+        
         al_flip_display();
         al_set_target_bitmap(bitmap);
       }
@@ -284,8 +301,8 @@ int main(int argc, char *argv[]) {
 
 //      // If our code is faster than 20ms (expected to be),
 //      // then wait for what is remaining.
-//      unsigned long dwNow = GetTickCount();
-//      unsigned long dwEllapsed = dwNow - dwFrameStartTime;
+//      dwNow = GetTickCount();
+//      dwEllapsed = dwNow - dwFrameStartTime;
 //      if (dwEllapsed < 20) {
 //#ifndef WIN32
 //        usleep(20000 - dwEllapsed*1000);
@@ -293,8 +310,10 @@ int main(int argc, char *argv[]) {
 //        Sleep(20 - dwEllapsed);
 //#endif
 //        dwNow = GetTickCount();
-//      }
-//      dwFrameStartTime = dwNow;
+//      } /*else {
+//        printf("Demasiado lento!\n");
+//      }*/
+//      dwFrameStartTime = dwNow;  
     }
 
   } while(true);

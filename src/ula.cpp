@@ -2,6 +2,7 @@
 
 ULA::ULA() {
   bitmap = NULL;
+  dwFrameTStates = 0;
   dwScanLineTStates = 0;
   dwScanLine = 0;
   isDirty = false;
@@ -64,7 +65,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   dwFrameTStates += cycles;
   dwScanLineTStates += cycles;
 
-  // Update the analog audio output from ULA
+    // Update the analog audio output from ULA
   // First, compute audio output value for this cycle
   int signal = 0;
   signal  = (ULAIOData & 0x10) ? +16384 : 0;
@@ -85,7 +86,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   
   // As clocks don't match and this is a quick approximation, limit
   // offset output
-  if (offset < SAMPLES_PER_FRAME)    
+  if (offset < SAMPLES_PER_FRAME)
     FrameAudio[offset] = audioOutput/* - dcAverage*/;
 
   if (dwScanLineTStates > TSTATES_PER_SCANLINE)
@@ -182,6 +183,7 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
       ink   = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
     }
 
+
     for (unsigned int p = 0; p < 8; p++) {
       bool is_ink = (value & (0x01 << (7 - p)));
       unsigned char r = ((is_ink ? ink : paper) & 0xFF000000) >> 24;
@@ -190,7 +192,7 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
       unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
 
       al_draw_pixel(column + p + 32, row + 24, al_map_rgb(r,g,b));
-      
+
       //printf("row=%d, column=%d, value=%x, is_ink=%d, ink=%x, paper=%x, r=%x, g=%x, b=%x, a=%x\n", row, column+p, value, is_ink, ink, paper, r, g, b, a);
     }
   } else {
