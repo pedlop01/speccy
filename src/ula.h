@@ -99,8 +99,7 @@ class ULA : public ULAMemory, ULAIO {
     void IOWrite(unsigned int address, unsigned char value);
     unsigned char IORead(unsigned int address);
     void PressKey(unsigned int keyRow, unsigned int keyCol, bool down);
-    bool GetIsDirty();
-    void ClearFrameAudio();
+    bool GetIsDirty();    
 };
 
 #endif

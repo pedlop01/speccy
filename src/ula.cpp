@@ -257,9 +257,3 @@ void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
 bool ULA::GetIsDirty() {
   return isDirty;
 }
-
-void ULA::ClearFrameAudio() {
-  for(unsigned int i = 0; i < SAMPLES_PER_FRAME; i++) {
-    FrameAudio[i] = 0;    
-  }
-}
