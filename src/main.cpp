@@ -284,6 +284,9 @@ int main(int argc, char *argv[]) {
       cpu.INT();
 
       if (ula.GetIsDirty()) {        
+        ALLEGRO_LOCKED_REGION* lock;
+
+        al_unlock_bitmap(bitmap);
         al_set_target_bitmap(al_get_backbuffer(display));
         al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
 
@@ -292,6 +295,8 @@ int main(int argc, char *argv[]) {
 //        al_draw_text(font, al_map_rgb(255, 255, 255), 0, 0, ALLEGRO_ALIGN_LEFT, buff);  
         
         al_flip_display();
+        
+        lock = al_lock_bitmap(bitmap, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
         al_set_target_bitmap(bitmap);
       }
 

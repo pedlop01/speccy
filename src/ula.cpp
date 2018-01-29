@@ -54,7 +54,7 @@ void ULA::UpdateChar(unsigned int nChar) {
       unsigned char b = ((is_ink ? ink : paper) & 0x0000FF00) >> 8;
       unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
 
-      al_draw_pixel(column + x + 32, row + y + 24, al_map_rgb(r,g,b));
+      al_put_pixel(column + x + 32, row + y + 24, al_map_rgb(r,g,b));
     }
     pmemOffset += 256;
   }
@@ -131,13 +131,18 @@ void ULA::ScanLine(bool& IRQ) {
 
   // redraw current scanline with proper color
   if ((bitmapLine < 24) || (bitmapLine > 24+191)) {
-    // top/bottom border
-    al_draw_line(0, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
+    // top/bottom border    
+    for (unsigned int x = 0; x < 320; x++)
+      al_put_pixel(x, bitmapLine, al_map_rgb(r, g, b)); // al_draw_line(0, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
   } else {
-    // screen contents
-    al_draw_line(0,   bitmapLine, 31,  bitmapLine, al_map_rgb(r, g, b), 1);
-    // REVISIT: 287 or 288?
-    al_draw_line(287, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
+    for (unsigned int x = 0; x < 32; x++) {
+      // screen contents
+      // al_draw_line(0,   bitmapLine, 31,  bitmapLine, al_map_rgb(r, g, b), 1);
+      al_put_pixel(x, bitmapLine, al_map_rgb(r, g, b));
+      // REVISIT: 287 or 288?
+      //al_draw_line(287, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
+      al_put_pixel(x + 287, bitmapLine, al_map_rgb(r, g, b));
+    }
   }
 
   // Save border color for line
@@ -191,7 +196,7 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
       unsigned char b = ((is_ink ? ink : paper) & 0x0000FF00) >> 8;
       unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
 
-      al_draw_pixel(column + p + 32, row + 24, al_map_rgb(r,g,b));
+      al_put_pixel(column + p + 32, row + 24, al_map_rgb(r,g,b));
 
       //printf("row=%d, column=%d, value=%x, is_ink=%d, ink=%x, paper=%x, r=%x, g=%x, b=%x, a=%x\n", row, column+p, value, is_ink, ink, paper, r, g, b, a);
     }
