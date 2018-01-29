@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  al_set_new_display_flags(ALLEGRO_WINDOWED);
   display = al_create_display(640, 480);
   if(!display) {
     printf("Error: failed to create display!\n");
@@ -176,7 +177,11 @@ int main(int argc, char *argv[]) {
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
-  ifstream input("manic.tap", std::ios::binary);
+  if(argc != 2) {
+    printf("Error: wrong parameters. Usage: gomas tap_file\n");
+    exit(-1);
+  }
+  ifstream input(argv[1], std::ios::binary);
 
   // Read the next tape block
   vector<unsigned char>::iterator block;

@@ -141,7 +141,7 @@ void ULA::ScanLine(bool& IRQ) {
       al_put_pixel(x, bitmapLine, al_map_rgb(r, g, b));
       // REVISIT: 287 or 288?
       //al_draw_line(287, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
-      al_put_pixel(x + 287, bitmapLine, al_map_rgb(r, g, b));
+      al_put_pixel(x + 288, bitmapLine, al_map_rgb(r, g, b));
     }
   }
 
