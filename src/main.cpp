@@ -182,6 +182,10 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
   ifstream input(argv[1], std::ios::binary);
+  if(!input) {
+    printf("Error: rom does not exists!\n");
+    exit(-1);
+  }
 
   // Read the next tape block
   vector<unsigned char>::iterator block;
