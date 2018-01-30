@@ -60,11 +60,12 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
 
 int main(int argc, char *argv[]) {
 
-  ALLEGRO_DISPLAY*     display     = NULL;
-  ALLEGRO_BITMAP*      bitmap      = NULL;
-  ALLEGRO_EVENT_QUEUE* event_queue = NULL;
-  ALLEGRO_SAMPLE*      sample      = NULL;
-  unsigned long        dwEllapsed;
+  ALLEGRO_DISPLAY*       display     = NULL;
+  ALLEGRO_BITMAP*        bitmap      = NULL;
+  ALLEGRO_EVENT_QUEUE*   event_queue = NULL;
+  ALLEGRO_SAMPLE*        sample      = NULL;
+  ALLEGRO_LOCKED_REGION* lock;
+  unsigned long          dwEllapsed;
 
   // Components
   Z80 cpu;
@@ -174,6 +175,8 @@ int main(int argc, char *argv[]) {
 
   cpu.regs.PC = 0;
 
+  // Set bitmap before main loop for first iteration
+  lock = al_lock_bitmap(bitmap, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
   al_set_target_bitmap(bitmap);
 
   // REVISIT: read tap file at the begining
@@ -293,7 +296,6 @@ int main(int argc, char *argv[]) {
       cpu.INT();
 
       if (ula.GetIsDirty()) {        
-        ALLEGRO_LOCKED_REGION* lock;
 
         al_unlock_bitmap(bitmap);
         al_set_target_bitmap(al_get_backbuffer(display));
