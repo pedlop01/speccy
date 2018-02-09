@@ -1,0 +1,17 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje bombolles
+
+bitmap  bombolles2.bmp 
+screenx 320
+screeny 200
+
+animaciones 1
+
+animacion parada 
+num_frames 4 
+velocidad 300 
+frame 1 1 8 22 0 0 
+frame 10 1 17 22 1 0 
+frame 19 1 26 22 2 0 
+frame 28 1 35 22 3 0 

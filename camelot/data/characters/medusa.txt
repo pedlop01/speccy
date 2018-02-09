@@ -1,0 +1,21 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje medusa
+
+bitmap  medusa.bmp 
+screenx 320
+screeny 200
+
+animaciones 2 
+
+animacion parado
+num_frames 1
+velocidad 0 
+frame 1 1 16 14 0 0 
+
+animacion caminar_derecha 
+num_frames 3
+velocidad 100 
+frame 1 1 16 14 0 0 
+frame 18 1 33 14 1 0 
+frame 35 1 50 14 2 0 

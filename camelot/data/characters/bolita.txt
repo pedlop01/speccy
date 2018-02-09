@@ -1,0 +1,22 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje bolita
+
+bitmap bolita.bmp 
+screenx 320
+screeny 200
+
+animaciones 2 
+
+animacion caminar_derecha 
+num_frames 1
+velocidad 0 
+frame 1 1 16 20 0 0 
+
+animacion parado
+num_frames 4
+velocidad 100 
+frame 1 1 16 18 0 0 
+frame 18 1 33 18 1 0 
+frame 35 1 50 18 2 0 
+frame 52 1 67 18 3 0 

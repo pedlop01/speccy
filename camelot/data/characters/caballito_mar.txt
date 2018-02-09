@@ -1,0 +1,21 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje caballito_mar
+
+bitmap  caballito_mar.bmp 
+screenx 320
+screeny 200
+
+animaciones 2 
+
+animacion caminar_derecha 
+num_frames 1
+velocidad 0 
+frame 1 1 22 24 0 0 
+
+animacion parado
+num_frames 3
+velocidad 100
+frame 1 1 22 24 0 0 
+frame 24 1 45 24 1 0  
+frame 47 1 68 24 2 0 

@@ -1,0 +1,19 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del objeto explosion
+
+bitmap explosion.bmp 
+screenx 406
+screeny 200
+
+animaciones 1 
+
+animacion caminar_derecha 
+num_frames 5
+velocidad 250 
+frame 1 1 80 66 0 0 
+frame 82 1 161 66 1 0 
+frame 163 1 232 66 2 0 
+frame 244 1 323 66 3 0 
+frame 325 1 404 66 4 0 
+

@@ -1,0 +1,14 @@
+x_ini 2632 
+y_ini 1 
+warrior_form 1 
+warrior_preivous_state 13 
+warrior_state 15 
+warrior_dir 0 
+song  ./data/music/roki.mid 
+world_description ./data/maps/world2_transparencia.txt 
+enemies_description ./data/characters/enemies_phase2.txt 
+checkpoint_description ./data/checkpoints/checkpoint_fase2.txt 
+scripts ./data/scripts/phase2.txt 
+objects ./data/objects/objects_phase2.txt 
+scrolls ./data/levels/scroll_zones_phase2.txt 
+anims ./data/machinimia/phase2.txt 

@@ -1,0 +1,15 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del objeto bombilla
+
+bitmap bombilla.bmp 
+screenx 320
+screeny 200
+
+animaciones 1 
+
+animacion caminar_derecha 
+num_frames 1
+velocidad 0 
+frame 1 1 16 23 0 0 
+
