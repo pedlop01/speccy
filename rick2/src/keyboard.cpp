@@ -44,21 +44,21 @@ int Keyboard::GetKeys() {
 }
 
 int Keyboard::PressedLeft() {
-  return (keys && KEY_LEFT);
+  return (keys & KEY_LEFT);
 }
 
 int Keyboard::PressedRight() {
-  return (keys && KEY_RIGHT);
+  return (keys & KEY_RIGHT);
 }
 
 int Keyboard::PressedUp() {
-  return (keys && KEY_UP);
+  return (keys & KEY_UP);
 }
 
 int Keyboard::PressedDown() {
-  return (keys && KEY_DOWN);
+  return (keys & KEY_DOWN);
 }
 
 int Keyboard::PressedSpace() {
-  return (keys && KEY_SPACE);
+  return (keys & KEY_SPACE);
 }

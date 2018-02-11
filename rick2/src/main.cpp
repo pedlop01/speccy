@@ -10,6 +10,7 @@
 
 #include "world.h"
 #include "keyboard.h"
+#include "camera.h"
 
 using namespace std;
 
@@ -18,10 +19,10 @@ int main(int argc, char *argv[]) {
   ALLEGRO_DISPLAY*       display     = NULL;
   ALLEGRO_BITMAP*        bitmap      = NULL;
   ALLEGRO_EVENT_QUEUE*   event_queue = NULL;
-  ALLEGRO_SAMPLE*        sample      = NULL;
-  ALLEGRO_LOCKED_REGION* lock;
+  ALLEGRO_SAMPLE*        sample      = NULL;  
   World*                 map_level1;
   Keyboard               keyboard;
+  Camera                 camera;
 
   // Check arguments
   if(argc != 1) {
@@ -73,29 +74,28 @@ int main(int argc, char *argv[]) {
 
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
-  // Set bitmap before main loop for first iteration
-  lock = al_lock_bitmap(bitmap, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
-  al_set_target_bitmap(bitmap);
-
   // Game initializations
   map_level1 = new World("../maps/level1/Map1_final.tmx", false);
+  camera.InitCamera(0, 0, 320, 240, 320/8, 240/8, bitmap);
+  camera.SetMap(map_level1);
 
   // Main loop
   do {
+    al_set_target_bitmap(bitmap);
 
     keyboard.ReadKeyboard(event_queue);
 
-    printf("%d\n", keyboard.GetKeys());
+    camera.DrawScreen();
 
-    al_unlock_bitmap(bitmap);
+    if(keyboard.PressedRight()) { camera.SetPosX(camera.GetPosX()+8); }
+    if(keyboard.PressedLeft()) { camera.SetPosX(camera.GetPosX()-8); }
+    if(keyboard.PressedUp()) { camera.SetPosY(camera.GetPosY()-8); }
+    if(keyboard.PressedDown()) { camera.SetPosY(camera.GetPosY()+8); }
+
     al_set_target_bitmap(al_get_backbuffer(display));
     al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
        
     al_flip_display();
-        
-    lock = al_lock_bitmap(bitmap, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
-    al_set_target_bitmap(bitmap);
-
   } while(true);
 
   al_destroy_display(display);

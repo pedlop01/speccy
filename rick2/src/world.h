@@ -5,6 +5,7 @@
 #include <allegro5/allegro_image.h>
 #include <fstream>
 #include <string>
+#include <tgmath.h>
 #include "pugixml.hpp"
 
 #include <iostream>
@@ -79,8 +80,8 @@ class World
         int   GetTilesetCount()          { return tileset_count;        }
         int   GetTilesetColumns()        { return tileset_columns;      }
 
-   	    Tile* GetTile(int x, int y)      { return world_tiles[y][x]; }
-		int   GetTileValue(int x, int y) { return world_tiles[y][x]->GetValue(); }		
+   	    Tile* GetTile(int x, int y)      { return world_tiles[x][y]; }
+		int   GetTileValue(int x, int y) { return world_tiles[x][y]->GetValue(); }		
 		
 		ALLEGRO_BITMAP* GetWorldImage()  { return world_image;     }
 		

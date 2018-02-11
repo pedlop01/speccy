@@ -54,13 +54,13 @@ World::World(char *file, bool tileExtractedOption)
   int y = 0;
   for (pugi::xml_node tile = tile_layer.first_child(); tile; tile = tile.next_sibling()) {
     for (pugi::xml_attribute attr = tile.first_attribute(); attr; attr = attr.next_attribute()) {
-      int tile_id = attr.as_int();
+      int tile_id = ((attr.as_int() != 0) ? attr.as_int() - 1: attr.as_int());
       // Save the id of the tile aswell as the coordinates in the tileset bitmap
       world_tiles[x][y]->SetValue(tile_id);
-      world_tiles[x][y]->SetLeftUpX((tile_id % tileset_columns) * tileset_width);
-      world_tiles[x][y]->SetLeftUpY(tile_id/tileset_columns);
+      world_tiles[x][y]->SetLeftUpX((tile_id % tileset_columns) * tileset_width);      
+      world_tiles[x][y]->SetLeftUpY(ceil((tile_id/tileset_columns))*tileset_height);
       world_tiles[x][y]->SetRightDownX((tile_id % tileset_columns) * tileset_width + tileset_width);
-      world_tiles[x][y]->SetRightDownY(tile_id/tileset_columns + tileset_height);
+      world_tiles[x][y]->SetRightDownY(ceil((tile_id/tileset_columns))*tileset_height + tileset_height);
       if (x == (map_width - 1)) {
         y++;
         x = 0;
