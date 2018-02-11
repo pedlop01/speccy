@@ -9,6 +9,7 @@
 #include <allegro5/allegro_image.h>
 
 #include "world.h"
+#include "keyboard.h"
 
 using namespace std;
 
@@ -20,6 +21,7 @@ int main(int argc, char *argv[]) {
   ALLEGRO_SAMPLE*        sample      = NULL;
   ALLEGRO_LOCKED_REGION* lock;
   World*                 map_level1;
+  Keyboard               keyboard;
 
   // Check arguments
   if(argc != 1) {
@@ -63,6 +65,14 @@ int main(int argc, char *argv[]) {
   al_draw_bitmap(bitmap, 0, 0, 0);
   al_flip_display();
 
+  event_queue = al_create_event_queue();
+  if(!event_queue) {
+    printf("Error: failted to create event_queue!\n");
+    return -1;
+  }
+
+  al_register_event_source(event_queue, al_get_keyboard_event_source());
+
   // Set bitmap before main loop for first iteration
   lock = al_lock_bitmap(bitmap, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY);
   al_set_target_bitmap(bitmap);
@@ -72,6 +82,10 @@ int main(int argc, char *argv[]) {
 
   // Main loop
   do {
+
+    keyboard.ReadKeyboard(event_queue);
+
+    printf("%d\n", keyboard.GetKeys());
 
     al_unlock_bitmap(bitmap);
     al_set_target_bitmap(al_get_backbuffer(display));
