@@ -19,11 +19,9 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
 
   // First byte of data contains value for the A register on return.
   // Last byte is blocks checksum (not using it).  
-  unsigned short nBytesLSB = *block;
-  printf("nBytesLSB=%d\n", nBytesLSB);
+  unsigned short nBytesLSB = *block;  
   block++;
-  unsigned short nBytesMSB = *block;
-  printf("nBytesMSB=%d\n", nBytesMSB);
+  unsigned short nBytesMSB = *block;  
   block++;
   unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
   unsigned short totalNBytes = nBytes - 2;
@@ -255,11 +253,8 @@ int main(int argc, char *argv[]) {
     }
 
     cpu.tStates = 0;
-
-    //printf("Before EmulateOne %x\n", cpu.regs.PC);
-
-    if ((cpu.regs.PC == 0x056B)) {
-      printf("Captured PC 0x056B\n");
+    
+    if ((cpu.regs.PC == 0x056B)) {      
       if (LoadTrap(cpu, data, block) == 0) {
           //printf("LoadTrap successful\n");
           // set up register for success
@@ -267,8 +262,7 @@ int main(int argc, char *argv[]) {
           cpu.regs.altAF = 0x0145;
           cpu.regs.CF = 1;
       } else {
-        // set up registers for failure
-        //printf("LoadTrap unsuccessful\n");
+        // set up registers for failure        
         cpu.regs.CF = 0;
       }
       // Return from the table block load routine
