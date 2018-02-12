@@ -19,6 +19,12 @@ class Camera
     int tiles_width;
     int tiles_height;
 
+    int tile_width;
+    int tile_height;
+
+    int world_width;
+    int world_height;
+
     ALLEGRO_BITMAP* screen;
     World*          map;
 
@@ -34,12 +40,12 @@ class Camera
     int GetTilesWidth()   { return tiles_width; }
     int GetTilesHeight()  { return tiles_height; }    
 
-    void SetPosX(int _pos_x)                 { pos_x = _pos_x; }
-    void SetPosY(int _pos_y)                 { pos_y = _pos_y; }
-    void SetPixelsWidth(int _pixels_width)   { pixels_width = _pixels_width; }
-    void SetPixelsHeight(int _pixels_height) { pixels_height = _pixels_height; }
-    void SetTilesWidth(int _tiles_width)     { tiles_width = _tiles_width; }
-    void SetTilesHeight(int _tiles_height)   { tiles_height = _tiles_height; }
+    void SetPosX(int _pos_x);
+    void SetPosY(int _pos_y);
+    void SetPixelsWidth(int _pixels_width);
+    void SetPixelsHeight(int _pixels_height);
+    void SetTilesWidth(int _tiles_width);
+    void SetTilesHeight(int _tiles_height);
 
     ALLEGRO_BITMAP* GetScreen() { return screen; }
     void SetScreen(ALLEGRO_BITMAP* _screen) { screen = _screen; }
