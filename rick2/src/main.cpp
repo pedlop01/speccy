@@ -75,9 +75,8 @@ int main(int argc, char *argv[]) {
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
   // Game initializations
-  map_level1 = new World("../maps/level1/Map1_final.tmx", false);
-  camera.SetMap(map_level1);
-  camera.InitCamera(0, 0, 320, 240, 320/8, 240/8, bitmap);
+  map_level1 = new World("../maps/level1/Map1_final.tmx", false);  
+  camera.InitCamera(0, 0, 320, 240, map_level1, bitmap);
 
   // Main loop
   do {
@@ -88,9 +87,9 @@ int main(int argc, char *argv[]) {
     camera.DrawScreen();
 
     if(keyboard.PressedRight()) { camera.SetPosX(camera.GetPosX()+1); }
-    if(keyboard.PressedLeft()) { camera.SetPosX(camera.GetPosX()-1); }
-    if(keyboard.PressedUp()) { camera.SetPosY(camera.GetPosY()-1); }
-    if(keyboard.PressedDown()) { camera.SetPosY(camera.GetPosY()+1); }
+    if(keyboard.PressedLeft())  { camera.SetPosX(camera.GetPosX()-1); }
+    if(keyboard.PressedUp())    { camera.SetPosY(camera.GetPosY()-1); }
+    if(keyboard.PressedDown())  { camera.SetPosY(camera.GetPosY()+1); }
 
     al_set_target_bitmap(al_get_backbuffer(display));
     al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);

@@ -37,6 +37,8 @@ World::World(char *file, bool tileExtractedOption)
 
   tileset_count = tileset.attribute("tilecount").as_int();
   tileset_columns = tileset.attribute("columns").as_int();
+  tileset_tile_width = tileset.attribute("tilewidth").as_int();
+  tileset_tile_height = tileset.attribute("tileheight").as_int();
 
   pugi::xml_node tile_layer = world_file.child("map").child("layer").child("data");
 

@@ -33,6 +33,8 @@ int Keyboard::ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue) {
       case ALLEGRO_KEY_UP    : (keyDown ? keys |= KEY_UP    : keys &= ~KEY_UP);    break;
       case ALLEGRO_KEY_DOWN  : (keyDown ? keys |= KEY_DOWN  : keys &= ~KEY_DOWN);  break;
       case ALLEGRO_KEY_SPACE : (keyDown ? keys |= KEY_SPACE : keys &= ~KEY_SPACE); break;
+      case ALLEGRO_KEY_A     : (keyDown ? keys |= KEY_A     : keys &= ~KEY_A);     break;
+      case ALLEGRO_KEY_Z     : (keyDown ? keys |= KEY_Z     : keys &= ~KEY_Z);     break;
     }
   }
 
@@ -61,4 +63,12 @@ int Keyboard::PressedDown() {
 
 int Keyboard::PressedSpace() {
   return (keys & KEY_SPACE);
+}
+
+int Keyboard::PressedA() {
+  return (keys & KEY_A);
+}
+
+int Keyboard::PressedZ() {
+  return (keys & KEY_Z);
 }

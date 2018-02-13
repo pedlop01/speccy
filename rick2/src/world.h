@@ -55,12 +55,14 @@ class Tile
 class World
 {
     private:       
-        int     map_width;       // In number of tiles
-        int     map_height;      // In number of tiles
-        int     tileset_width;   // In pixels
-        int     tileset_height;  // In pixels
+        int     map_width;           // In number of tiles
+        int     map_height;          // In number of tiles
+        int     tileset_width;       // In pixels
+        int     tileset_height;      // In pixels
         int     tileset_count;
-        int     tileset_columns;        
+        int     tileset_columns;   
+        int     tileset_tile_width;  // Tile width in pixels
+        int     tileset_tile_height; // Tile height in pixels
 
         Tile    ***world_tiles;
 
@@ -79,6 +81,8 @@ class World
         int   GetTilesetHeight()         { return tileset_height;       }
         int   GetTilesetCount()          { return tileset_count;        }
         int   GetTilesetColumns()        { return tileset_columns;      }
+        int   GetTilesetTileWidth()      { return tileset_tile_width;   }
+        int   GetTilesetTileHeight()     { return tileset_tile_height;  }
 
    	    Tile* GetTile(int x, int y)      { return world_tiles[x][y]; }
 		int   GetTileValue(int x, int y) { return world_tiles[x][y]->GetValue(); }		

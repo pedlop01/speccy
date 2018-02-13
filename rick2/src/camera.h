@@ -25,12 +25,12 @@ class Camera
     int world_width;
     int world_height;
 
+    ALLEGRO_BITMAP* camera_bitmap;
     ALLEGRO_BITMAP* screen;
     World*          map;
 
   public:
     Camera();
-    Camera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, int _tiles_width, int _tiles_height, ALLEGRO_BITMAP* _screen);
     ~Camera();
 
     int GetPosX()         { return pos_x; }
@@ -50,7 +50,7 @@ class Camera
     ALLEGRO_BITMAP* GetScreen() { return screen; }
     void SetScreen(ALLEGRO_BITMAP* _screen) { screen = _screen; }
 
-    void InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, int _tiles_width, int _tiles_height, ALLEGRO_BITMAP* _screen);
+    void InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, World* _map, ALLEGRO_BITMAP* _screen);
 
     void SetMap(World* _map) { map = _map; }
 

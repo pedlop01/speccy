@@ -10,6 +10,8 @@
 #define KEY_UP    0x04
 #define KEY_DOWN  0x08
 #define KEY_SPACE 0x10
+#define KEY_A     0x20
+#define KEY_Z     0x40
 
 using namespace std;
 
@@ -30,6 +32,8 @@ class Keyboard
        int PressedUp();
        int PressedDown();
        int PressedSpace();
+       int PressedA();
+       int PressedZ();
 };
 
 #endif // KEYBOARD_H
