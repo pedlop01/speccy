@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
   // Game initializations
-  map_level1 = new World("../maps/level1/Map1_final.tmx", false);  
+  map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
   camera.InitCamera(0, 0, 320, 240, map_level1, bitmap);
 
   // Main loop

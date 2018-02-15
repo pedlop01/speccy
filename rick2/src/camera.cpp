@@ -21,8 +21,9 @@ Camera::~Camera() {
 
 void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, World* _map, ALLEGRO_BITMAP* _screen) {
   map = _map;
-  pos_x = _pos_x;
-  pos_y = _pos_y;
+  // Using methods to set x and y because they control the limits of the camera in the world
+  SetPosX(_pos_x);
+  SetPosY(_pos_y);
   pixels_width = _pixels_width;
   pixels_height = _pixels_height;
   tiles_width = pixels_width / map->GetTilesetTileWidth();
@@ -40,17 +41,23 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
 }
 
 void Camera::SetPosX(int _pos_x) {
-  if ((_pos_x < 0) || (_pos_x >= (world_width - pixels_width - tile_width)) ) // REVISIT
-    return;
-
-  pos_x = _pos_x;
+  if (_pos_x < 0) {
+    pos_x = 0;
+  } else if (_pos_x > (world_width - pixels_width - tile_width)) { // REVISIT
+    pos_x = (world_width - pixels_width - tile_width);
+  } else {
+    pos_x = _pos_x;
+}
 }
 
 void Camera::SetPosY(int _pos_y) {
-  if ((_pos_y < 0) || (_pos_y >= (world_height - pixels_height)) )
-    return;
-
-  pos_y = _pos_y;
+  if (_pos_y < 0) {
+    pos_y = 0;
+  } else if (_pos_y > (world_height - pixels_height)) {
+    pos_y = (world_height - pixels_height);
+  } else {
+    pos_y = _pos_y;
+  }
 }
 
 void Camera::SetPixelsWidth(int _pixels_width) {

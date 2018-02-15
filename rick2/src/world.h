@@ -20,17 +20,12 @@ class Tile
         int right_down_x;
         int right_down_y;
         int value;
-        int collisionable;
-        int pintado;
-        int position;
+        int type;
 
     public:
-        Tile()
-        {
-            value = 0;
-            collisionable = 0;
-            pintado = 0;
-            position = 0;
+        Tile() {
+          value = 0;
+          type = 0;
         }
         ~Tile() { ; }
         
@@ -44,12 +39,8 @@ class Tile
         int  GetRightDownY()           { return right_down_y;  }        
         int  GetValue()                { return value;         }
         void SetValue(int val)         { value = val;          }
-        int  GetCollisionable()        { return collisionable; }
-        void SetCollisionable(int col) { collisionable = col;  }
-        int  GetPosition()             { return position;      }
-        void SetPosition(int pos)      { position = pos;       }                        
-        int  GetPintado()              { return pintado;       }
-        void SetPintado(int pint)      { pintado = pint;       }
+        int  GetType()                 { return type;          }
+        void SetType(int _type)        { type = _type;         }
 };
 
 class World
@@ -57,6 +48,8 @@ class World
     private:       
         int     map_width;           // In number of tiles
         int     map_height;          // In number of tiles
+
+        // REVISIT: make tileset a class
         int     tileset_width;       // In pixels
         int     tileset_height;      // In pixels
         int     tileset_count;
