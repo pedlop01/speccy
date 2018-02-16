@@ -21,15 +21,21 @@ Camera::~Camera() {
 
 void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, World* _map, ALLEGRO_BITMAP* _screen) {
   map = _map;
-  // Using methods to set x and y because they control the limits of the camera in the world
-  SetPosX(_pos_x);
-  SetPosY(_pos_y);
+
   pixels_width = _pixels_width;
   pixels_height = _pixels_height;
+
   tiles_width = pixels_width / map->GetTilesetTileWidth();
   tiles_height = pixels_height / map->GetTilesetTileHeight();
+
   tile_width = pixels_width / tiles_width;
   tile_height = pixels_height / tiles_height;
+
+  // Using methods to set x and y because they control the limits of the camera in the world
+  // These methods need to be call after initializing the other width parameters
+  SetPosX(_pos_x);
+  SetPosY(_pos_y);
+
   // REVISIT: Need to pass map
   world_width = map->GetMapWidth()*tile_width;
   world_height = map->GetMapHeight()*tile_height;
@@ -37,6 +43,8 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
   // If bitmap exists, then destroy it first
   al_destroy_bitmap(camera_bitmap);
   camera_bitmap = al_create_bitmap(pixels_width, pixels_height);
+
+  // Finally, link the screen bitmap
   screen = _screen;
 }
 
