@@ -1,0 +1,18 @@
+<character name="rick">
+  <states>
+    <state name="stopped">
+      <animation bitmap="../characters/rick.png" speed="0">
+        <sprite x="1" y="1" width="20" height="20">
+      </animation>
+    </state>
+    <state name="walking">
+      <animation bitmap="../characters/rick.png" speed="1">
+        <sprite x="23" y="1" width="20" height="20">
+        <sprite x="45" y="1" width="20" height="20">
+        <sprite x="67" y="1" width="20" height="20">
+        <sprite x="89" y="1" width="20" height="20">
+        <sprite x="111" y="1" width="20" height="20">
+      </animation>
+    </state>
+  </states>
+</character>
