@@ -1,6 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+#include <stdio.h>
 #include "pugixml.hpp"
 
 class Character {

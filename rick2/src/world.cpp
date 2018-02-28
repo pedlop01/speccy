@@ -30,7 +30,9 @@ World::World(char *file, bool tileExtractedOption)
 
   sprintf(aux_file, "%s", file);
   sprintf(tileset_file, "%s/%s", chopToDirectory(aux_file).c_str(), tileset.attribute("name").as_string());
-    
+
+  printf("Tileset file = %s\n", tileset_file);
+
   world_image = al_load_bitmap(tileset_file);
   if (!world_image) {
     printf("Error: failed to load tileset\n");    
@@ -41,6 +43,7 @@ World::World(char *file, bool tileExtractedOption)
   tileset_tile_width = tileset.attribute("tilewidth").as_int();
   tileset_tile_height = tileset.attribute("tileheight").as_int();
 
+  printf("Tileset count = %d\nTileset columns = %d\nTile width = %d\nTile height = %d\n", tileset_count, tileset_columns, tileset_tile_width, tileset_tile_height);
   
   // Initialize world    
   world_tiles = new Tile**[map_width];
