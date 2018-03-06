@@ -2,7 +2,8 @@
 
 // class constructor
 Character::Character() {
-	// insert your code here
+  pos_x = 0;
+  pos_y = 0;
 }
 
 Character::Character(char* file) {

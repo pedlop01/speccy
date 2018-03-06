@@ -1,11 +1,13 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <iostream>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
-#include <iostream>
+#include <allegro5/allegro_primitives.h>
 
 #include "world.h"
+#include "character.h"
 
 using namespace std;
 
@@ -51,10 +53,12 @@ class Camera
     void SetScreen(ALLEGRO_BITMAP* _screen) { screen = _screen; }
 
     void InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_height, World* _map, ALLEGRO_BITMAP* _screen);
+    void PositionBasedOnPlayer(Character* player);
 
     void SetMap(World* _map) { map = _map; }
 
-    void DrawScreen();
+    void DrawScreen(Character *player);
+
 };
 
 #endif // CAMERA_H

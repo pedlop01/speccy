@@ -48,6 +48,11 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
   screen = _screen;
 }
 
+void Camera::PositionBasedOnPlayer(Character* player) {
+  SetPosX(player->GetPosX() - pixels_width/2);
+  SetPosY(player->GetPosY() - pixels_height/2);
+}
+
 void Camera::SetPosX(int _pos_x) {
   if (_pos_x < 0) {
     pos_x = 0;
@@ -84,7 +89,7 @@ void Camera::SetTilesHeight(int _tiles_height) {
   tiles_height = _tiles_height;
 }
 
-void Camera::DrawScreen() {
+void Camera::DrawScreen(Character* player) {
   Tile* tile;
   int left_up_x;
   int left_up_y;
@@ -133,6 +138,13 @@ void Camera::DrawScreen() {
     tile_y++;    
   }
   
+   // Draw the player in front of back tiles
+   al_draw_rectangle(player->GetPosX() - GetPosX(),
+                     player->GetPosY() - GetPosY(),
+                     player->GetPosX() + 8 - GetPosX(),
+                     player->GetPosY() + 8 - GetPosY(),
+                     al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
+
   // Move camera to screen
   al_set_target_bitmap(screen);
   al_draw_scaled_bitmap(camera_bitmap,

@@ -7,10 +7,12 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_acodec.h>
 #include <allegro5/allegro_image.h>
+#include <allegro5/allegro_primitives.h>
 
 #include "world.h"
 #include "keyboard.h"
 #include "camera.h"
+#include "character.h"
 
 using namespace std;
 
@@ -23,6 +25,7 @@ int main(int argc, char *argv[]) {
   World*                 map_level1;
   Keyboard               keyboard;
   Camera                 camera;
+  Character              player;
 
   // Check arguments
   if(argc != 1) {
@@ -60,6 +63,11 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  if(!al_init_primitives_addon()) {
+    printf("Error: failed to initialize allegro primitives!\n");
+    return -1;
+  }
+
   al_set_target_bitmap(bitmap);
   al_clear_to_color(al_map_rgb(0xD7, 0xD7, 0xD7));
   al_set_target_bitmap(al_get_backbuffer(display));
@@ -84,12 +92,13 @@ int main(int argc, char *argv[]) {
 
     keyboard.ReadKeyboard(event_queue);
 
-    camera.DrawScreen();
+    if(keyboard.PressedRight()) { player.SetPosX(player.GetPosX()+1); }
+    if(keyboard.PressedLeft())  { player.SetPosX(player.GetPosX()-1); }
+    if(keyboard.PressedUp())    { player.SetPosY(player.GetPosY()-1); }
+    if(keyboard.PressedDown())  { player.SetPosY(player.GetPosY()+1); }
 
-    if(keyboard.PressedRight()) { camera.SetPosX(camera.GetPosX()+1); }
-    if(keyboard.PressedLeft())  { camera.SetPosX(camera.GetPosX()-1); }
-    if(keyboard.PressedUp())    { camera.SetPosY(camera.GetPosY()-1); }
-    if(keyboard.PressedDown())  { camera.SetPosY(camera.GetPosY()+1); }
+    camera.PositionBasedOnPlayer(&player);
+    camera.DrawScreen(&player);
 
     al_set_target_bitmap(al_get_backbuffer(display));
     al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
