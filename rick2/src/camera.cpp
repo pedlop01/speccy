@@ -113,10 +113,8 @@ void Camera::DrawScreen(Character* player) {
   // Traverse map and draw intro screen
   int tile_y = pos_y / tile_height;
   for (int y = 0; y < tiles_height_corrected; y++) {
-    int tile_x = pos_x / tile_width;
-    for (int x = 0; x < tiles_width_corrected; x++) {      
-      tile_x++;
-
+    int tile_x = pos_x / tile_width;    
+    for (int x = 0; x < tiles_width_corrected; x++) {
       tile = map->GetTile(tile_x, tile_y);
       left_up_x = tile->GetLeftUpX();
       left_up_y = tile->GetLeftUpY();
@@ -124,7 +122,7 @@ void Camera::DrawScreen(Character* player) {
       int dest_x = x*tile_width - correct_x;
       int dest_y = y*tile_height - correct_y;
 
-      if ((dest_x < world_width) && (dest_y < world_height)) {
+      if ((dest_x < world_width) && (dest_y < world_height)) {        
         al_draw_bitmap_region(tileset_bitmap,
                               left_up_x,
                               left_up_y,
@@ -132,11 +130,19 @@ void Camera::DrawScreen(Character* player) {
                               tile_height,
                               dest_x,
                               dest_y,
-                              0);
+                              0);        
+        if (tile->GetType() != 0) {
+          al_draw_filled_rectangle(dest_x,
+                                   dest_y,
+                                   dest_x + tile_width,
+                                   dest_y + tile_height,
+                                  al_map_rgb(tile->GetType()*0x0F, tile->GetType()*0x0F, tile->GetType()*0x0F));
+        }
       }
+      tile_x++;
     }
     tile_y++;    
-  }
+  }  
   
    // Draw the player in front of back tiles
    al_draw_rectangle(player->GetPosX() - GetPosX(),
