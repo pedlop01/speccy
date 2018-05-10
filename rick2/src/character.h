@@ -2,7 +2,9 @@
 #define CHARACTER_H
 
 #include <stdio.h>
+
 #include "pugixml.hpp"
+#include "world.h"
 
 class Character {
   private:
@@ -16,8 +18,9 @@ class Character {
 
     ~Character();   // class desructor
     
-    void SetPosX(int x) { pos_x = x; }
-    void SetPosY(int y) { pos_y = y; }
+    void SetPosX(World* map, int x);
+    void SetPosY(World* map, int y);
+
     int  GetPosX()      { return pos_x; }
     int  GetPosY()      { return pos_y; }
 };

@@ -92,10 +92,11 @@ int main(int argc, char *argv[]) {
 
     keyboard.ReadKeyboard(event_queue);
 
-    if(keyboard.PressedRight()) { player.SetPosX(player.GetPosX()+1); }
-    if(keyboard.PressedLeft())  { player.SetPosX(player.GetPosX()-1); }
-    if(keyboard.PressedUp())    { player.SetPosY(player.GetPosY()-1); }
-    if(keyboard.PressedDown())  { player.SetPosY(player.GetPosY()+1); }
+    if(keyboard.PressedRight()) { player.SetPosX(map_level1, player.GetPosX()+1); }
+    if(keyboard.PressedLeft())  { player.SetPosX(map_level1, player.GetPosX()-1); }
+    if(keyboard.PressedUp())    { player.SetPosY(map_level1, player.GetPosY()-1); }
+    if(keyboard.PressedDown())  { player.SetPosY(map_level1, player.GetPosY()+1); }
+    if(keyboard.PressedESC())   { return 0; }
 
     camera.PositionBasedOnPlayer(&player);
     camera.DrawScreen(&player);
