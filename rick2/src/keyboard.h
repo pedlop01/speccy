@@ -12,6 +12,7 @@
 #define KEY_SPACE 0x10
 #define KEY_A     0x20
 #define KEY_Z     0x40
+#define KEY_ESC   0x80
 
 using namespace std;
 
@@ -34,6 +35,7 @@ class Keyboard
        int PressedSpace();
        int PressedA();
        int PressedZ();
+       int PressedESC();
 };
 
 #endif // KEYBOARD_H
