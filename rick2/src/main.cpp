@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -15,6 +16,29 @@
 #include "character.h"
 
 using namespace std;
+
+// Helper functions. Consider moving them to clases
+
+double PCFreq = 0.0;
+__int64 CounterStart = 0;
+
+void StartCounter()
+{
+    LARGE_INTEGER li;
+    if(!QueryPerformanceFrequency(&li))
+    cout << "QueryPerformanceFrequency failed!\n";
+
+    PCFreq = double(li.QuadPart)/1000.0;
+
+    QueryPerformanceCounter(&li);
+    CounterStart = li.QuadPart;
+}
+double GetCounter()
+{
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    return double(li.QuadPart-CounterStart)/PCFreq;
+}
 
 int main(int argc, char *argv[]) {
   // Allegro variables
@@ -86,6 +110,9 @@ int main(int argc, char *argv[]) {
   map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
   camera.InitCamera(0, 0, 320, 240, map_level1, bitmap);
 
+  // Start counter for first iteration
+  StartCounter();
+
   // Main loop
   do {
     al_set_target_bitmap(bitmap);
@@ -103,8 +130,15 @@ int main(int argc, char *argv[]) {
 
     al_set_target_bitmap(al_get_backbuffer(display));
     al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
-       
     al_flip_display();
+
+    // Check counter value for adding waiting time
+    double delay = ((double)GetCounter());
+    if(delay < 25)
+      Sleep(25 - delay);
+
+    // Start counter again for next iteration
+    StartCounter();
   } while(true);
 
   al_destroy_display(display);
