@@ -2,8 +2,11 @@
 
 // class constructor
 Character::Character() {
-  pos_x = 0;
-  pos_y = 0;
+  pos_x = 264;  // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
+
+  height = 16;  // REVISIT: should be 0
+  weight = 16;  // REVISIT: should be 0
 }
 
 Character::Character(char* file) {
@@ -35,7 +38,7 @@ void Character::SetPosX(World* map, int x) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
   int tile_weight = map->GetTilesetTileHeight();
-  int character_weight = 8; // REVISIT
+  int character_weight = this->height;
 
   // Compute the displacement in x
   int desp_x = (x > pos_x) ? (x - pos_x) : (pos_x - x);
@@ -75,7 +78,7 @@ void Character::SetPosY(World* map, int y) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
   int tile_height = map->GetTilesetTileHeight();
-  int character_height = 8; // REVISIT
+  int character_height = this->weight;
 
   // Compute the displacement in x
   int desp_y = (y > pos_y) ? (y - pos_y) : (pos_y - y);

@@ -147,8 +147,8 @@ void Camera::DrawScreen(Character* player) {
    // Draw the player in front of back tiles
    al_draw_rectangle(player->GetPosX() - GetPosX(),
                      player->GetPosY() - GetPosY(),
-                     player->GetPosX() + 8 - GetPosX(),
-                     player->GetPosY() + 8 - GetPosY(),
+                     player->GetPosX() + player->GetWeight() - GetPosX(),
+                     player->GetPosY() + player->GetHeight() - GetPosY(),
                      al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
 
   // Move camera to screen
