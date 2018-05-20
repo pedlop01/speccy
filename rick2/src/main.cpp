@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
 
     keyboard.ReadKeyboard(event_queue);
 
-    if(keyboard.PressedRight()) { player.SetPosX(map_level1, player.GetPosX()+1); }
-    if(keyboard.PressedLeft())  { player.SetPosX(map_level1, player.GetPosX()-1); }
-    if(keyboard.PressedUp())    { player.SetPosY(map_level1, player.GetPosY()-1); }
-    if(keyboard.PressedDown())  { player.SetPosY(map_level1, player.GetPosY()+1); }
+    if(keyboard.PressedRight()) { player.SetPosX(map_level1, player.GetPosX()+2); }
+    if(keyboard.PressedLeft())  { player.SetPosX(map_level1, player.GetPosX()-2); }
+    if(keyboard.PressedUp())    { player.SetPosY(map_level1, player.GetPosY()-2); }
+    if(keyboard.PressedDown())  { player.SetPosY(map_level1, player.GetPosY()+2); }
     if(keyboard.PressedESC())   { return 0; }
 
     camera.PositionBasedOnPlayer(&player);
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
 
     // Check counter value for adding waiting time
     double delay = ((double)timer.GetCounter());
-    if(delay < 25)
-      Sleep(25 - delay);
+    if(delay < 20)
+      Sleep(20 - delay);
 
     // Start counter again for next iteration
     timer.StartCounter();

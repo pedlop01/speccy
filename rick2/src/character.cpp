@@ -113,3 +113,11 @@ void Character::SetPosY(World* map, int y) {
     }
   }
 }
+
+void Character::ComputeNextState(
+  int mask_col_ext,
+  int mask_col_ver_int,
+  int mask_col_hor_int,
+  Keyboard& keyboard) {
+
+}
