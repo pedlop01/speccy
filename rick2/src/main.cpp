@@ -29,6 +29,10 @@ int main(int argc, char *argv[]) {
   Camera                 camera;
   Character              player;
   Timer                  timer;
+  // REVISIT: not sure if collision will be in main loop
+  vector<int> ext_collisions;
+  vector<int> int_width_collisions;
+  vector<int> int_height_collisions;
 
   // Check arguments
   if(argc != 1) {
@@ -98,6 +102,18 @@ int main(int argc, char *argv[]) {
 
     keyboard.ReadKeyboard(event_queue);
 
+    // REVISIT: this will be internal to the player
+    player.GetCollisionsExternalBox(map_level1, ext_collisions);
+    player.GetCollisionsInternalWidthBox(map_level1, int_width_collisions);
+    player.GetCollisionsInternalHeightBox(map_level1, int_height_collisions);
+    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n", ext_collisions[0], ext_collisions[1], ext_collisions[2], ext_collisions[3]);
+    printf("[Collisions int width] lup=%d, rup=%d, rdw=%d, ldw=%d\n", int_width_collisions[0], int_width_collisions[1], int_width_collisions[2], int_width_collisions[3]);
+    printf("[Collisions int height] lup=%d, rup=%d, rdw=%d, ldw=%d\n", int_height_collisions[0], int_height_collisions[1], int_height_collisions[2], int_height_collisions[3]);
+
+    ext_collisions.clear();
+    int_width_collisions.clear();
+    int_height_collisions.clear();
+
     if(keyboard.PressedRight()) { player.SetPosX(map_level1, player.GetPosX()+2); }
     if(keyboard.PressedLeft())  { player.SetPosX(map_level1, player.GetPosX()-2); }
     if(keyboard.PressedUp())    { player.SetPosY(map_level1, player.GetPosY()-2); }
@@ -107,14 +123,14 @@ int main(int argc, char *argv[]) {
     camera.PositionBasedOnPlayer(&player);
     camera.DrawScreen(&player);
 
-    al_set_target_bitmap(al_get_backbuffer(display));
-    al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
-    al_flip_display();
-
     // Check counter value for adding waiting time
     double delay = ((double)timer.GetCounter());
     if(delay < 20)
       Sleep(20 - delay);
+
+    al_set_target_bitmap(al_get_backbuffer(display));
+    al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
+    al_flip_display();
 
     // Start counter again for next iteration
     timer.StartCounter();

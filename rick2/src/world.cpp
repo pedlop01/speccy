@@ -105,22 +105,16 @@ World::~World()
 
 int World::GetTileValueByCoord(int x, int y)
 {
-//  int tile_x = div(x, tiles_size_x).quot;
-//  int tile_y = div(y, tiles_size_y).quot;
-//
-//  assert( tile_x < tiles_m_x && tile_x >= 0);   
-//  assert( tile_y < tiles_m_y && tile_y >= 0);
-//
-//  return tiles_mundo[tile_y][tile_x]->GetValue();
+  int tile_x = x / tileset_tile_width;
+  int tile_y = y / tileset_tile_height;
+
+  return world_tiles[tile_x][tile_y]->GetValue();
 }
 
 Tile* World::GetTileByCoord(int x, int y)
 {
-//  int tile_x = div(x, tiles_size_x).quot;
-//  int tile_y = div(y, tiles_size_y).quot;
-//
-//  assert( tile_x < tiles_m_x && tile_x >= 0);   
-//  assert( tile_y < tiles_m_y && tile_y >= 0);
-//
-//  return tiles_mundo[tile_y][tile_x];
+  int tile_x = x / tileset_tile_width;
+  int tile_y = y / tileset_tile_height;
+
+  return world_tiles[tile_x][tile_y];
 }

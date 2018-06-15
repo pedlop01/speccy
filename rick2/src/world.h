@@ -78,12 +78,12 @@ class World
         int   GetTilesetTileHeight()     { return tileset_tile_height;  }
 
    	    Tile* GetTile(int x, int y)      { return world_tiles[x][y]; }
-		int   GetTileValue(int x, int y) { return world_tiles[x][y]->GetValue(); }		
+        int   GetTileValue(int x, int y) { return world_tiles[x][y]->GetValue(); }
 		
-		ALLEGRO_BITMAP* GetWorldImage()  { return world_image;     }
+		    ALLEGRO_BITMAP* GetWorldImage()  { return world_image;     }
 		
-		int   GetTileValueByCoord(int x, int y);
-    	Tile* GetTileByCoord(int x, int y);
+		    int   GetTileValueByCoord(int x, int y);
+        Tile* GetTileByCoord(int x, int y);
 
     private:
             

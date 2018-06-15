@@ -2,7 +2,9 @@
 #define CHARACTER_H
 
 #include <stdio.h>
+#include <vector>
 
+#include "rick_params.h"
 #include "pugixml.hpp"
 #include "world.h"
 #include "keyboard.h"
@@ -14,13 +16,31 @@
 #define RICK_RUNNING  3
 #define RICK_CLIMBING 4
 
+
+/* Character bounding boxes.
+   The external box is defined by {height, width}
+   The height internal box is defined by {height, width - width_internal}
+   The width internal box is defined by {height - height_internal, width}
+
+        /----/-----\----\
+        |    | hi  |    |
+        /---------------\
+        |            wi |
+        \---------------/
+        |    |     |    |
+        \----\-----/----/
+*/
+
 class Character {
   private:
     int pos_x;
     int pos_y;
 
     int height;
-    int weight;
+    int width;
+
+    int height_internal;
+    int width_internal;
 
     int state;
     int direction;
@@ -39,11 +59,16 @@ class Character {
     int  GetPosX()      { return pos_x;     }
     int  GetPosY()      { return pos_y;     }
     int  GetHeight()    { return height;    }
-    int  GetWeight()    { return weight;    }
+    int  GetWidth()     { return width;    }
     int  GetState()     { return state;     }
     int  GetDirection() { return direction; }
 
-    void ComputeNextState(int mask_col_ext, int mask_col_ver_int, int mask_col_hor_int, Keyboard& keyboard);
+    void GetCollisionsByCoords(World* map, vector<int> &mask_col, int left_up_x, int left_up_y, int width, int height);
+    void GetCollisionsExternalBox(World* map, vector<int> &mask_col);
+    void GetCollisionsInternalWidthBox(World* map, vector<int> &mask_col);
+    void GetCollisionsInternalHeightBox(World* map, vector<int> &mask_col);
+
+    void ComputeNextState(vector<int> &mask_col_ext, vector<int> &mask_col_ver_int, vector<int> &mask_col_hor_int, Keyboard& keyboard);
 };
 
 #endif // CHARACTER_H
