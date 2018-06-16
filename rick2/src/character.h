@@ -8,6 +8,7 @@
 #include "pugixml.hpp"
 #include "world.h"
 #include "keyboard.h"
+#include "colbox.h"
 
 // REVISIT: state will be provided from a file
 #define RICK_STOP     0
@@ -63,15 +64,15 @@ class Character {
     int  GetState()     { return state;     }
     int  GetDirection() { return direction; }
 
-    void GetCollisionsByCoords(World* map, vector<int> &mask_col, int left_up_x, int left_up_y, int width, int height);
-    void GetCollisionsExternalBoxExt(World* map, vector<int> &mask_col);
-    void GetCollisionsExternalBoxInt(World* map, vector<int> &mask_col);
-    void GetCollisionsInternalWidthBoxExt(World* map, vector<int> &mask_col);
-    void GetCollisionsInternalWidthBoxInt(World* map, vector<int> &mask_col);
-    void GetCollisionsInternalHeightBoxExt(World* map, vector<int> &mask_col);
-    void GetCollisionsInternalHeightBoxInt(World* map, vector<int> &mask_col);
+    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
+    void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsExternalBoxInt(World* map, Colbox &mask_col);
+    void GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col);
+    void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
-    void ComputeNextState(vector<int> &mask_col_ext, vector<int> &mask_col_ver_int, vector<int> &mask_col_hor_int, Keyboard& keyboard);
+    void ComputeNextState(Colbox &mask_col_ext, Colbox &mask_col_ver_int, Colbox &mask_col_hor_int, Keyboard& keyboard);
 };
 
 #endif // CHARACTER_H
