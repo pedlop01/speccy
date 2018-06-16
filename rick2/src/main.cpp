@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
     keyboard.ReadKeyboard(event_queue);
 
     // REVISIT: this will be internal to the player
-    player.GetCollisionsExternalBox(map_level1, ext_collisions);
-    player.GetCollisionsInternalWidthBox(map_level1, int_width_collisions);
-    player.GetCollisionsInternalHeightBox(map_level1, int_height_collisions);
+    player.GetCollisionsExternalBoxExt(map_level1, ext_collisions);
+    player.GetCollisionsInternalWidthBoxExt(map_level1, int_width_collisions);
+    player.GetCollisionsInternalHeightBoxExt(map_level1, int_height_collisions);
     printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n", ext_collisions[0], ext_collisions[1], ext_collisions[2], ext_collisions[3]);
     printf("[Collisions int width] lup=%d, rup=%d, rdw=%d, ldw=%d\n", int_width_collisions[0], int_width_collisions[1], int_width_collisions[2], int_width_collisions[3]);
     printf("[Collisions int height] lup=%d, rup=%d, rdw=%d, ldw=%d\n", int_height_collisions[0], int_height_collisions[1], int_height_collisions[2], int_height_collisions[3]);

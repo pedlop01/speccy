@@ -124,7 +124,7 @@ void Character::GetCollisionsByCoords(World* map, vector<int> &mask_col, int lef
   mask_col.push_back(map->GetTileByCoord(left_up_x, left_up_y + height)->GetType());
 }
 
-void Character::GetCollisionsExternalBox(World* map, vector<int> &mask_col) {
+void Character::GetCollisionsExternalBoxExt(World* map, vector<int> &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
                               pos_x - 1,
@@ -133,7 +133,16 @@ void Character::GetCollisionsExternalBox(World* map, vector<int> &mask_col) {
                               height + 2);
 }
 
-void Character::GetCollisionsInternalWidthBox(World* map, vector<int> &mask_col) {
+void Character::GetCollisionsExternalBoxInt(World* map, vector<int> &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x,
+                              pos_y,
+                              width + 1,
+                              height + 1);
+}
+
+void Character::GetCollisionsInternalWidthBoxExt(World* map, vector<int> &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
                               pos_x - 1,
@@ -142,13 +151,31 @@ void Character::GetCollisionsInternalWidthBox(World* map, vector<int> &mask_col)
                               height - 2*height_internal + 2);
 }
 
-void Character::GetCollisionsInternalHeightBox(World* map, vector<int> &mask_col) {
+void Character::GetCollisionsInternalWidthBoxInt(World* map, vector<int> &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x,
+                              pos_y + height_internal - 1,
+                              width + 1,
+                              height - 2*height_internal + 2);
+}
+
+void Character::GetCollisionsInternalHeightBoxExt(World* map, vector<int> &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
                               pos_x + width_internal - 1,
                               pos_y - 1,
                               width - 2*width_internal + 2,
                               height + 2);
+}
+
+void Character::GetCollisionsInternalHeightBoxInt(World* map, vector<int> &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x + width_internal - 1,
+                              pos_y,
+                              width - 2*width_internal + 2,
+                              height + 1);
 }
 
 void Character::ComputeNextState(
