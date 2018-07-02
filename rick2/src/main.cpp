@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     player.GetCollisionsExternalBoxExt(map_level1, ext_collisions);
     player.GetCollisionsInternalWidthBoxExt(map_level1, int_width_collisions);
     player.GetCollisionsInternalHeightBoxExt(map_level1, int_height_collisions);
-    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
+/*    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
       ext_collisions.GetLeftUpCol(),
       ext_collisions.GetRightUpCol(),
       ext_collisions.GetRightDownCol(),
@@ -121,13 +121,12 @@ int main(int argc, char *argv[]) {
       int_height_collisions.GetLeftUpCol(),
       int_height_collisions.GetRightUpCol(),
       int_height_collisions.GetRightDownCol(),
-      int_height_collisions.GetLeftDownCol());
+      int_height_collisions.GetLeftDownCol());*/
 
-    if(keyboard.PressedRight()) { player.SetPosX(map_level1, player.GetPosX()+2); }
-    if(keyboard.PressedLeft())  { player.SetPosX(map_level1, player.GetPosX()-2); }
-    if(keyboard.PressedUp())    { player.SetPosY(map_level1, player.GetPosY()-2); }
-    if(keyboard.PressedDown())  { player.SetPosY(map_level1, player.GetPosY()+2); }
     if(keyboard.PressedESC())   { return 0; }
+
+    player.ComputeNextState(ext_collisions, int_height_collisions, int_width_collisions, keyboard);
+    player.ComputeNextPosition(map_level1, ext_collisions, int_height_collisions, int_width_collisions);
 
     camera.PositionBasedOnPlayer(&player);
     camera.DrawScreen(&player);

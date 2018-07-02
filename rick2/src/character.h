@@ -11,12 +11,17 @@
 #include "colbox.h"
 
 // REVISIT: state will be provided from a file
-#define RICK_STOP     0
-#define RICK_FALLING  1
-#define RICK_JUMPING  2
-#define RICK_RUNNING  3
-#define RICK_CLIMBING 4
+#define RICK_STATE_STOP     0
+#define RICK_STATE_JUMPING  1
+#define RICK_STATE_RUNNING  2
+#define RICK_STATE_CLIMBING 3
 
+// REVISIT: direction will be provided from a file
+#define RICK_DIR_STOP  0b0000
+#define RICK_DIR_RIGHT 0b0001
+#define RICK_DIR_LEFT  0b0010
+#define RICK_DIR_UP    0b0100
+#define RICK_DIR_DOWN  0b1000
 
 /* Character bounding boxes.
    The external box is defined by {height, width}
@@ -46,6 +51,9 @@ class Character {
     int state;
     int direction;
 
+    float speed_x;
+    float speed_y;
+
     pugi::xml_document character_file;
 
   public:    
@@ -73,6 +81,7 @@ class Character {
     void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
     void ComputeNextState(Colbox &mask_col_ext, Colbox &mask_col_ver_int, Colbox &mask_col_hor_int, Keyboard& keyboard);
+    void ComputeNextPosition(World* map, Colbox &mask_col_ext, Colbox &mask_col_ver_int, Colbox &mask_col_hor_int);
 };
 
 #endif // CHARACTER_H

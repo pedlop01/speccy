@@ -10,6 +10,12 @@ Character::Character() {
 
   height_internal = 2;
   width_internal = 2;
+
+  state = RICK_STATE_STOP;
+  direction = RICK_DIR_STOP;
+
+  speed_x = 2.0;
+  speed_y = 1.0;
 }
 
 Character::Character(char* file) {
@@ -184,4 +190,149 @@ void Character::ComputeNextState(
   Colbox &mask_col_hor_int,
   Keyboard& keyboard) {
 
+  printf("State = %d, direction = %d\n", state, direction);
+
+  switch(state) {
+    case RICK_STATE_STOP:
+      direction = RICK_DIR_STOP;
+      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else {
+        if (keyboard.PressedUp()) {
+          if ((mask_col_ver_int.GetLeftUpCol() != 0) || (mask_col_ver_int.GetRightUpCol() != 0)) {
+            state = RICK_STATE_CLIMBING;
+            direction = RICK_DIR_UP;
+          }
+        } else if (keyboard.PressedDown() &&
+                   ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) ||
+                    (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS))) {
+            state = RICK_STATE_CLIMBING;
+            direction = RICK_DIR_DOWN;
+        } else if (keyboard.PressedRight() || keyboard.PressedLeft()) {
+          state = RICK_STATE_RUNNING;
+        }
+        if (keyboard.PressedRight()) {
+          direction |= RICK_DIR_RIGHT;
+        } else if (keyboard.PressedLeft()) {
+          direction |= RICK_DIR_LEFT;
+        }
+      }
+      break;
+    case RICK_STATE_RUNNING:
+      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedDown() &&
+                 ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) ||
+                  (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS))) {
+        state = RICK_STATE_CLIMBING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedRight()) {
+        direction = RICK_DIR_RIGHT;
+      } else if (keyboard.PressedLeft()) {
+        direction = RICK_DIR_LEFT;
+      } else {
+        state = RICK_STATE_STOP;
+      }
+      break;
+    case RICK_STATE_JUMPING:
+      if (direction & RICK_DIR_DOWN) {
+        if ((mask_col_ver_int.GetLeftDownCol() != 0) || (mask_col_ver_int.GetRightDownCol() != 0)) {
+          state = RICK_STATE_STOP;
+          direction = RICK_DIR_STOP;
+        } else {
+          if (keyboard.PressedRight()) {
+            direction |= RICK_DIR_RIGHT;
+          } else if (keyboard.PressedLeft()) {
+            direction |= RICK_DIR_LEFT;
+          } else {
+            direction = RICK_DIR_DOWN;
+          }
+        }
+      }
+      break;
+    case RICK_STATE_CLIMBING:
+      direction = RICK_DIR_STOP;
+      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
+        // Check if there is floor below. If not, make the player to fall
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedUp()) {
+        // If on stairs, and pressed key up, then keep climbing up
+        if ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) || (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS)) {
+          state = RICK_STATE_CLIMBING;
+          direction = RICK_DIR_UP;
+        }
+      } else if (keyboard.PressedDown()) {
+        // If on stais, and pressed key down, then climb down stairs
+        if ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) || (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS)) {
+          direction = RICK_DIR_DOWN;
+        } else {
+        // No in stairs, stop player because it was previously in stairs
+          state = RICK_STATE_STOP;
+          direction = RICK_DIR_STOP;
+        }
+      }
+      if (keyboard.PressedRight()) {
+        direction |= RICK_DIR_RIGHT;
+      } else if (keyboard.PressedLeft()) {
+        direction |= RICK_DIR_LEFT;
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+void Character::ComputeNextPosition(
+  World* map,
+  Colbox &mask_col_ext,
+  Colbox &mask_col_ver_int,
+  Colbox &mask_col_hor_int) {
+  switch(state) {
+    case RICK_STATE_STOP:
+      break;
+    case RICK_STATE_RUNNING:
+      if (direction & RICK_DIR_RIGHT) {
+        SetPosX(map, GetPosX() + speed_x);
+      } else if (direction & RICK_DIR_LEFT) {
+        SetPosX(map, GetPosX() - speed_x);
+      }
+      break;
+    case RICK_STATE_JUMPING:
+      SetPosY(map, GetPosY() + speed_x);
+      if (direction & RICK_DIR_RIGHT) {
+        SetPosX(map, GetPosX() + speed_y);
+      } else if (direction & RICK_DIR_LEFT) {
+        SetPosX(map, GetPosX() - speed_y);
+      }
+      break;
+    case RICK_STATE_CLIMBING:
+      if (direction & RICK_DIR_UP) {
+        // First, correct x to facilitate moving up
+        if ((mask_col_ext.GetLeftUpCol() == TILE_COL) && (mask_col_ver_int.GetRightUpCol() != TILE_COL))
+          SetPosX(map, GetPosX() + speed_y);
+        else if ((mask_col_ver_int.GetLeftUpCol() != TILE_COL) && (mask_col_ext.GetRightUpCol() == TILE_COL))
+          SetPosX(map, GetPosX() - speed_y);
+
+        SetPosY(map, GetPosY() - 2);
+      } else if (direction & RICK_DIR_DOWN) {
+        // First, correct x to facilitate moving down
+        if ((mask_col_ext.GetLeftDownCol() == TILE_COL) && (mask_col_ver_int.GetRightDownCol() != TILE_COL))
+          SetPosX(map, GetPosX() + speed_y);
+        else if ((mask_col_ver_int.GetLeftDownCol() != TILE_COL) && (mask_col_ext.GetRightDownCol() == TILE_COL))
+          SetPosX(map, GetPosX() - speed_y);
+
+        SetPosY(map, GetPosY() + speed_x);
+      }
+      if (direction & RICK_DIR_RIGHT) {
+        SetPosX(map, GetPosX() + speed_x);
+      } else if (direction & RICK_DIR_LEFT) {
+        SetPosX(map, GetPosX() - speed_x);
+      }
+      break;
+    default:
+      break;
+  }
 }
