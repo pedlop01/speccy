@@ -23,24 +23,13 @@
 #define RICK_DIR_UP    0b0100
 #define RICK_DIR_DOWN  0b1000
 
-/* Character bounding boxes.
-   The external box is defined by {height, width}
-   The height internal box is defined by {height, width - width_internal}
-   The width internal box is defined by {height - height_internal, width}
-
-        /----/-----\----\
-        |    | hi  |    |
-        /---------------\
-        |            wi |
-        \---------------/
-        |    |     |    |
-        \----\-----/----/
-*/
-
 class Character {
   private:
     int pos_x;
     int pos_y;
+
+    int pos_x_chk;
+    int pos_y_chk;
 
     int height;
     int width;
@@ -53,6 +42,15 @@ class Character {
 
     float speed_x;
     float speed_y;
+
+    Colbox extColInt;
+    Colbox extColExt;
+    Colbox extHeightColExt;
+    Colbox extWidthColExt;
+    Colbox heightColInt;
+    Colbox heightColExt;
+    Colbox widthColInt;
+    Colbox widthColExt;
 
     pugi::xml_document character_file;
 
@@ -74,14 +72,17 @@ class Character {
 
     void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
     void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsExternalWidthBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsExternalBoxInt(World* map, Colbox &mask_col);
     void GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col);
     void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
-    void ComputeNextState(Colbox &mask_col_ext, Colbox &mask_col_ver_int, Colbox &mask_col_hor_int, Keyboard& keyboard);
-    void ComputeNextPosition(World* map, Colbox &mask_col_ext, Colbox &mask_col_ver_int, Colbox &mask_col_hor_int);
+    void ComputeCollisions(World* map);
+    void ComputeNextState(Keyboard& keyboard);
+    void ComputeNextPosition(World* map);
 };
 
 #endif // CHARACTER_H

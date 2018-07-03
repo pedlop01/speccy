@@ -131,13 +131,13 @@ void Camera::DrawScreen(Character* player) {
                               dest_x,
                               dest_y,
                               0);        
-        if (tile->GetType() != 0) {
+/*        if (tile->GetType() != 0) {
           al_draw_filled_rectangle(dest_x,
                                    dest_y,
                                    dest_x + tile_width,
                                    dest_y + tile_height,
                                   al_map_rgb(tile->GetType()*0x0F, tile->GetType()*0x0F, tile->GetType()*0x0F));
-        }
+        }*/
       }
       tile_x++;
     }
@@ -147,9 +147,27 @@ void Camera::DrawScreen(Character* player) {
    // Draw the player in front of back tiles
    al_draw_rectangle(player->GetPosX() - GetPosX(),
                      player->GetPosY() - GetPosY(),
-                     player->GetPosX() + player->GetWidth() - GetPosX(),
-                     player->GetPosY() + player->GetHeight() - GetPosY(),
+                     player->GetPosX() + player->GetWidth() - GetPosX() - 1,
+                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
+                     al_map_rgb(0xAD, 0x21, 0x56), 1.0);
+   // Externalmake
+   al_draw_rectangle(player->GetPosX() - 1 - GetPosX(),
+                     player->GetPosY() - 1 - GetPosY(),
+                     player->GetPosX() + player->GetWidth() + 1 - GetPosX() - 1,
+                     player->GetPosY() + player->GetHeight() + 1 - GetPosY() - 1,
                      al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
+   // Horitzontal internal
+   al_draw_rectangle(player->GetPosX() - GetPosX(),
+                     player->GetPosY() + 3 - GetPosY(),
+                     player->GetPosX() + player->GetWidth() - GetPosX() - 1,
+                     player->GetPosY() + player->GetHeight() - 3 - GetPosY() - 1,
+                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
+   // Vertical internal
+   al_draw_rectangle(player->GetPosX() + 3 - GetPosX(),
+                     player->GetPosY() - GetPosY(),
+                     player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
+                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
+                     al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
 
   // Move camera to screen
   al_set_target_bitmap(screen);

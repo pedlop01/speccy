@@ -8,14 +8,14 @@ Character::Character() {
   height = 16;  // REVISIT: should be 0
   width = 16;  // REVISIT: should be 0
 
-  height_internal = 2;
-  width_internal = 2;
+  height_internal = 3;
+  width_internal = 3;
 
   state = RICK_STATE_STOP;
   direction = RICK_DIR_STOP;
 
   speed_x = 2.0;
-  speed_y = 1.0;
+  speed_y = 2.0;
 }
 
 Character::Character(char* file) {
@@ -135,8 +135,26 @@ void Character::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
                               mask_col,
                               pos_x - 1,
                               pos_y - 1,
-                              width + 2,
-                              height + 2);
+                              width + 1,
+                              height + 1);
+}
+
+void Character::GetCollisionsExternalWidthBoxExt(World* map, Colbox &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x - 1,
+                              pos_y,
+                              width + 1,
+                              height - 1);
+}
+
+void Character::GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x,
+                              pos_y - 1,
+                              width - 1,
+                              height + 1);
 }
 
 void Character::GetCollisionsExternalBoxInt(World* map, Colbox &mask_col) {
@@ -144,129 +162,200 @@ void Character::GetCollisionsExternalBoxInt(World* map, Colbox &mask_col) {
                               mask_col,
                               pos_x,
                               pos_y,
-                              width + 1,
-                              height + 1);
+                              width - 1,
+                              height - 1);
 }
 
 void Character::GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
                               pos_x - 1,
-                              pos_y + height_internal - 1,
-                              width + 2,
-                              height - 2*height_internal + 2);
+                              pos_y + height_internal,
+                              width + 2 - 1,
+                              height - 2*height_internal - 1);
 }
 
 void Character::GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
                               pos_x,
-                              pos_y + height_internal - 1,
-                              width + 1,
-                              height - 2*height_internal + 2);
+                              pos_y + height_internal,
+                              width - 1,
+                              height - 2*height_internal - 1);
 }
 
 void Character::GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
-                              pos_x + width_internal - 1,
+                              pos_x + width_internal,
                               pos_y - 1,
-                              width - 2*width_internal + 2,
-                              height + 2);
+                              width - 2*width_internal - 1,
+                              height + 1);
 }
 
 void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
-                              pos_x + width_internal - 1,
+                              pos_x + width_internal,
                               pos_y,
-                              width - 2*width_internal + 2,
-                              height + 1);
+                              width - 2*width_internal - 1,
+                              height - 1);
 }
 
-void Character::ComputeNextState(
-  Colbox &mask_col_ext,
-  Colbox &mask_col_ver_int,
-  Colbox &mask_col_hor_int,
-  Keyboard& keyboard) {
+void Character::ComputeCollisions(World* map) {
+    this->GetCollisionsExternalBoxInt(map, extColInt);
+    this->GetCollisionsExternalBoxExt(map, extColExt);
+    this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
+    this->GetCollisionsExternalHeightBoxExt(map, extHeightColExt);
+    this->GetCollisionsInternalWidthBoxInt(map, widthColInt);
+    this->GetCollisionsInternalWidthBoxExt(map, widthColExt);
+    this->GetCollisionsInternalHeightBoxInt(map, heightColInt);
+    this->GetCollisionsInternalHeightBoxExt(map, heightColExt);
 
-  printf("State = %d, direction = %d\n", state, direction);
+/*    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
+      extColExt.GetLeftUpCol(),
+      extColExt.GetRightUpCol(),
+      extColExt.GetRightDownCol(),
+      extColExt.GetLeftDownCol());
+    printf("[Collisions int width] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
+      widthColInt.GetLeftUpCol(),
+      widthColInt.GetRightUpCol(),
+      widthColInt.GetRightDownCol(),
+      widthColInt.GetLeftDownCol());
+    printf("[Collisions int height] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
+      heightColInt.GetLeftUpCol(),
+      heightColInt.GetRightUpCol(),
+      heightColInt.GetRightDownCol(),
+      heightColInt.GetLeftDownCol());*/
+}
+
+void Character::ComputeNextState(Keyboard& keyboard) {
+
+  //printf("State = %d, direction = %d\n", state, direction);
 
   switch(state) {
     case RICK_STATE_STOP:
       direction = RICK_DIR_STOP;
-      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_DOWN;
-      } else {
-        if (keyboard.PressedUp()) {
-          if ((mask_col_ver_int.GetLeftUpCol() != 0) || (mask_col_ver_int.GetRightUpCol() != 0)) {
-            state = RICK_STATE_CLIMBING;
-            direction = RICK_DIR_UP;
-          }
-        } else if (keyboard.PressedDown() &&
-                   ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) ||
-                    (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS))) {
-            state = RICK_STATE_CLIMBING;
-            direction = RICK_DIR_DOWN;
-        } else if (keyboard.PressedRight() || keyboard.PressedLeft()) {
-          state = RICK_STATE_RUNNING;
+
+      if (keyboard.PressedUp()) {
+        if ((heightColInt.GetLeftUpCol() == TILE_STAIRS) || (heightColInt.GetRightUpCol() == TILE_STAIRS)) {
+          // In stairs
+          state = RICK_STATE_CLIMBING;
+          direction = RICK_DIR_UP;
+        } else {
+          // Start jump
+          state = RICK_STATE_JUMPING;
+          direction = RICK_DIR_UP;
+          // Save pos y
+          pos_y_chk = pos_y;
         }
-        if (keyboard.PressedRight()) {
-          direction |= RICK_DIR_RIGHT;
-        } else if (keyboard.PressedLeft()) {
-          direction |= RICK_DIR_LEFT;
-        }
-      }
-      break;
-    case RICK_STATE_RUNNING:
-      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_DOWN;
       } else if (keyboard.PressedDown() &&
-                 ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) ||
-                  (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS))) {
+                 ((heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+                  (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP))) {
+          state = RICK_STATE_CLIMBING;
+          direction = RICK_DIR_DOWN;
+      } else if (((extHeightColExt.GetLeftDownCol() != TILE_COL) && (extHeightColExt.GetRightDownCol() != TILE_COL)) &&
+                 ((extHeightColExt.GetLeftDownCol() != TILE_STAIRS_TOP) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS_TOP))) {
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedRight() || keyboard.PressedLeft()) {
+        state = RICK_STATE_RUNNING;
+      }
+
+      break;
+
+    case RICK_STATE_RUNNING:
+      if (keyboard.PressedDown() &&
+          ((heightColExt.GetLeftDownCol() == TILE_STAIRS) ||
+           (heightColExt.GetRightDownCol() == TILE_STAIRS) ||
+           (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+           (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP))) {
         state = RICK_STATE_CLIMBING;
         direction = RICK_DIR_DOWN;
-      } else if (keyboard.PressedRight()) {
-        direction = RICK_DIR_RIGHT;
+      } else if ((extColExt.GetLeftDownCol() == 0) && (extColExt.GetRightDownCol() == 0)) {
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;       
+      } else if (keyboard.PressedUp()) {
+        // Start jump
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_UP;
+        // Save pos y
+        pos_y_chk = pos_y;
+      }
+      if (keyboard.PressedRight()) {
+        direction |= RICK_DIR_RIGHT;
+        direction &= ~RICK_DIR_LEFT;
       } else if (keyboard.PressedLeft()) {
-        direction = RICK_DIR_LEFT;
+        direction |= RICK_DIR_LEFT;
+        direction &= ~RICK_DIR_RIGHT;
       } else {
-        state = RICK_STATE_STOP;
+        // If no update to state while running and no left of right, then stop
+        if (state == RICK_STATE_RUNNING)
+          state = RICK_STATE_STOP;
+        direction &= ~RICK_DIR_LEFT;
+        direction &= ~RICK_DIR_RIGHT;          
       }
       break;
+
     case RICK_STATE_JUMPING:
-      if (direction & RICK_DIR_DOWN) {
-        if ((mask_col_ver_int.GetLeftDownCol() != 0) || (mask_col_ver_int.GetRightDownCol() != 0)) {
+      if ((direction & RICK_DIR_DOWN)) {
+        if (((extHeightColExt.GetLeftDownCol() != 0) && (extHeightColExt.GetLeftDownCol() != TILE_STAIRS)) ||
+            ((extHeightColExt.GetRightDownCol() != 0) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS))) {
           state = RICK_STATE_STOP;
           direction = RICK_DIR_STOP;
-        } else {
-          if (keyboard.PressedRight()) {
-            direction |= RICK_DIR_RIGHT;
-          } else if (keyboard.PressedLeft()) {
-            direction |= RICK_DIR_LEFT;
-          } else {
-            direction = RICK_DIR_DOWN;
-          }
+        }
+      } else if (direction & RICK_DIR_UP) {
+        if ((extHeightColExt.GetLeftUpCol() == TILE_COL) || (extHeightColExt.GetRightUpCol() == TILE_COL) ||
+            (abs(pos_y_chk - pos_y) >= 3*8)) {
+          direction = RICK_DIR_DOWN;
         }
       }
+
+      if (keyboard.PressedUp() &&
+          ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
+           (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
+           (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+           (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP))) {
+        state = RICK_STATE_CLIMBING;
+        direction = RICK_DIR_UP;
+      }
+
+      if (keyboard.PressedRight()) {
+        direction |= RICK_DIR_RIGHT;
+        direction &= ~RICK_DIR_LEFT;
+      } else if (keyboard.PressedLeft()) {
+        direction |= RICK_DIR_LEFT;
+        direction &= ~RICK_DIR_RIGHT;
+      } else {
+        direction &= ~RICK_DIR_LEFT;
+        direction &= ~RICK_DIR_RIGHT;          
+      }
       break;
+
     case RICK_STATE_CLIMBING:
-      direction = RICK_DIR_STOP;
-      if ((mask_col_ver_int.GetLeftDownCol() == 0) && (mask_col_ver_int.GetRightDownCol() == 0)) {
+
+      if ((extHeightColExt.GetLeftDownCol() != TILE_STAIRS) && (extHeightColExt.GetRightDownCol() !=TILE_STAIRS)) {
         // Check if there is floor below. If not, make the player to fall
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_DOWN;
+        if (keyboard.PressedLeft() || keyboard.PressedRight()) {
+          state = RICK_STATE_RUNNING;
+        } else {
+          state = RICK_STATE_STOP;
+        }
       } else if (keyboard.PressedUp()) {
         // If on stairs, and pressed key up, then keep climbing up
-        if ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) || (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS)) {
+        if ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
+            (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
+            (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+            (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP)) {
           state = RICK_STATE_CLIMBING;
           direction = RICK_DIR_UP;
         }
       } else if (keyboard.PressedDown()) {
         // If on stais, and pressed key down, then climb down stairs
-        if ((mask_col_ver_int.GetLeftDownCol() == TILE_STAIRS) || (mask_col_ver_int.GetRightDownCol() == TILE_STAIRS)) {
+        if ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
+            (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
+            (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+            (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP)) {
           direction = RICK_DIR_DOWN;
         } else {
         // No in stairs, stop player because it was previously in stairs
@@ -274,22 +363,30 @@ void Character::ComputeNextState(
           direction = RICK_DIR_STOP;
         }
       }
+
+      // Pix horizontal direction
       if (keyboard.PressedRight()) {
         direction |= RICK_DIR_RIGHT;
+        direction &= ~RICK_DIR_LEFT;
       } else if (keyboard.PressedLeft()) {
         direction |= RICK_DIR_LEFT;
+        direction &= ~RICK_DIR_RIGHT;
+      } else {
+          direction &= ~RICK_DIR_LEFT;
+          direction &= ~RICK_DIR_RIGHT;
       }
+      if (!keyboard.PressedUp() && !keyboard.PressedDown()) {
+        direction &= ~RICK_DIR_UP;
+        direction &= ~RICK_DIR_DOWN;
+      }
+
       break;
     default:
       break;
   }
 }
 
-void Character::ComputeNextPosition(
-  World* map,
-  Colbox &mask_col_ext,
-  Colbox &mask_col_ver_int,
-  Colbox &mask_col_hor_int) {
+void Character::ComputeNextPosition(World* map) {
   switch(state) {
     case RICK_STATE_STOP:
       break;
@@ -301,30 +398,44 @@ void Character::ComputeNextPosition(
       }
       break;
     case RICK_STATE_JUMPING:
-      SetPosY(map, GetPosY() + speed_x);
-      if (direction & RICK_DIR_RIGHT) {
-        SetPosX(map, GetPosX() + speed_y);
-      } else if (direction & RICK_DIR_LEFT) {
-        SetPosX(map, GetPosX() - speed_y);
-      }
+      if (direction & RICK_DIR_UP)
+        SetPosY(map, GetPosY() - speed_y);
+      else if (direction & RICK_DIR_DOWN)
+        SetPosY(map, GetPosY() + speed_y);
+
+      if (direction & RICK_DIR_RIGHT)
+        SetPosX(map, GetPosX() + speed_x);
+      else if (direction & RICK_DIR_LEFT)
+        SetPosX(map, GetPosX() - speed_x);
+
       break;
     case RICK_STATE_CLIMBING:
       if (direction & RICK_DIR_UP) {
         // First, correct x to facilitate moving up
-        if ((mask_col_ext.GetLeftUpCol() == TILE_COL) && (mask_col_ver_int.GetRightUpCol() != TILE_COL))
-          SetPosX(map, GetPosX() + speed_y);
-        else if ((mask_col_ver_int.GetLeftUpCol() != TILE_COL) && (mask_col_ext.GetRightUpCol() == TILE_COL))
-          SetPosX(map, GetPosX() - speed_y);
+        if ((extColExt.GetLeftUpCol() == TILE_COL) &&
+            (extColExt.GetRightUpCol() != TILE_COL) &&
+            (heightColExt.GetRightUpCol() != TILE_COL)) {
+          SetPosX(map, GetPosX() + speed_x);          
+        } else if ((heightColExt.GetLeftUpCol() != TILE_COL) &&
+                   (extColExt.GetLeftUpCol() != TILE_COL) &&
+                   (extColExt.GetRightUpCol() == TILE_COL)) {
+          SetPosX(map, GetPosX() - speed_x);          
+        }
 
-        SetPosY(map, GetPosY() - 2);
+        SetPosY(map, GetPosY() - speed_y);
       } else if (direction & RICK_DIR_DOWN) {
         // First, correct x to facilitate moving down
-        if ((mask_col_ext.GetLeftDownCol() == TILE_COL) && (mask_col_ver_int.GetRightDownCol() != TILE_COL))
-          SetPosX(map, GetPosX() + speed_y);
-        else if ((mask_col_ver_int.GetLeftDownCol() != TILE_COL) && (mask_col_ext.GetRightDownCol() == TILE_COL))
-          SetPosX(map, GetPosX() - speed_y);
+        if ((extColExt.GetLeftDownCol() == TILE_COL) &&
+            (extColExt.GetRightDownCol() != TILE_COL) &&
+            (heightColExt.GetRightDownCol() != TILE_COL)) {
+          SetPosX(map, GetPosX() + speed_x);
+        } else if ((heightColExt.GetLeftDownCol() != TILE_COL) &&
+                   (extColExt.GetLeftDownCol() != TILE_COL) &&
+                   (extColExt.GetRightDownCol() == TILE_COL)) {
+          SetPosX(map, GetPosX() - speed_x);
+        }
 
-        SetPosY(map, GetPosY() + speed_x);
+        SetPosY(map, GetPosY() + speed_y);
       }
       if (direction & RICK_DIR_RIGHT) {
         SetPosX(map, GetPosX() + speed_x);
