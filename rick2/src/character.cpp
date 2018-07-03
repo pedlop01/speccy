@@ -18,7 +18,8 @@ Character::Character() {
   speed_y = 2.0;
 
   stepsInState = 0;
-  stepsInDirection = 0;
+  stepsInDirectionX = 0;
+  stepsInDirectionY = 0;
 }
 
 Character::Character(char* file) {
@@ -86,7 +87,7 @@ void Character::SetPosX(World* map, int x) {
   }
 }
 
-void Character::SetPosY(World* map, int y) {
+void Character::SetPosY(World* map, int y, bool all) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
   int tile_height = map->GetTilesetTileHeight();
@@ -102,8 +103,11 @@ void Character::SetPosY(World* map, int y) {
   if (y > pos_y) {
     // Collision moving down
     tile_col_y = (pos_y + desp_y + character_height)  / tile_height;
-    if ((map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) {
+    // REVISIT: improve coding for "all"
+    if (((!all & (map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL)) ||
+         (all && !(map->GetTile(tile_col_up_x, tile_col_y)->IsCollisionable()))) &&
+        ((!all && (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) ||
+         (all && !(map->GetTile(tile_col_down_x, tile_col_y)->IsCollisionable())))) {
       // No collision
       pos_y = pos_y + desp_y;
     } else {
@@ -114,8 +118,11 @@ void Character::SetPosY(World* map, int y) {
   } else if ((y > 0) && (y < pos_y)) {
     // Collision moving up    
     tile_col_y = (pos_y - desp_y) / tile_height;
-    if ((map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) {
+    // REVISIT: improve coding for "all"
+    if (((!all && (map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL)) ||
+         (all && !(map->GetTile(tile_col_up_x, tile_col_y)->IsCollisionable()))) &&
+        ((!all && (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) ||
+         (all && !(map->GetTile(tile_col_down_x, tile_col_y)->IsCollisionable())))) {
       // No collision
       pos_y = pos_y - desp_y;
     } else {
@@ -232,16 +239,37 @@ void Character::ComputeCollisions(World* map) {
       heightColInt.GetLeftDownCol());*/
 }
 
-void Character::ComputeNextState(Keyboard& keyboard) {
-  int old_state;
-  int old_direction;
+void Character::ComputeNextState(Keyboard& keyboard) {  
+  int prevDirection;
+  bool inAir;
+  bool inAirInt;
+  bool inStairs;
+  bool inFloor;
+  bool inTopStairs;
+
+  inStairs = ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
+              (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
+              (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+              (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP));
+
+  inAirInt = ((heightColInt.GetLeftDownCol() == 0) &&
+               (heightColInt.GetRightDownCol() == 0));
+
+  inFloor = (extHeightColExt.GetLeftDownCol() == TILE_COL) &&
+            (extHeightColExt.GetRightDownCol() == TILE_COL);
+
+  inTopStairs = (extHeightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
+                (extHeightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
+
+  inAir = (extHeightColExt.GetLeftDownCol() == 0) &&
+          (extHeightColExt.GetRightDownCol() == 0);
   
   // Save current state before computing next state
-  old_state = state;
+  prevState = state;
   // Save current direction before computing next state and direction
-  old_direction = direction;
+  prevDirection = direction;
 
-  //printf("State = %d, direction = %d\n", state, direction);
+  //printf("Pre: State = %d, direction = %d\n", state, direction);
 
   switch(state) {
     case RICK_STATE_STOP:
@@ -253,11 +281,16 @@ void Character::ComputeNextState(Keyboard& keyboard) {
           state = RICK_STATE_CLIMBING;
           direction = RICK_DIR_UP;
         } else {
-          // Start jump
-          state = RICK_STATE_JUMPING;
-          direction = RICK_DIR_UP;
-          // Save pos y
-          pos_y_chk = pos_y;
+          if (inFloor || inTopStairs) {
+            // Start jump
+            state = RICK_STATE_JUMPING;
+            direction = RICK_DIR_UP;
+            // Save pos y
+            pos_y_chk = pos_y;
+          } else {
+            state = RICK_STATE_JUMPING;
+            direction = RICK_DIR_DOWN;
+          }
         }
       } else if (keyboard.PressedDown() &&
                  ((heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
@@ -311,10 +344,18 @@ void Character::ComputeNextState(Keyboard& keyboard) {
       if ((direction & RICK_DIR_DOWN)) {
         if (((extHeightColExt.GetLeftDownCol() != 0) && (extHeightColExt.GetLeftDownCol() != TILE_STAIRS)) ||
             ((extHeightColExt.GetRightDownCol() != 0) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS))) {
-          state = RICK_STATE_STOP;
-          direction = RICK_DIR_STOP;
+          // Factor keyboard to keep running without transitioning through stop
+          if (keyboard.PressedRight()) {
+            state = RICK_STATE_RUNNING;            
+          } else if (keyboard.PressedLeft()) {
+            state = RICK_STATE_RUNNING;
+          } else {
+            state = RICK_STATE_STOP;
+            direction = RICK_DIR_STOP;
+          }
         }
       } else if (direction & RICK_DIR_UP) {
+        // REVISIT: hard coded the maximum distance for jumping
         if ((extHeightColExt.GetLeftUpCol() == TILE_COL) || (extHeightColExt.GetRightUpCol() == TILE_COL) ||
             (abs(pos_y_chk - pos_y) >= 3*8)) {
           direction = RICK_DIR_DOWN;
@@ -323,9 +364,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
       if (keyboard.PressedUp() &&
           ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
-           (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
-           (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
-           (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP))) {
+           (heightColInt.GetRightDownCol() == TILE_STAIRS))) {
         state = RICK_STATE_CLIMBING;
         direction = RICK_DIR_UP;
       }
@@ -344,37 +383,32 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
     case RICK_STATE_CLIMBING:
 
-      if ((extHeightColExt.GetLeftDownCol() != TILE_STAIRS) && (extHeightColExt.GetRightDownCol() !=TILE_STAIRS)) {
-        // Check if there is floor below. If not, make the player to fall
-        if (keyboard.PressedLeft() || keyboard.PressedRight()) {
-          state = RICK_STATE_RUNNING;
-        } else {
-          state = RICK_STATE_STOP;
-        }
-      } else if (keyboard.PressedUp()) {
+      if (keyboard.PressedUp()) {
         // If on stairs, and pressed key up, then keep climbing up
-        if ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
-            (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
-            (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
-            (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP)) {
+        if (inAirInt) {
+          state = RICK_STATE_STOP;
+          direction = RICK_DIR_STOP;
+        } else if (inStairs) {
           state = RICK_STATE_CLIMBING;
           direction = RICK_DIR_UP;
         }
       } else if (keyboard.PressedDown()) {
         // If on stais, and pressed key down, then climb down stairs
-        if ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
-            (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
-            (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
-            (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP)) {
-          direction = RICK_DIR_DOWN;
-        } else {
+        if (inFloor) {
         // No in stairs, stop player because it was previously in stairs
+          state = RICK_STATE_STOP;
+          direction = RICK_DIR_STOP;
+        } else if (inStairs) {
+          direction = RICK_DIR_DOWN;
+        }
+      } else {
+        if (inAirInt || !inStairs) {
           state = RICK_STATE_STOP;
           direction = RICK_DIR_STOP;
         }
       }
 
-      // Pix horizontal direction
+      // Fix horizontal direction
       if (keyboard.PressedRight()) {
         direction |= RICK_DIR_RIGHT;
         direction &= ~RICK_DIR_LEFT;
@@ -396,17 +430,24 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   }
 
   // Increment steps in state if no change in state
-  if (old_state == state)
+  if (prevState == state)
     stepsInState++;
   else
     stepsInState = 0;
 
-  if (old_direction == direction)
-    stepsInDirection++;
-  else
-    stepsInDirection = 0;
+  if ((prevDirection == direction)) { 
+    if ((direction == RICK_DIR_LEFT) || (direction == RICK_DIR_RIGHT)) {      
+      stepsInDirectionX++;
+    } else {
+      stepsInDirectionY++;
+    }
+  } else {
+    stepsInDirectionX = 0;
+    stepsInDirectionY = 0;
+  }
 
-  printf("Steps in state = %d, steps in direction = %d\n", stepsInState, stepsInDirection);
+  //printf("Post: State = %d, direction = %d\n", state, direction);
+  //printf("Steps in state = %d, steps in direction x = %d, steps in direction y = %d\n", stepsInState, stepsInDirectionX, stepsInDirectionY);
 }
 
 void Character::ComputeNextPosition(World* map) {
@@ -420,11 +461,11 @@ void Character::ComputeNextPosition(World* map) {
         SetPosX(map, GetPosX() - speed_x);
       }
       break;
-    case RICK_STATE_JUMPING:
+    case RICK_STATE_JUMPING:      
       if (direction & RICK_DIR_UP)
-        SetPosY(map, GetPosY() - speed_y);
+        SetPosY(map, GetPosY() - speed_y, false);
       else if (direction & RICK_DIR_DOWN)
-        SetPosY(map, GetPosY() + speed_y);
+        SetPosY(map, GetPosY() + speed_y, true);
 
       if (direction & RICK_DIR_RIGHT)
         SetPosX(map, GetPosX() + speed_x);
@@ -445,7 +486,7 @@ void Character::ComputeNextPosition(World* map) {
           SetPosX(map, GetPosX() - speed_x);          
         }
 
-        SetPosY(map, GetPosY() - speed_y);
+        SetPosY(map, GetPosY() - speed_y, false);
       } else if (direction & RICK_DIR_DOWN) {
         // First, correct x to facilitate moving down
         if ((extColExt.GetLeftDownCol() == TILE_COL) &&
@@ -458,7 +499,7 @@ void Character::ComputeNextPosition(World* map) {
           SetPosX(map, GetPosX() - speed_x);
         }
 
-        SetPosY(map, GetPosY() + speed_y);
+        SetPosY(map, GetPosY() + speed_y, false);
       }
       if (direction & RICK_DIR_RIGHT) {
         SetPosX(map, GetPosX() + speed_x);
@@ -469,4 +510,46 @@ void Character::ComputeNextPosition(World* map) {
     default:
       break;
   }
+}
+
+void Character::ComputeNextSpeed() {
+  //printf("Speed Update %d\n", state);
+  switch (state) {
+    case RICK_STATE_STOP:
+      speed_x = 0.0;
+      speed_y = 0.0;
+      break;
+    case RICK_STATE_RUNNING:
+      speed_x = 2.0;
+      break;
+    case RICK_STATE_JUMPING:
+        if (!stepsInState) {
+          if (direction & RICK_DIR_UP)
+            speed_y = 2.0;
+          else
+            speed_y = 0.8;
+        } else if ((direction & RICK_DIR_UP) && (stepsInDirectionY > 0)) {
+          if (speed_y > 0)
+            speed_y = speed_y - 0.1;
+          else
+            speed_y = 0.0;
+        } else if ((direction & RICK_DIR_DOWN) && (stepsInDirectionY > 0)) {
+          if (speed_y < 2.0)
+            speed_y = speed_y + 0.1;
+          else
+            speed_y = 2.0;
+        }
+        speed_x = 2.0;
+      break;
+    case RICK_STATE_CLIMBING:
+      speed_x = 2.0;
+      speed_y = 2.0;
+      break;
+    default:      
+      speed_x = 2.0;
+      speed_y = 2.0;
+      break;
+  }
+
+  //printf("speed_y = %f\n", speed_y);
 }

@@ -7,6 +7,7 @@
 #include <string>
 #include <tgmath.h>
 #include "pugixml.hpp"
+#include "rick_params.h"
 
 #include <iostream>
 
@@ -41,6 +42,9 @@ class Tile
         void SetValue(int val)         { value = val;          }
         int  GetType()                 { return type;          }
         void SetType(int _type)        { type = _type;         }
+
+        bool IsCollisionable()         { return ((type == TILE_COL) ||
+                                                 (type == TILE_STAIRS_TOP)); }
 };
 
 class World

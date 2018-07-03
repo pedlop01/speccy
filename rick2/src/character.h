@@ -37,6 +37,7 @@ class Character {
     int height_internal;
     int width_internal;
 
+    int prevState;
     int state;
     int direction;
 
@@ -53,7 +54,8 @@ class Character {
     Colbox widthColExt;
 
     int stepsInState;
-    int stepsInDirection;
+    int stepsInDirectionX;
+    int stepsInDirectionY;
 
     pugi::xml_document character_file;
 
@@ -64,7 +66,7 @@ class Character {
     ~Character();   // class desructor
     
     void SetPosX(World* map, int x);
-    void SetPosY(World* map, int y);
+    void SetPosY(World* map, int y, bool all);
 
     int  GetPosX()      { return pos_x;     }
     int  GetPosY()      { return pos_y;     }
@@ -86,6 +88,7 @@ class Character {
     void ComputeCollisions(World* map);
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
+    void ComputeNextSpeed();
 };
 
 #endif // CHARACTER_H

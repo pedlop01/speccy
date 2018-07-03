@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
     player.ComputeCollisions(map_level1);
     player.ComputeNextState(keyboard);
     player.ComputeNextPosition(map_level1);
+    player.ComputeNextSpeed();
 
     camera.PositionBasedOnPlayer(&player);
     camera.DrawScreen(&player);
