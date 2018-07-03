@@ -52,6 +52,9 @@ class Character {
     Colbox widthColInt;
     Colbox widthColExt;
 
+    int stepsInState;
+    int stepsInDirection;
+
     pugi::xml_document character_file;
 
   public:    

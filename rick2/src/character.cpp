@@ -16,6 +16,9 @@ Character::Character() {
 
   speed_x = 2.0;
   speed_y = 2.0;
+
+  stepsInState = 0;
+  stepsInDirection = 0;
 }
 
 Character::Character(char* file) {
@@ -230,6 +233,13 @@ void Character::ComputeCollisions(World* map) {
 }
 
 void Character::ComputeNextState(Keyboard& keyboard) {
+  int old_state;
+  int old_direction;
+  
+  // Save current state before computing next state
+  old_state = state;
+  // Save current direction before computing next state and direction
+  old_direction = direction;
 
   //printf("State = %d, direction = %d\n", state, direction);
 
@@ -384,6 +394,19 @@ void Character::ComputeNextState(Keyboard& keyboard) {
     default:
       break;
   }
+
+  // Increment steps in state if no change in state
+  if (old_state == state)
+    stepsInState++;
+  else
+    stepsInState = 0;
+
+  if (old_direction == direction)
+    stepsInDirection++;
+  else
+    stepsInDirection = 0;
+
+  printf("Steps in state = %d, steps in direction = %d\n", stepsInState, stepsInDirection);
 }
 
 void Character::ComputeNextPosition(World* map) {
