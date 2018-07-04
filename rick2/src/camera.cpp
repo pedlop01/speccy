@@ -89,7 +89,7 @@ void Camera::SetTilesHeight(int _tiles_height) {
   tiles_height = _tiles_height;
 }
 
-void Camera::DrawScreen(Character* player) {
+void Camera::DrawScreen(Character* player, Object *object) {
   Tile* tile;
   int left_up_x;
   int left_up_y;
@@ -144,30 +144,37 @@ void Camera::DrawScreen(Character* player) {
     tile_y++;    
   }  
   
-   // Draw the player in front of back tiles
-   al_draw_rectangle(player->GetPosX() - GetPosX(),
-                     player->GetPosY() - GetPosY(),
-                     player->GetPosX() + player->GetWidth() - GetPosX() - 1,
-                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
-                     al_map_rgb(0xAD, 0x21, 0x56), 1.0);
-   // Externalmake
-   al_draw_rectangle(player->GetPosX() - 1 - GetPosX(),
-                     player->GetPosY() - 1 - GetPosY(),
-                     player->GetPosX() + player->GetWidth() + 1 - GetPosX() - 1,
-                     player->GetPosY() + player->GetHeight() + 1 - GetPosY() - 1,
-                     al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
-   // Horitzontal internal
-   al_draw_rectangle(player->GetPosX() - GetPosX(),
-                     player->GetPosY() + 3 - GetPosY(),
-                     player->GetPosX() + player->GetWidth() - GetPosX() - 1,
-                     player->GetPosY() + player->GetHeight() - 3 - GetPosY() - 1,
-                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-   // Vertical internal
-   al_draw_rectangle(player->GetPosX() + 3 - GetPosX(),
-                     player->GetPosY() - GetPosY(),
-                     player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
-                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
-                     al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
+  // Draw the player in front of back tiles
+  al_draw_rectangle(player->GetPosX() - GetPosX(),
+                    player->GetPosY() - GetPosY(),
+                    player->GetPosX() + player->GetWidth() - GetPosX() - 1,
+                    player->GetPosY() + player->GetHeight() - GetPosY() - 1,
+                    al_map_rgb(0xAD, 0x21, 0x56), 1.0);
+  // - External
+  al_draw_rectangle(player->GetPosX() - 1 - GetPosX(),
+                    player->GetPosY() - 1 - GetPosY(),
+                    player->GetPosX() + player->GetWidth() + 1 - GetPosX() - 1,
+                    player->GetPosY() + player->GetHeight() + 1 - GetPosY() - 1,
+                    al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
+  // - Horitzontal internal
+  al_draw_rectangle(player->GetPosX() - GetPosX(),
+                    player->GetPosY() + 3 - GetPosY(),
+                    player->GetPosX() + player->GetWidth() - GetPosX() - 1,
+                    player->GetPosY() + player->GetHeight() - 3 - GetPosY() - 1,
+                    al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
+  // - Vertical internal
+  al_draw_rectangle(player->GetPosX() + 3 - GetPosX(),
+                    player->GetPosY() - GetPosY(),
+                    player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
+                    player->GetPosY() + player->GetHeight() - GetPosY() - 1,
+                    al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
+
+  // Draw objects and platforms
+  al_draw_filled_rectangle(object->GetX() - GetPosX(),
+                           object->GetY() - GetPosY(),
+                           object->GetX() + object->GetWidth() - GetPosX() - 1,
+                           object->GetY() + object->GetHeight() - GetPosY() - 1,
+                           al_map_rgb(0xFF, 0xFF, 0xFF));
 
   // Move camera to screen
   al_set_target_bitmap(screen);

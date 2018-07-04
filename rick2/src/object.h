@@ -9,7 +9,7 @@
 #include "world.h"
 
 class Object {
-  private:
+  protected:
     int x;
     int y;
     int width;

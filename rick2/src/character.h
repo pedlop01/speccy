@@ -7,6 +7,7 @@
 #include "rick_params.h"
 #include "pugixml.hpp"
 #include "world.h"
+#include "platform.h"
 #include "keyboard.h"
 #include "colbox.h"
 
@@ -44,6 +45,12 @@ class Character {
     float speed_x;
     float speed_y;
 
+    int stepsInState;
+    int stepsInDirectionX;
+    int stepsInDirectionY;
+
+    // Collisions
+    // - bounding boxes
     Colbox extColInt;
     Colbox extColExt;
     Colbox extHeightColExt;
@@ -52,10 +59,14 @@ class Character {
     Colbox heightColExt;
     Colbox widthColInt;
     Colbox widthColExt;
-
-    int stepsInState;
-    int stepsInDirectionX;
-    int stepsInDirectionY;
+    // - status
+    bool inAir;
+    bool inAirInt;
+    bool inStairs;
+    bool inFloor;
+    bool inTopStairs;
+    bool inPlatform;
+    Platform* inPlatformPtr;
 
     pugi::xml_document character_file;
 
@@ -85,7 +96,7 @@ class Character {
     void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
-    void ComputeCollisions(World* map);
+    void ComputeCollisions(World* map, Platform* platform);
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
     void ComputeNextSpeed();

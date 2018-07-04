@@ -10,6 +10,7 @@
 
 #include "world.h"
 #include "character.h"
+#include "object.h"
 
 using namespace std;
 
@@ -59,7 +60,7 @@ class Camera
 
     void SetMap(World* _map) { map = _map; }
 
-    void DrawScreen(Character *player);
+    void DrawScreen(Character *player, Object *object);
 
 };
 

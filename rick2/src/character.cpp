@@ -212,15 +212,15 @@ void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) 
                               height - 1);
 }
 
-void Character::ComputeCollisions(World* map) {
-    this->GetCollisionsExternalBoxInt(map, extColInt);
-    this->GetCollisionsExternalBoxExt(map, extColExt);
-    this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
-    this->GetCollisionsExternalHeightBoxExt(map, extHeightColExt);
-    this->GetCollisionsInternalWidthBoxInt(map, widthColInt);
-    this->GetCollisionsInternalWidthBoxExt(map, widthColExt);
-    this->GetCollisionsInternalHeightBoxInt(map, heightColInt);
-    this->GetCollisionsInternalHeightBoxExt(map, heightColExt);
+void Character::ComputeCollisions(World* map, Platform* platform) {
+  this->GetCollisionsExternalBoxInt(map, extColInt);
+  this->GetCollisionsExternalBoxExt(map, extColExt);
+  this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
+  this->GetCollisionsExternalHeightBoxExt(map, extHeightColExt);
+  this->GetCollisionsInternalWidthBoxInt(map, widthColInt);
+  this->GetCollisionsInternalWidthBoxExt(map, widthColExt);
+  this->GetCollisionsInternalHeightBoxInt(map, heightColInt);
+  this->GetCollisionsInternalHeightBoxExt(map, heightColExt);
 
 /*    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
       extColExt.GetLeftUpCol(),
@@ -237,25 +237,29 @@ void Character::ComputeCollisions(World* map) {
       heightColInt.GetRightUpCol(),
       heightColInt.GetRightDownCol(),
       heightColInt.GetLeftDownCol());*/
-}
 
-void Character::ComputeNextState(Keyboard& keyboard) {  
-  int prevDirection;
-  bool inAir;
-  bool inAirInt;
-  bool inStairs;
-  bool inFloor;
-  bool inTopStairs;
+  // First check if there is collision with an object over the tiles
+  int down_left_x = pos_x;
+  int down_right_x = pos_x + width;
+  int down_y = pos_y + height + 1;
+  if ((down_y >= platform->GetY()) && (down_y <= (platform->GetY() + platform->GetHeight())) &&
+      (((down_left_x >= platform->GetX()) && (down_left_x <= (platform->GetX() + platform->GetWidth()))) ||
+       ((down_right_x >= platform->GetX()) && (down_right_x <= (platform->GetX() + platform->GetWidth()))))) {
+    inPlatform = true;
+    inPlatformPtr = platform;
+  } else {
+    inPlatform = false;
+    inPlatformPtr = 0;
+  }
 
+  // Check if there is a collision with the tiles
   inStairs = ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
               (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
               (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
               (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP));
 
-  inAirInt = ((heightColInt.GetLeftDownCol() == 0) &&
-               (heightColInt.GetRightDownCol() == 0));
-
-  inFloor = (extHeightColExt.GetLeftDownCol() == TILE_COL) &&
+  inFloor = inPlatform ||
+            (extHeightColExt.GetLeftDownCol() == TILE_COL) ||
             (extHeightColExt.GetRightDownCol() == TILE_COL);
 
   inTopStairs = (extHeightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
@@ -263,6 +267,13 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
   inAir = (extHeightColExt.GetLeftDownCol() == 0) &&
           (extHeightColExt.GetRightDownCol() == 0);
+
+  inAirInt = ((heightColInt.GetLeftDownCol() == 0) &&
+               (heightColInt.GetRightDownCol() == 0));
+}
+
+void Character::ComputeNextState(Keyboard& keyboard) {  
+  int prevDirection;
   
   // Save current state before computing next state
   prevState = state;
@@ -297,7 +308,8 @@ void Character::ComputeNextState(Keyboard& keyboard) {
                   (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP))) {
           state = RICK_STATE_CLIMBING;
           direction = RICK_DIR_DOWN;
-      } else if (((extHeightColExt.GetLeftDownCol() != TILE_COL) && (extHeightColExt.GetRightDownCol() != TILE_COL)) &&
+      } else if (!inPlatform &&
+                 ((extHeightColExt.GetLeftDownCol() != TILE_COL) && (extHeightColExt.GetRightDownCol() != TILE_COL)) &&
                  ((extHeightColExt.GetLeftDownCol() != TILE_STAIRS_TOP) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS_TOP))) {
         state = RICK_STATE_JUMPING;
         direction = RICK_DIR_DOWN;
@@ -316,8 +328,10 @@ void Character::ComputeNextState(Keyboard& keyboard) {
         state = RICK_STATE_CLIMBING;
         direction = RICK_DIR_DOWN;
       } else if ((extColExt.GetLeftDownCol() == 0) && (extColExt.GetRightDownCol() == 0)) {
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_DOWN;       
+        if (!inPlatform) {
+          state = RICK_STATE_JUMPING;
+          direction = RICK_DIR_DOWN;
+        }
       } else if (keyboard.PressedUp()) {
         // Start jump
         state = RICK_STATE_JUMPING;
@@ -325,6 +339,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
         // Save pos y
         pos_y_chk = pos_y;
       }
+
       if (keyboard.PressedRight()) {
         direction |= RICK_DIR_RIGHT;
         direction &= ~RICK_DIR_LEFT;
@@ -353,11 +368,14 @@ void Character::ComputeNextState(Keyboard& keyboard) {
             state = RICK_STATE_STOP;
             direction = RICK_DIR_STOP;
           }
+        } else if (inPlatform) {
+          state = RICK_STATE_STOP;
+          direction = RICK_DIR_STOP;
         }
       } else if (direction & RICK_DIR_UP) {
         // REVISIT: hard coded the maximum distance for jumping
         if ((extHeightColExt.GetLeftUpCol() == TILE_COL) || (extHeightColExt.GetRightUpCol() == TILE_COL) ||
-            (abs(pos_y_chk - pos_y) >= 3*8)) {
+            (abs(pos_y_chk - pos_y) >= 5*8)) {
           direction = RICK_DIR_DOWN;
         }
       }
@@ -451,6 +469,13 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 }
 
 void Character::ComputeNextPosition(World* map) {
+
+  // First check if on platform
+  if (inPlatform) {
+    // Correct y to be on top of platform
+    SetPosY(map, GetPosY() - (GetPosY() + GetHeight() - inPlatformPtr->GetY()), false);
+  }
+
   switch(state) {
     case RICK_STATE_STOP:
       break;
@@ -530,7 +555,7 @@ void Character::ComputeNextSpeed() {
             speed_y = 0.8;
         } else if ((direction & RICK_DIR_UP) && (stepsInDirectionY > 0)) {
           if (speed_y > 0)
-            speed_y = speed_y - 0.1;
+            speed_y = speed_y - 0.05;
           else
             speed_y = 0.0;
         } else if ((direction & RICK_DIR_DOWN) && (stepsInDirectionY > 0)) {

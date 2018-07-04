@@ -16,6 +16,8 @@
 #include "character.h"
 #include "timer.h"
 #include "colbox.h"
+#include "object.h"
+#include "platform.h"
 
 using namespace std;
 
@@ -30,6 +32,7 @@ int main(int argc, char *argv[]) {
   Camera                 camera;
   Character              player;
   Timer                  timer;
+  Platform               platform_test(804, 1720, 24, 8, true, true, PLATFORM_DIR_UP, 10*8);
 
   // Check arguments
   if(argc != 1) {
@@ -101,13 +104,17 @@ int main(int argc, char *argv[]) {
 
     if(keyboard.PressedESC())   { return 0; }
 
-    player.ComputeCollisions(map_level1);
+    // Handle objects and platform
+    platform_test.platformStep();
+
+    // Handle player
+    player.ComputeCollisions(map_level1, &platform_test);
     player.ComputeNextState(keyboard);
     player.ComputeNextPosition(map_level1);
     player.ComputeNextSpeed();
 
-    camera.PositionBasedOnPlayer(&player);
-    camera.DrawScreen(&player);
+    camera.PositionBasedOnPlayer(&player);    
+    camera.DrawScreen(&player, &platform_test);
 
     // Check counter value for adding waiting time
     double delay = ((double)timer.GetCounter());
