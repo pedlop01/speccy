@@ -1,5 +1,5 @@
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
 
 world.o: ../src/world.cpp
 	g++ -c ../src/world.cpp
@@ -27,6 +27,9 @@ timer.o: ../src/timer.cpp
 
 object.o: ../src/object.cpp
 	g++ -c ../src/object.cpp
+
+platform.o: ../src/platform.cpp
+	g++ -c ../src/platform.cpp
 
 pugixml.o: ../src/pugixml.cpp
 	g++ -c ../src/pugixml.cpp
