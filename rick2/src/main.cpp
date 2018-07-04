@@ -32,7 +32,38 @@ int main(int argc, char *argv[]) {
   Camera                 camera;
   Character              player;
   Timer                  timer;
-  Platform               platform_test(804, 1720, 24, 8, true, true, PLATFORM_DIR_UP, 10*8);
+  vector<Platform*>      platforms;
+  Platform*              platform1;
+  Platform*              platform2;
+  Platform*              platform3;
+  Platform*              platform4;
+  Platform*              platform5;
+  Platform*              platform6;
+  Platform*              platform7;
+  Platform*              platform8;
+  Platform*              platform9;
+  Platform*              platform10;
+
+  platform1 = new Platform(804, 1720, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);  
+  platform2 = new Platform(548, 1368, 24, 8, true, true, PLATFORM_DIR_DOWN,  14*8);
+  platform3 = new Platform(450, 1696, 24, 8, true, true, PLATFORM_DIR_LEFT,  20*8);
+  platform4 = new Platform(300, 1696, 24, 8, true, true, PLATFORM_DIR_RIGHT, 20*8);
+  platform5 = new Platform(972,  992, 24, 8, true, true, PLATFORM_DIR_LEFT,   6*8);
+  platform6 = new Platform(708, 1200, 24, 8, true, true, PLATFORM_DIR_UP,    12*8);
+  platform7 = new Platform(288, 1640, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);
+  platform8 = new Platform(452, 1568, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
+  platform9 = new Platform(484, 1320, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
+  platform10 = new Platform(388, 1048, 24, 8, true, true, PLATFORM_DIR_UP,    12*8);
+  platforms.push_back(platform1);
+  platforms.push_back(platform2);
+  platforms.push_back(platform3);
+  platforms.push_back(platform4);
+  platforms.push_back(platform5);
+  platforms.push_back(platform6);
+  platforms.push_back(platform7);
+  platforms.push_back(platform8);
+  platforms.push_back(platform9);
+  platforms.push_back(platform10);
 
   // Check arguments
   if(argc != 1) {
@@ -105,16 +136,18 @@ int main(int argc, char *argv[]) {
     if(keyboard.PressedESC())   { return 0; }
 
     // Handle objects and platform
-    platform_test.platformStep();
+    for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
+      (*it)->platformStep();
+    }
 
     // Handle player
-    player.ComputeCollisions(map_level1, &platform_test);
+    player.ComputeCollisions(map_level1, &platforms);
     player.ComputeNextState(keyboard);
     player.ComputeNextPosition(map_level1);
     player.ComputeNextSpeed();
 
     camera.PositionBasedOnPlayer(&player);    
-    camera.DrawScreen(&player, &platform_test);
+    camera.DrawScreen(&player, &platforms);
 
     // Check counter value for adding waiting time
     double delay = ((double)timer.GetCounter());

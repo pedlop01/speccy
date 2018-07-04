@@ -26,6 +26,7 @@ Platform::~Platform() {
 }
 
 void Platform::platformStep() {
+
   if (direction == PLATFORM_DIR_UP) {
     if (abs(y - start_y) < displacement) {
       y--;
@@ -39,6 +40,22 @@ void Platform::platformStep() {
     } else {
       start_y = start_y + displacement;
       direction = PLATFORM_DIR_UP;
+    }
+  }
+
+  if (direction == PLATFORM_DIR_LEFT) {
+    if (abs(x - start_x) < displacement) {
+      x--;
+    } else {
+      start_x = start_x - displacement;
+      direction = PLATFORM_DIR_RIGHT;
+    }
+  } else if (direction == PLATFORM_DIR_RIGHT) {
+    if (abs(x - start_x) < displacement) {
+      x++;
+    } else {
+      start_x = start_x + displacement;
+      direction = PLATFORM_DIR_LEFT;
     }
   }
 }

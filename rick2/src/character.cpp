@@ -212,7 +212,11 @@ void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) 
                               height - 1);
 }
 
-void Character::ComputeCollisions(World* map, Platform* platform) {
+void Character::ComputeCollisions(World* map, vector<Platform*> *platforms) {
+  int down_left_x;
+  int down_right_x;
+  int down_y;
+
   this->GetCollisionsExternalBoxInt(map, extColInt);
   this->GetCollisionsExternalBoxExt(map, extColExt);
   this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
@@ -239,18 +243,24 @@ void Character::ComputeCollisions(World* map, Platform* platform) {
       heightColInt.GetLeftDownCol());*/
 
   // First check if there is collision with an object over the tiles
-  int down_left_x = pos_x;
-  int down_right_x = pos_x + width;
-  int down_y = pos_y + height + 1;
-  if ((down_y >= platform->GetY()) && (down_y <= (platform->GetY() + platform->GetHeight())) &&
+  for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
+    down_left_x = pos_x;
+    down_right_x = pos_x + width;
+    down_y = pos_y + height + 1;
+
+    Platform* platform = *it;
+    if ((down_y >= platform->GetY()) && (down_y <= (platform->GetY() + platform->GetHeight())) &&
       (((down_left_x >= platform->GetX()) && (down_left_x <= (platform->GetX() + platform->GetWidth()))) ||
        ((down_right_x >= platform->GetX()) && (down_right_x <= (platform->GetX() + platform->GetWidth()))))) {
-    inPlatform = true;
-    inPlatformPtr = platform;
-  } else {
-    inPlatform = false;
-    inPlatformPtr = 0;
-  }
+      inPlatform = true;
+      inPlatformPtr = platform;
+      // Take first platform with collision
+      break;
+    } else {
+      inPlatform = false;
+      inPlatformPtr = 0;
+    }
+  } 
 
   // Check if there is a collision with the tiles
   inStairs = ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
@@ -470,6 +480,8 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
 void Character::ComputeNextPosition(World* map) {
 
+  //printf("PRE: pos_x = %d pos_y %d\n", pos_x, pos_y);
+
   // First check if on platform
   if (inPlatform) {
     // Correct y to be on top of platform
@@ -535,6 +547,8 @@ void Character::ComputeNextPosition(World* map) {
     default:
       break;
   }
+
+  //printf("POST: pos_x = %d pos_y %d\n", pos_x, pos_y);
 }
 
 void Character::ComputeNextSpeed() {

@@ -89,7 +89,7 @@ void Camera::SetTilesHeight(int _tiles_height) {
   tiles_height = _tiles_height;
 }
 
-void Camera::DrawScreen(Character* player, Object *object) {
+void Camera::DrawScreen(Character* player, vector<Platform*> *platforms) {
   Tile* tile;
   int left_up_x;
   int left_up_y;
@@ -170,11 +170,14 @@ void Camera::DrawScreen(Character* player, Object *object) {
                     al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
 
   // Draw objects and platforms
-  al_draw_filled_rectangle(object->GetX() - GetPosX(),
-                           object->GetY() - GetPosY(),
-                           object->GetX() + object->GetWidth() - GetPosX() - 1,
-                           object->GetY() + object->GetHeight() - GetPosY() - 1,
-                           al_map_rgb(0xFF, 0xFF, 0xFF));
+  for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
+    Platform* platform = *it;
+    al_draw_filled_rectangle(platform->GetX() - GetPosX(),
+                             platform->GetY() - GetPosY(),
+                             platform->GetX() + platform->GetWidth() - GetPosX() - 1,
+                             platform->GetY() + platform->GetHeight() - GetPosY() - 1,
+                             al_map_rgb(0xFF, 0xFF, 0xFF));
+  }
 
   // Move camera to screen
   al_set_target_bitmap(screen);
