@@ -24,6 +24,13 @@
 #define RICK_DIR_UP    0b0100
 #define RICK_DIR_DOWN  0b1000
 
+#define HOR_SPEED_MAX   2.0
+#define HOR_SPEED_MIN   1.0
+#define HOR_SPEED_STEP  0.1
+#define VERT_SPEED_MAX  3.0
+#define VERT_SPEED_MIN  1.0
+#define VERT_SPEED_STEP 0.1
+
 class Character {
   private:
     int pos_x;

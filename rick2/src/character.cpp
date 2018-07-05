@@ -14,8 +14,8 @@ Character::Character() {
   state = RICK_STATE_STOP;
   direction = RICK_DIR_STOP;
 
-  speed_x = 2.0;
-  speed_y = 2.0;
+  speed_x = HOR_SPEED_MAX;
+  speed_y = VERT_SPEED_MAX;
 
   stepsInState = 0;
   stepsInDirectionX = 0;
@@ -452,6 +452,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 void Character::ComputeNextPosition(World* map) {
 
   //printf("PRE: pos_x = %d pos_y %d\n", pos_x, pos_y);
+  //printf("pos_x = %d, pos_y = %d, speed_x = %f, speed_y = %f\n", pos_x, pos_y, speed_x, speed_y);
 
   // First check if on platform
   if (inPlatform) {
@@ -523,41 +524,42 @@ void Character::ComputeNextPosition(World* map) {
 }
 
 void Character::ComputeNextSpeed() {
-  //printf("Speed Update %d\n", state);
+  
   switch (state) {
     case RICK_STATE_STOP:
       speed_x = 0.0;
       speed_y = 0.0;
       break;
     case RICK_STATE_RUNNING:
-      speed_x = 2.0;
+      speed_x = HOR_SPEED_MAX;
       break;
     case RICK_STATE_JUMPING:
         if (!stepsInState) {
           if (direction & RICK_DIR_UP)
-            speed_y = 2.0;
+            speed_y = VERT_SPEED_MAX;
           else
-            speed_y = 0.8;
+            speed_y = VERT_SPEED_MIN;
         } else if ((direction & RICK_DIR_UP) && (stepsInDirectionY > 0)) {
-          if (speed_y > 0)
-            speed_y = speed_y - 0.05;
+          if (speed_y > VERT_SPEED_MIN)
+            speed_y = speed_y - VERT_SPEED_STEP;
           else
-            speed_y = 0.0;
+            speed_y = VERT_SPEED_MIN;
         } else if ((direction & RICK_DIR_DOWN) && (stepsInDirectionY > 0)) {
-          if (speed_y < 2.0)
-            speed_y = speed_y + 0.1;
+          if (speed_y < VERT_SPEED_MAX)
+            speed_y = speed_y + VERT_SPEED_STEP;
           else
-            speed_y = 2.0;
+            speed_y = VERT_SPEED_MAX;
         }
-        speed_x = 2.0;
+
+        speed_x = HOR_SPEED_MAX;
       break;
     case RICK_STATE_CLIMBING:
-      speed_x = 2.0;
-      speed_y = 2.0;
+      speed_x = HOR_SPEED_MAX;
+      speed_y = HOR_SPEED_MAX;  // Same as horizontal speed
       break;
     default:      
-      speed_x = 2.0;
-      speed_y = 2.0;
+      speed_x = HOR_SPEED_MAX;
+      speed_y = VERT_SPEED_MAX;
       break;
   }
 
