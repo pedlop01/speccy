@@ -265,23 +265,46 @@ void Character::ComputeCollisions(World* map) {
   } 
 
   // Check if there is a collision with the tiles
-  inStairs = ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
-              (heightColInt.GetRightDownCol() == TILE_STAIRS) ||
+  inStairs = ((heightColInt.GetLeftUpCol() == TILE_STAIRS) ||
+              (heightColInt.GetRightUpCol() == TILE_STAIRS) ||
+              (heightColInt.GetLeftUpCol() == TILE_STAIRS) ||
+              (heightColInt.GetRightUpCol() == TILE_STAIRS) ||
               (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
               (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP));
+
+  overStairs = (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+               (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
 
   inFloor = inPlatform ||
             (extHeightColExt.GetLeftDownCol() == TILE_COL) ||
             (extHeightColExt.GetRightDownCol() == TILE_COL);
 
-  inTopStairs = (extHeightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
-                (extHeightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
-
-  inAir = (extHeightColExt.GetLeftDownCol() == 0) &&
-          (extHeightColExt.GetRightDownCol() == 0);
+  inAir = !inPlatform &&
+          ((extHeightColExt.GetLeftDownCol() == 0) ||             // No tile is air
+           (extHeightColExt.GetLeftDownCol() == TILE_STAIRS)) &&  // Stairs is also air
+          ((extHeightColExt.GetRightDownCol() == 0) ||
+           (extHeightColExt.GetRightDownCol() == TILE_STAIRS));
 
   inAirInt = ((heightColInt.GetLeftDownCol() == 0) &&
-               (heightColInt.GetRightDownCol() == 0));
+              (heightColInt.GetRightDownCol() == 0));
+
+  // - Collision with head on collisionable tile
+  collisionHead = (extHeightColExt.GetLeftUpCol() == TILE_COL) ||
+                  (extHeightColExt.GetRightUpCol() == TILE_COL);
+}
+
+// Helper function to reset direction based on keyboard
+void Character::FixHorizontalDirection(Keyboard& keyboard) {
+  if (keyboard.PressedRight()) {
+    direction |= RICK_DIR_RIGHT;
+    direction &= ~RICK_DIR_LEFT;
+  } else if (keyboard.PressedLeft()) {
+    direction |= RICK_DIR_LEFT;
+    direction &= ~RICK_DIR_RIGHT;
+  } else {
+    direction &= ~RICK_DIR_LEFT;
+    direction &= ~RICK_DIR_RIGHT;
+  }
 }
 
 void Character::ComputeNextState(Keyboard& keyboard) {  
@@ -292,19 +315,22 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   // Save current direction before computing next state and direction
   prevDirection = direction;
 
-  //printf("Pre: State = %d, direction = %d\n", state, direction);
+  printf("Pre: State = %d, direction = %d\n", state, direction);
 
   switch(state) {
     case RICK_STATE_STOP:
-      direction = RICK_DIR_STOP;
+    case RICK_STATE_RUNNING:
 
-      if (keyboard.PressedUp()) {
-        if ((heightColInt.GetLeftUpCol() == TILE_STAIRS) || (heightColInt.GetRightUpCol() == TILE_STAIRS)) {
+      if (inAir) {
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedUp()) {
+        if (inStairs) {
           // In stairs
           state = RICK_STATE_CLIMBING;
           direction = RICK_DIR_UP;
         } else {
-          if (inFloor || inTopStairs) {
+          if (!inAir) {
             // Start jump
             state = RICK_STATE_JUMPING;
             direction = RICK_DIR_UP;
@@ -315,146 +341,89 @@ void Character::ComputeNextState(Keyboard& keyboard) {
             direction = RICK_DIR_DOWN;
           }
         }
-      } else if (keyboard.PressedDown() &&
-                 ((heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
-                  (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP))) {
-          state = RICK_STATE_CLIMBING;
-          direction = RICK_DIR_DOWN;
-      } else if (!inPlatform &&
-                 ((extHeightColExt.GetLeftDownCol() != TILE_COL) && (extHeightColExt.GetRightDownCol() != TILE_COL)) &&
-                 ((extHeightColExt.GetLeftDownCol() != TILE_STAIRS_TOP) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS_TOP))) {
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_DOWN;
-      } else if (keyboard.PressedRight() || keyboard.PressedLeft()) {
+      } else if (keyboard.PressedDown()) {
+          if (overStairs) {
+            state = RICK_STATE_CLIMBING;
+            direction = RICK_DIR_DOWN;
+          } else {
+          // REVISIT: at the moment keep it in STOP. Later it will move to CROUCHING
+            state = RICK_STATE_STOP;
+            direction = RICK_DIR_STOP;
+          }
+      } else if (keyboard.PressedRight()) {
         state = RICK_STATE_RUNNING;
-      }
-
-      break;
-
-    case RICK_STATE_RUNNING:
-      if (keyboard.PressedDown() &&
-          ((heightColExt.GetLeftDownCol() == TILE_STAIRS) ||
-           (heightColExt.GetRightDownCol() == TILE_STAIRS) ||
-           (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
-           (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP))) {
-        state = RICK_STATE_CLIMBING;
-        direction = RICK_DIR_DOWN;
-      } else if ((extColExt.GetLeftDownCol() == 0) && (extColExt.GetRightDownCol() == 0)) {
-        if (!inPlatform) {
-          state = RICK_STATE_JUMPING;
-          direction = RICK_DIR_DOWN;
-        }
-      } else if (keyboard.PressedUp()) {
-        // Start jump
-        state = RICK_STATE_JUMPING;
-        direction = RICK_DIR_UP;
-        // Save pos y
-        pos_y_chk = pos_y;
-      }
-
-      if (keyboard.PressedRight()) {
-        direction |= RICK_DIR_RIGHT;
-        direction &= ~RICK_DIR_LEFT;
+        direction = RICK_DIR_RIGHT;
       } else if (keyboard.PressedLeft()) {
-        direction |= RICK_DIR_LEFT;
-        direction &= ~RICK_DIR_RIGHT;
+        state = RICK_STATE_RUNNING;
+        direction = RICK_DIR_LEFT;
       } else {
-        // If no update to state while running and no left of right, then stop
-        if (state == RICK_STATE_RUNNING)
-          state = RICK_STATE_STOP;
-        direction &= ~RICK_DIR_LEFT;
-        direction &= ~RICK_DIR_RIGHT;          
+        state = RICK_STATE_STOP;
+        direction = RICK_DIR_STOP;
       }
+
       break;
 
     case RICK_STATE_JUMPING:
       if ((direction & RICK_DIR_DOWN)) {
-        if (((extHeightColExt.GetLeftDownCol() != 0) && (extHeightColExt.GetLeftDownCol() != TILE_STAIRS)) ||
-            ((extHeightColExt.GetRightDownCol() != 0) && (extHeightColExt.GetRightDownCol() != TILE_STAIRS))) {
+        if (!inAir) {
           // Factor keyboard to keep running without transitioning through stop
-          if (keyboard.PressedRight()) {
-            state = RICK_STATE_RUNNING;            
-          } else if (keyboard.PressedLeft()) {
+          if (keyboard.PressedRight() || keyboard.PressedLeft()) {
             state = RICK_STATE_RUNNING;
           } else {
             state = RICK_STATE_STOP;
             direction = RICK_DIR_STOP;
           }
-        } else if (inPlatform) {
-          state = RICK_STATE_STOP;
-          direction = RICK_DIR_STOP;
         }
       } else if (direction & RICK_DIR_UP) {
-        // REVISIT: hard coded the maximum distance for jumping
-        if ((extHeightColExt.GetLeftUpCol() == TILE_COL) || (extHeightColExt.GetRightUpCol() == TILE_COL) ||
-            (abs(pos_y_chk - pos_y) >= 5*8)) {
+        if (collisionHead ||
+            (abs(pos_y_chk - pos_y) >= 5*8)) {                   // REVISIT: hard coded the maximum distance for jumping
           direction = RICK_DIR_DOWN;
         }
       }
 
+      // Take stairs if pressing up when jumping
       if (keyboard.PressedUp() &&
-          ((heightColInt.GetLeftDownCol() == TILE_STAIRS) ||
-           (heightColInt.GetRightDownCol() == TILE_STAIRS))) {
+          inStairs) {
         state = RICK_STATE_CLIMBING;
         direction = RICK_DIR_UP;
       }
 
-      if (keyboard.PressedRight()) {
-        direction |= RICK_DIR_RIGHT;
-        direction &= ~RICK_DIR_LEFT;
-      } else if (keyboard.PressedLeft()) {
-        direction |= RICK_DIR_LEFT;
-        direction &= ~RICK_DIR_RIGHT;
-      } else {
-        direction &= ~RICK_DIR_LEFT;
-        direction &= ~RICK_DIR_RIGHT;          
-      }
+      // Fix horizontal direction based on keyboard input
+      this->FixHorizontalDirection(keyboard);
       break;
 
     case RICK_STATE_CLIMBING:
 
-      if (keyboard.PressedUp()) {
-        // If on stairs, and pressed key up, then keep climbing up
-        if (inAirInt) {
-          state = RICK_STATE_STOP;
-          direction = RICK_DIR_STOP;
-        } else if (inStairs) {
-          state = RICK_STATE_CLIMBING;
+      if (inAirInt && !overStairs & !inStairs) {
+        // height rectangle is out of the stairs. Make Rick to fall
+        state = RICK_STATE_JUMPING;
+        direction = RICK_DIR_DOWN;
+      } else if (keyboard.PressedUp()) {
+        if (inAirInt && overStairs) {
+        // Just arrived at the top of the stairs
+        state = RICK_STATE_STOP;
+        direction = RICK_DIR_STOP;
+        } else {
+          // If on stairs, and pressed key up, then keep climbing up
           direction = RICK_DIR_UP;
         }
       } else if (keyboard.PressedDown()) {
-        // If on stais, and pressed key down, then climb down stairs
         if (inFloor) {
         // No in stairs, stop player because it was previously in stairs
           state = RICK_STATE_STOP;
           direction = RICK_DIR_STOP;
-        } else if (inStairs) {
+        } else {
           direction = RICK_DIR_DOWN;
         }
       } else {
-        if (inAirInt || !inStairs) {
-          state = RICK_STATE_STOP;
-          direction = RICK_DIR_STOP;
-        }
+        // No up and down keyboard pressed
+        direction = RICK_DIR_STOP;
       }
 
-      // Fix horizontal direction
-      if (keyboard.PressedRight()) {
-        direction |= RICK_DIR_RIGHT;
-        direction &= ~RICK_DIR_LEFT;
-      } else if (keyboard.PressedLeft()) {
-        direction |= RICK_DIR_LEFT;
-        direction &= ~RICK_DIR_RIGHT;
-      } else {
-          direction &= ~RICK_DIR_LEFT;
-          direction &= ~RICK_DIR_RIGHT;
-      }
-      if (!keyboard.PressedUp() && !keyboard.PressedDown()) {
-        direction &= ~RICK_DIR_UP;
-        direction &= ~RICK_DIR_DOWN;
-      }
-
+      // Fix horizontal direction based on keyboard input
+      this->FixHorizontalDirection(keyboard);
       break;
+
     default:
       break;
   }

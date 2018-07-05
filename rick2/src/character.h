@@ -64,8 +64,10 @@ class Character {
     bool inAirInt;
     bool inStairs;
     bool inFloor;
-    bool inTopStairs;
     bool inPlatform;
+    bool overStairs;
+    bool collisionHead;
+
     Platform* inPlatformPtr;
 
     pugi::xml_document character_file;
@@ -100,6 +102,9 @@ class Character {
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
     void ComputeNextSpeed();
+
+  private:
+    void FixHorizontalDirection(Keyboard& keyboard);
 };
 
 #endif // CHARACTER_H

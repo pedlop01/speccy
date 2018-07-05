@@ -131,13 +131,13 @@ void Camera::DrawScreen(World* world, Character* player) {
                               dest_x,
                               dest_y,
                               0);        
-/*        if (tile->GetType() != 0) {
+        if (tile->GetType() != 0) {
           al_draw_filled_rectangle(dest_x,
                                    dest_y,
                                    dest_x + tile_width,
                                    dest_y + tile_height,
                                   al_map_rgb(tile->GetType()*0x0F, tile->GetType()*0x0F, tile->GetType()*0x0F));
-        }*/
+        }
       }
       tile_x++;
     }
