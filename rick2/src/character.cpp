@@ -315,7 +315,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   // Save current direction before computing next state and direction
   prevDirection = direction;
 
-  printf("Pre: State = %d, direction = %d\n", state, direction);
+  //printf("Pre: State = %d, direction = %d\n", state, direction);
 
   switch(state) {
     case RICK_STATE_STOP:

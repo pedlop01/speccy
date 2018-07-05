@@ -9,6 +9,8 @@
 
 class Object {
   protected:
+    static int id;
+
     int x;
     int y;
     int width;
@@ -18,6 +20,7 @@ class Object {
     bool active;
 
   public:
+
     Object();
     Object(int _x, int _y, int _width, int _height, bool _visible, bool _active);
     ~Object();
@@ -29,6 +32,7 @@ class Object {
     void SetVisible(bool _visible) { visible = _visible;  };
     void SetActive(bool _active)   { active = _active;    };
 
+    int GetId()       { return id;      }
     int GetX()        { return x;       };
     int GetY()        { return y;       };
     int GetWidth()    { return width;   };
