@@ -7,6 +7,8 @@ Character::Character() {
 
   height = 20;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
+  height_orig = height;
+  width_orig = width;
 
   height_internal = 3;
   width_internal = 3;
@@ -20,6 +22,8 @@ Character::Character() {
   stepsInState = 0;
   stepsInDirectionX = 0;
   stepsInDirectionY = 0;
+
+  face = RICK_DIR_RIGHT;
 }
 
 Character::Character(char* file) {
@@ -45,6 +49,24 @@ Character::Character(char* file) {
 
 // class destructor
 Character::~Character() {
+}
+
+int Character::GetCorrectedPosX() {
+  if (width == width_orig)
+    return pos_x;
+  else if (width > width_orig)
+    return pos_x + (width - width_orig);
+  else
+    return pos_x - (width_orig - width);
+}
+
+int Character::GetCorrectedPosY() {
+  if (height == height_orig)
+    return pos_y;
+  else if (height > height_orig)
+    return pos_y + (height - height_orig);
+  else
+    return pos_y - (height_orig - height);
 }
 
 void Character::SetPosX(World* map, int x) {
@@ -171,6 +193,16 @@ void Character::GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col) 
                               height + 1);
 }
 
+
+void Character::GetCollisionsExternalHeightBoxExtOrig(World* map, Colbox &mask_col) {
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              this->GetCorrectedPosX(),
+                              this->GetCorrectedPosY() - 1,
+                              width_orig - 1,
+                              height_orig + 1);
+}
+
 void Character::GetCollisionsExternalBoxInt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
@@ -225,6 +257,7 @@ void Character::ComputeCollisions(World* map) {
   this->GetCollisionsExternalBoxExt(map, extColExt);
   this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
   this->GetCollisionsExternalHeightBoxExt(map, extHeightColExt);
+  this->GetCollisionsExternalHeightBoxExtOrig(map, extHeightColExtOrig);
   this->GetCollisionsInternalWidthBoxInt(map, widthColInt);
   this->GetCollisionsInternalWidthBoxExt(map, widthColExt);
   this->GetCollisionsInternalHeightBoxInt(map, heightColInt);
@@ -295,6 +328,17 @@ void Character::ComputeCollisions(World* map) {
   // - Collision with head on collisionable tile
   collisionHead = (extHeightColExt.GetLeftUpCol() == TILE_COL) ||
                   (extHeightColExt.GetRightUpCol() == TILE_COL);
+
+  collisionHeadOrig = (extHeightColExtOrig.GetLeftUpCol() == TILE_COL) ||
+                      (extHeightColExtOrig.GetRightUpCol() == TILE_COL);
+
+  overStairsRight = (extColExt.GetLeftDownCol() == TILE_COL) &&
+                    (extColExt.GetRightDownCol() == TILE_STAIRS_TOP) &&
+                    (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
+
+  overStairsLeft = (extColExt.GetRightDownCol() == TILE_COL) &&
+                   (extColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
+                   (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP);
 }
 
 // Helper function to reset direction based on keyboard
@@ -319,7 +363,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   // Save current direction before computing next state and direction
   prevDirection = direction;
 
-  //printf("Pre: State = %d, direction = %d\n", state, direction);
+  printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
 
   switch(state) {
     case RICK_STATE_STOP:
@@ -346,12 +390,15 @@ void Character::ComputeNextState(Keyboard& keyboard) {
           }
         }
       } else if (keyboard.PressedDown()) {
-          if (overStairs) {
+          if ((overStairsRight && (face & RICK_DIR_RIGHT)) || 
+              (overStairsLeft  && (face & RICK_DIR_LEFT))  ||
+              (!overStairsRight && !overStairsLeft && overStairs)) {
             state = RICK_STATE_CLIMBING;
             direction = RICK_DIR_DOWN;
           } else {
-          // REVISIT: at the moment keep it in STOP. Later it will move to CROUCHING
-            state = RICK_STATE_STOP;
+            height = height / 2;
+            pos_y = pos_y + height;
+            state = RICK_STATE_CROUCHING;
             direction = RICK_DIR_STOP;
           }
       } else if (keyboard.PressedRight()) {
@@ -390,6 +437,17 @@ void Character::ComputeNextState(Keyboard& keyboard) {
           inStairs) {
         state = RICK_STATE_CLIMBING;
         direction = RICK_DIR_UP;
+      }
+
+      // Fix horizontal direction based on keyboard input
+      this->FixHorizontalDirection(keyboard);
+      break;
+
+    case RICK_STATE_CROUCHING:
+      if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {
+        pos_y = pos_y - height;
+        height = height * 2;
+        state = RICK_STATE_STOP;
       }
 
       // Fix horizontal direction based on keyboard input
@@ -449,7 +507,14 @@ void Character::ComputeNextState(Keyboard& keyboard) {
     stepsInDirectionY = 0;
   }
 
-  //printf("Post: State = %d, direction = %d\n", state, direction);
+  // keep last direction in face
+  if (direction & RICK_DIR_LEFT) {
+    face = RICK_DIR_LEFT;
+  } else if (direction & RICK_DIR_RIGHT) {
+    face = RICK_DIR_RIGHT;
+  }
+
+  //printf("Post: State = %d, direction = %d, face = %d\n", state, direction, face);
   //printf("Steps in state = %d, steps in direction x = %d, steps in direction y = %d\n", stepsInState, stepsInDirectionX, stepsInDirectionY);
 }
 
@@ -468,6 +533,7 @@ void Character::ComputeNextPosition(World* map) {
     case RICK_STATE_STOP:
       break;
     case RICK_STATE_RUNNING:
+    case RICK_STATE_CROUCHING:
       if (direction & RICK_DIR_RIGHT) {
         SetPosX(map, GetPosX() + speed_x);
       } else if (direction & RICK_DIR_LEFT) {
@@ -503,13 +569,9 @@ void Character::ComputeNextPosition(World* map) {
       } else if (direction & RICK_DIR_DOWN) {
 
         // First, correct x to facilitate moving down
-        if ((extColExt.GetLeftDownCol() == TILE_COL) &&
-            (extColExt.GetRightDownCol() != TILE_COL) &&
-            (heightColExt.GetRightDownCol() != TILE_COL)) {
+        if (overStairsRight) {
           SetPosX(map, GetPosX() + HOR_SPEED_MAX);
-        } else if ((heightColExt.GetLeftDownCol() != TILE_COL) &&
-                   (extColExt.GetLeftDownCol() != TILE_COL) &&
-                   (extColExt.GetRightDownCol() == TILE_COL)) {
+        } else if (overStairsLeft) {
           SetPosX(map, GetPosX() - HOR_SPEED_MAX);
         }
 

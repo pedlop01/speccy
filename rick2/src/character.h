@@ -12,10 +12,11 @@
 #include "colbox.h"
 
 // REVISIT: state will be provided from a file
-#define RICK_STATE_STOP     0
-#define RICK_STATE_JUMPING  1
-#define RICK_STATE_RUNNING  2
-#define RICK_STATE_CLIMBING 3
+#define RICK_STATE_STOP      0
+#define RICK_STATE_JUMPING   1
+#define RICK_STATE_RUNNING   2
+#define RICK_STATE_CLIMBING  3
+#define RICK_STATE_CROUCHING 4
 
 // REVISIT: direction will be provided from a file
 #define RICK_DIR_STOP  0b0000
@@ -39,7 +40,9 @@ class Character {
     int pos_x_chk;
     int pos_y_chk;
 
+    int height_orig;
     int height;
+    int width_orig;
     int width;
 
     int height_internal;
@@ -48,6 +51,7 @@ class Character {
     int prevState;
     int state;
     int direction;
+    int face;
 
     float speed_x;
     float speed_y;
@@ -59,8 +63,9 @@ class Character {
     // Collisions
     // - bounding boxes
     Colbox extColInt;
-    Colbox extColExt;
+    Colbox extColExt;    
     Colbox extHeightColExt;
+    Colbox extHeightColExtOrig;
     Colbox extWidthColExt;
     Colbox heightColInt;
     Colbox heightColExt;
@@ -74,6 +79,9 @@ class Character {
     bool inPlatform;
     bool overStairs;
     bool collisionHead;
+    bool collisionHeadOrig;
+    bool overStairsLeft;
+    bool overStairsRight;
 
     Platform* inPlatformPtr;
 
@@ -88,17 +96,24 @@ class Character {
     void SetPosX(World* map, int x);
     void SetPosY(World* map, int y, bool all);
 
-    int  GetPosX()      { return pos_x;     }
-    int  GetPosY()      { return pos_y;     }
-    int  GetHeight()    { return height;    }
-    int  GetWidth()     { return width;    }
-    int  GetState()     { return state;     }
-    int  GetDirection() { return direction; }
+    int  GetPosX()       { return pos_x;     }
+    int  GetPosY()       { return pos_y;     }
+    int  GetHeight()     { return height;    }
+    int  GetWidth()      { return width;     }
+    int  GetState()      { return state;     }
+    int  GetDirection()  { return direction; }
+
+    int  GetOrigHeight() { return height_orig; }
+    int  GetOrigWidth()  { return width_orig;  }
+
+    int  GetCorrectedPosX();
+    int  GetCorrectedPosY();
 
     void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
     void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsExternalWidthBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsExternalHeightBoxExtOrig(World* map, Colbox &mask_col);
     void GetCollisionsExternalBoxInt(World* map, Colbox &mask_col);
     void GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col);

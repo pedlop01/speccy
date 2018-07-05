@@ -49,8 +49,8 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
 }
 
 void Camera::PositionBasedOnPlayer(Character* player) {
-  SetPosX(player->GetPosX() - pixels_width/2);
-  SetPosY(player->GetPosY() - pixels_height/2);
+  SetPosX(player->GetCorrectedPosX() - pixels_width/2);
+  SetPosY(player->GetCorrectedPosY() - pixels_height/2);
 }
 
 void Camera::SetPosX(int _pos_x) {
@@ -141,7 +141,7 @@ void Camera::DrawScreen(World* world, Character* player) {
       }
       tile_x++;
     }
-    tile_y++;    
+    tile_y++;
   }  
   
   // Draw the player in front of back tiles
