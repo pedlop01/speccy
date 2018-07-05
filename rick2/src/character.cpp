@@ -5,8 +5,8 @@ Character::Character() {
   pos_x = 264;  // REVISIT: should be 0
   pos_y = 2000; // REVISIT: should be 0
 
-  height = 16;  // REVISIT: should be 0
-  width = 16;  // REVISIT: should be 0
+  height = 20;  // REVISIT: should be 0
+  width  = 16;  // REVISIT: should be 0
 
   height_internal = 3;
   width_internal = 3;
@@ -50,16 +50,18 @@ Character::~Character() {
 void Character::SetPosX(World* map, int x) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
-  int tile_width = map->GetTilesetTileHeight();
-  int character_width = this->height;
+  int tile_width = map->GetTilesetTileWidth();
+  int tile_height = map->GetTilesetTileHeight();
+  int character_width = this->width;
+  int character_height = this->height;
 
   // Compute the displacement in x
   int desp_x = (x > pos_x) ? (x - pos_x) : (pos_x - x);
 
   // Compute x and y corrections to draw world
   int tile_col_x;
-  int tile_col_up_y   = pos_y / tile_width;
-  int tile_col_down_y = (pos_y + character_width - 1) / tile_width;
+  int tile_col_up_y   = pos_y / tile_height;
+  int tile_col_down_y = (pos_y + character_height - 1) / tile_height;
   if ( x > pos_x) {
     // Collision moving right
     tile_col_x = (pos_x + desp_x + character_width)  / tile_width;
@@ -90,16 +92,18 @@ void Character::SetPosX(World* map, int x) {
 void Character::SetPosY(World* map, int y, bool all) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
+  int tile_width = map->GetTilesetTileWidth();
   int tile_height = map->GetTilesetTileHeight();
-  int character_height = this->width;
+  int character_width = this->width;
+  int character_height = this->height;
 
   // Compute the displacement in x
   int desp_y = (y > pos_y) ? (y - pos_y) : (pos_y - y);
 
   // Compute x and y corrections to draw world
   int tile_col_y;
-  int tile_col_up_x   = pos_x / tile_height;
-  int tile_col_down_x = (pos_x + character_height - 1) / tile_height;
+  int tile_col_up_x   = pos_x / tile_width;
+  int tile_col_down_x = (pos_x + character_width - 1) / tile_width;
   if (y > pos_y) {
     // Collision moving down
     tile_col_y = (pos_y + desp_y + character_height)  / tile_height;
