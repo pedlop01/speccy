@@ -26,7 +26,7 @@ class Platform : public Object {
     Platform(int _x, int _y, int _width, int _height, bool _visible, bool _active, int _dir, int _displacement);
     ~Platform();
 
-    void platformStep();
+    void PlatformStep();
 
 };
 

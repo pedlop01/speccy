@@ -25,7 +25,7 @@ Platform::~Platform() {
 
 }
 
-void Platform::platformStep() {
+void Platform::PlatformStep() {
 
   if (direction == PLATFORM_DIR_UP) {
     if (abs(y - start_y) < displacement) {

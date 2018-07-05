@@ -86,6 +86,29 @@ World::World(char *file, bool tileExtractedOption)
     // Move prop pointer
     prop = prop.next_sibling();
   }
+
+  // Read platforms
+  // REVISIT: need to be read from file! refactor reading of map too!
+  Platform* platform1 = new Platform(804, 1720, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);  
+  Platform* platform2 = new Platform(548, 1368, 24, 8, true, true, PLATFORM_DIR_DOWN,  14*8);
+  Platform* platform3 = new Platform(450, 1696, 24, 8, true, true, PLATFORM_DIR_LEFT,  20*8);
+  Platform* platform4 = new Platform(300, 1696, 24, 8, true, true, PLATFORM_DIR_RIGHT, 20*8);
+  Platform* platform5 = new Platform(972,  992, 24, 8, true, true, PLATFORM_DIR_LEFT,   6*8);
+  Platform* platform6 = new Platform(708, 1200, 24, 8, true, true, PLATFORM_DIR_UP,    12*8);
+  Platform* platform7 = new Platform(288, 1640, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);
+  Platform* platform8 = new Platform(452, 1568, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
+  Platform* platform9 = new Platform(484, 1320, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
+  Platform* platform10 = new Platform(388, 1048, 24, 8, true, true, PLATFORM_DIR_UP,   12*8);
+  platforms.push_back(platform1);
+  platforms.push_back(platform2);
+  platforms.push_back(platform3);
+  platforms.push_back(platform4);
+  platforms.push_back(platform5);
+  platforms.push_back(platform6);
+  platforms.push_back(platform7);
+  platforms.push_back(platform8);
+  platforms.push_back(platform9);
+  platforms.push_back(platform10);
 }
 
 // class destructor
@@ -101,6 +124,11 @@ World::~World()
 //  delete tiles_mundo;
 //    
 //  al_destroy_bitmap(world_image);
+
+  // Destroy platforms
+  for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
+      delete *it;
+  }
 }
 
 int World::GetTileValueByCoord(int x, int y)
@@ -117,4 +145,11 @@ Tile* World::GetTileByCoord(int x, int y)
   int tile_y = y / tileset_tile_height;
 
   return world_tiles[tile_x][tile_y];
+}
+
+void World::WorldStep() {
+  // Perform an step of all elements belonging to the world level
+  for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
+      (*it)->PlatformStep();
+  }  
 }

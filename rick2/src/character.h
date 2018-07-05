@@ -96,7 +96,7 @@ class Character {
     void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
-    void ComputeCollisions(World* map, vector<Platform*> *platforms);
+    void ComputeCollisions(World* map);
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
     void ComputeNextSpeed();

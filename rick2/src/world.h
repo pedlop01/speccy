@@ -5,11 +5,13 @@
 #include <allegro5/allegro_image.h>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <tgmath.h>
+#include <iostream>
+
 #include "pugixml.hpp"
 #include "rick_params.h"
-
-#include <iostream>
+#include "platform.h"
 
 using namespace std;
 
@@ -21,7 +23,7 @@ class Tile
         int right_down_x;
         int right_down_y;
         int value;
-        int type;
+        int type;        
 
     public:
         Tile() {
@@ -63,13 +65,16 @@ class World
 
         Tile    ***world_tiles;
 
+        // Platforms belonging to this level
+        vector<Platform*> platforms;
+
         ALLEGRO_BITMAP* world_image;
 
         pugi::xml_document world_file;
         
 	public:		
 		World();                        // class constructor		
-    	World(char *file, bool b);      // class constructor		
+    World(char *file, bool b);      // class constructor		
 		~World();                       // class destructor
 		
         int   GetMapWidth()              { return map_width;            }
@@ -88,6 +93,10 @@ class World
 		
 		    int   GetTileValueByCoord(int x, int y);
         Tile* GetTileByCoord(int x, int y);
+
+        vector<Platform*>* GetPlatforms() { return &platforms; }
+
+        void  WorldStep();
 
     private:
             

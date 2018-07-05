@@ -60,7 +60,7 @@ class Camera
 
     void SetMap(World* _map) { map = _map; }
 
-    void DrawScreen(Character *player, vector<Platform*> *platforms);
+    void DrawScreen(World* world, Character *player);
 
 };
 

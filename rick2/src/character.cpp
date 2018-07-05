@@ -212,7 +212,7 @@ void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) 
                               height - 1);
 }
 
-void Character::ComputeCollisions(World* map, vector<Platform*> *platforms) {
+void Character::ComputeCollisions(World* map) {
   int down_left_x;
   int down_right_x;
   int down_y;
@@ -243,6 +243,8 @@ void Character::ComputeCollisions(World* map, vector<Platform*> *platforms) {
       heightColInt.GetLeftDownCol());*/
 
   // First check if there is collision with an object over the tiles
+  vector<Platform*> *platforms = map->GetPlatforms();
+
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
     down_left_x = pos_x;
     down_right_x = pos_x + width;

@@ -6,7 +6,6 @@
 
 #include "rick_params.h"
 #include "pugixml.hpp"
-#include "world.h"
 
 class Object {
   protected:
