@@ -488,24 +488,25 @@ void Character::ComputeNextPosition(World* map) {
         if ((extColExt.GetLeftUpCol() == TILE_COL) &&
             (extColExt.GetRightUpCol() != TILE_COL) &&
             (heightColExt.GetRightUpCol() != TILE_COL)) {
-          SetPosX(map, GetPosX() + speed_x);          
+          SetPosX(map, GetPosX() + HOR_SPEED_MAX);
         } else if ((heightColExt.GetLeftUpCol() != TILE_COL) &&
                    (extColExt.GetLeftUpCol() != TILE_COL) &&
                    (extColExt.GetRightUpCol() == TILE_COL)) {
-          SetPosX(map, GetPosX() - speed_x);          
+          SetPosX(map, GetPosX() - HOR_SPEED_MAX);
         }
 
         SetPosY(map, GetPosY() - speed_y, false);
       } else if (direction & RICK_DIR_DOWN) {
+
         // First, correct x to facilitate moving down
         if ((extColExt.GetLeftDownCol() == TILE_COL) &&
             (extColExt.GetRightDownCol() != TILE_COL) &&
             (heightColExt.GetRightDownCol() != TILE_COL)) {
-          SetPosX(map, GetPosX() + speed_x);
+          SetPosX(map, GetPosX() + HOR_SPEED_MAX);
         } else if ((heightColExt.GetLeftDownCol() != TILE_COL) &&
                    (extColExt.GetLeftDownCol() != TILE_COL) &&
                    (extColExt.GetRightDownCol() == TILE_COL)) {
-          SetPosX(map, GetPosX() - speed_x);
+          SetPosX(map, GetPosX() - HOR_SPEED_MAX);
         }
 
         SetPosY(map, GetPosY() + speed_y, false);
