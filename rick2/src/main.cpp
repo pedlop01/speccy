@@ -29,9 +29,9 @@ int main(int argc, char *argv[]) {
   ALLEGRO_SAMPLE*        sample      = NULL;
   ALLEGRO_MOUSE_STATE    mouse_state;
   World*                 map_level1;
+  Character*             player;
   Keyboard               keyboard;
   Camera                 camera;
-  Character              player;
   Timer                  timer;
 
   // Check arguments
@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
   // Game initializations
   map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
   camera.InitCamera(0, 0, 320, 240, map_level1, bitmap);
+  player = new Character("../characters/rick.xml");
 
   // Start counter for first iteration
   timer.StartCounter();
@@ -117,13 +118,10 @@ int main(int argc, char *argv[]) {
     map_level1->WorldStep();
 
     // Handle player
-    player.ComputeCollisions(map_level1);
-    player.ComputeNextState(keyboard);
-    player.ComputeNextPosition(map_level1);
-    player.ComputeNextSpeed();
+    player->CharacterStep(map_level1, keyboard);
 
-    camera.PositionBasedOnPlayer(&player);    
-    camera.DrawScreen(map_level1, &player);
+    camera.PositionBasedOnPlayer(player);
+    camera.DrawScreen(map_level1, player);
 
     // Check counter value for adding waiting time
     double delay = ((double)timer.GetCounter());

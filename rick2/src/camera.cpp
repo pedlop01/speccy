@@ -105,7 +105,7 @@ void Camera::DrawScreen(World* world, Character* player) {
   // Draw everything on internal bitmap before resizing it
   // into the screen bitmap
   al_set_target_bitmap(camera_bitmap);
-  
+    
   // Check if it is needed to add an extra tile
   int tiles_width_corrected = (pos_x % tile_width) ? tiles_width + 1 : tiles_width;
   int tiles_height_corrected = (pos_y % tile_height) ? tiles_height + 1 : tiles_height;
@@ -168,6 +168,11 @@ void Camera::DrawScreen(World* world, Character* player) {
                     player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
                     al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
+  // Player bitmap  
+  al_draw_bitmap(player->GetCurrentAnimationBitmap(),
+                 player->GetPosX() - GetPosX(),
+                 player->GetPosY() - GetPosY(),
+                 player->GetCurrentAnimationBitmapAttributes());
 
   // Draw objects and platforms
   vector<Platform*>* platforms = world->GetPlatforms();

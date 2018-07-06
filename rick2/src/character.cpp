@@ -26,29 +26,71 @@ Character::Character() {
   face = RICK_DIR_RIGHT;
 }
 
-Character::Character(char* file) {
-  pugi::xml_parse_result result = character_file.load_file(file);
+Character::Character(const char* file) {
+  // REVISIT: most of this information should be read from the file
+  pos_x = 264;  // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
+  height = 20;  // REVISIT: should be 0
+  width  = 16;  // REVISIT: should be 0
+  height_orig = height;
+  width_orig = width;
+  height_internal = 3;
+  width_internal = 3;
+  state = RICK_STATE_STOP;
+  direction = RICK_DIR_STOP;
+  speed_x = HOR_SPEED_MAX;
+  speed_y = VERT_SPEED_MAX;
+  stepsInState = 0;
+  stepsInDirectionX = 0;
+  stepsInDirectionY = 0;
+  face = RICK_DIR_RIGHT;
 
+  pugi::xml_parse_result result = character_file.load_file(file);
   if(!result) {
-      printf("Error: loading character data\n");      
+      printf("Error: loading character data from file = %s, description = %s\n", file, result.description());
   }
 
+  // REVISIT: states are taking in order from the file. It would be better to find
+  // a way to insert them by id instead. However, giving an id to the xml
+  // state also requires synchronizing with the state id in the code.
+
+  printf("- Initializing player:\n");
   // Iterate over states
+  int num_anims = 0;
   for (pugi::xml_node state = character_file.child("character").child("states").first_child();
        state; state = state.next_sibling()) {
+    printf("State name = %s, id = %d\n", state.attribute("name").as_string(), state.attribute("id").as_int());
     // Create state
     pugi::xml_node animation = state.child("animation");
     // Create animation and attach to state
-
+    printf("\tAnimation %d: file = %s, speed = %d\n", num_anims, animation.attribute("bitmap").as_string(), animation.attribute("speed").as_int());
+    ALLEGRO_BITMAP* anim_bitmap = al_load_bitmap(animation.attribute("bitmap").as_string());
+    if (!anim_bitmap) {
+      printf("Error: failed to load animation bitmap\n");
+    }
+    Animation* player_anim = new Animation(anim_bitmap, animation.attribute("speed").as_int());
+    int num_sprites = 0;
     // Traverse all sprites in the animation
     for (pugi::xml_node sprite = animation.first_child(); sprite; sprite = sprite.next_sibling()) {
-
-    }    
+      printf("\t\tSprite %d: x = %d, y = %d, width = %d, height = %d\n", num_sprites,
+                                                                         sprite.attribute("x").as_int(),
+                                                                         sprite.attribute("y").as_int(),
+                                                                         sprite.attribute("width").as_int(),
+                                                                         sprite.attribute("height").as_int());
+      player_anim->AddSprite(sprite.attribute("x").as_int(),
+                             sprite.attribute("y").as_int(),
+                             sprite.attribute("width").as_int(),
+                             sprite.attribute("height").as_int());      
+    }
+    animations.push_back(player_anim);
   }  
 }
 
 // class destructor
-Character::~Character() {
+Character::~Character() {  
+  for(vector<Animation*>::iterator it = animations.begin(); it != animations.end(); ++it) {
+    delete (*it);
+  }
 }
 
 int Character::GetCorrectedPosX() {
@@ -363,7 +405,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   // Save current direction before computing next state and direction
   prevDirection = direction;
 
-  printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
+  //printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
 
   switch(state) {
     case RICK_STATE_STOP:
@@ -396,8 +438,8 @@ void Character::ComputeNextState(Keyboard& keyboard) {
             state = RICK_STATE_CLIMBING;
             direction = RICK_DIR_DOWN;
           } else {
-            height = height / 2;
-            pos_y = pos_y + height;
+            height = 15;                             // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
+            pos_y = pos_y + (height_orig - height);
             state = RICK_STATE_CROUCHING;
             direction = RICK_DIR_STOP;
           }
@@ -445,8 +487,8 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
     case RICK_STATE_CROUCHING:
       if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {
-        pos_y = pos_y - height;
-        height = height * 2;
+        pos_y = pos_y - (height_orig - height);
+        height = 20;                            // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
         state = RICK_STATE_STOP;
       }
 
@@ -631,4 +673,39 @@ void Character::ComputeNextSpeed() {
   }
 
   //printf("speed_y = %f\n", speed_y);
+}
+
+void Character::CharacterStep(World* map, Keyboard& keyboard) {
+  // Collisions with world and platforms
+  this->ComputeCollisions(map);
+  // Compute next state
+  this->ComputeNextState(keyboard);
+  // Compute next position
+  this->ComputeNextPosition(map);
+  // Re-calulate speed
+  this->ComputeNextSpeed();
+  // Compute next animation frame
+  if (direction == RICK_DIR_STOP)
+    animations[state]->ResetAnim();
+  else
+    animations[state]->AnimStep();
+}
+
+ALLEGRO_BITMAP* Character::GetCurrentAnimationBitmap() {
+  ALLEGRO_BITMAP* bitmap = animations[state]->source_bitmap;
+  // Set transparent color
+  al_convert_mask_to_alpha(bitmap, al_map_rgb(255,0,255));
+  sprite_ptr sprite = &(*animations[state]->sprites[animations[state]->GetCurrentAnim()]);
+  return al_create_sub_bitmap(bitmap,
+                              sprite->x,
+                              sprite->y,
+                              sprite->width,
+                              sprite->height);
+}
+
+int Character::GetCurrentAnimationBitmapAttributes() {
+  if (face == RICK_DIR_LEFT) {
+    return ALLEGRO_FLIP_HORIZONTAL;
+  }
+  return 0;
 }

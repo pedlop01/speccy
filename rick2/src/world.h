@@ -73,9 +73,9 @@ class World
         pugi::xml_document world_file;
         
 	public:		
-		World();                        // class constructor		
-    World(char *file, bool b);      // class constructor		
-		~World();                       // class destructor
+		World();                          // class constructor		
+    World(const char *file, bool b);  // class constructor		
+		~World();                         // class destructor
 		
         int   GetMapWidth()              { return map_width;            }
         int   GetMapHeight()             { return map_height;           }

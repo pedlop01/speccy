@@ -7,7 +7,7 @@ World::World()
 {
 }
 
-World::World(char *file, bool tileExtractedOption)
+World::World(const char *file, bool tileExtractedOption)
 {
   // REVISIT: need to read collision map
   char aux_file[100];

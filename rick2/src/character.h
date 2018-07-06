@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "keyboard.h"
 #include "colbox.h"
+#include "animation.h"
 
 // REVISIT: state will be provided from a file
 #define RICK_STATE_STOP      0
@@ -87,9 +88,12 @@ class Character {
 
     pugi::xml_document character_file;
 
+    // Animations
+    vector<Animation*> animations;
+
   public:    
 	  Character();    // class constructor
-    Character(char* file);    
+    Character(const char* file);    
 
     ~Character();   // class desructor
     
@@ -124,6 +128,11 @@ class Character {
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
     void ComputeNextSpeed();
+
+    void CharacterStep(World* map, Keyboard& keyboard);
+
+    ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
+    int GetCurrentAnimationBitmapAttributes();
 
   private:
     void FixHorizontalDirection(Keyboard& keyboard);
