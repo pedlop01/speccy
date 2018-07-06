@@ -29,6 +29,8 @@ class Platform : public Object {
 
     void PlatformStep();
 
+    int  GetDirection() { return direction; }
+
 };
 
 #endif // PLATFORM_H

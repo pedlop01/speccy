@@ -128,6 +128,7 @@ int main(int argc, char *argv[]) {
     if(delay < 20)
       Sleep(20 - delay);
 
+    // Move bitmap into display
     al_set_target_bitmap(al_get_backbuffer(display));
     al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
     al_flip_display();

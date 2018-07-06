@@ -566,9 +566,15 @@ void Character::ComputeNextPosition(World* map) {
   //printf("pos_x = %d, pos_y = %d, speed_x = %f, speed_y = %f\n", pos_x, pos_y, speed_x, speed_y);
 
   // First check if on platform
+  // REVISIT: platform should be revisited once they will be properly implemented
   if (inPlatform) {
     // Correct y to be on top of platform
     SetPosY(map, GetPosY() - (GetPosY() + GetHeight() - inPlatformPtr->GetY()), false);
+    if (inPlatformPtr->GetDirection() == PLATFORM_DIR_RIGHT) {
+      SetPosX(map, GetPosX() + 1);
+    } else if (inPlatformPtr->GetDirection() == PLATFORM_DIR_LEFT) {
+      SetPosX(map, GetPosX() - 1);
+    }
   }
 
   switch(state) {
