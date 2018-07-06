@@ -131,6 +131,46 @@ World::~World()
   }
 }
 
+int World::GetMapWidth() {
+   return map_width;
+}
+
+int World::GetMapHeight() {
+  return map_height;
+}
+
+int World::GetTilesetWidth() {
+  return tileset_width;
+}
+
+int World::GetTilesetHeight() {
+  return tileset_height;
+}
+
+int World::GetTilesetCount() {
+  return tileset_count;
+}
+
+int World::GetTilesetColumns() {
+  return tileset_columns;
+}
+
+int World::GetTilesetTileWidth() {
+  return tileset_tile_width;
+}
+
+int World::GetTilesetTileHeight() {
+  return tileset_tile_height;
+}
+
+Tile* World::GetTile(int x, int y) {
+  return world_tiles[x][y];
+}
+
+int World::GetTileValue(int x, int y) {
+  return world_tiles[x][y]->GetValue();
+}
+
 int World::GetTileValueByCoord(int x, int y)
 {
   int tile_x = x / tileset_tile_width;

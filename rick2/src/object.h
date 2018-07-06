@@ -21,7 +21,7 @@
 #define OBJ_DIR_UP    0b0100
 #define OBJ_DIR_DOWN  0b1000
 
-// Pre-declaration
+// Forward declaration
 class World;
 
 class Object {
@@ -73,6 +73,10 @@ class Object {
     void SetVisible(bool _visible) { visible = _visible;  };
     void SetActive(bool _active)   { active = _active;    };
 
+    // Differ from previous than this ones take into account the world collisions
+    void SetX(World* map, int _x);
+    void SetY(World* map, int _y);
+
     int GetId()       { return id;      }
     int GetX()        { return x;       };
     int GetY()        { return y;       };
@@ -111,6 +115,10 @@ class Object {
     void ComputeNextSpeed();
 
     void ObjectStep(World* map);
+
+  private:
+    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
+    void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
 };
 
 #endif // OBJECT_H

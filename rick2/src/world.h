@@ -11,6 +11,7 @@
 
 #include "pugixml.hpp"
 #include "rick_params.h"
+#include "object.h"
 #include "platform.h"
 
 using namespace std;
@@ -77,17 +78,17 @@ class World
     World(const char *file, bool b);  // class constructor		
 		~World();                         // class destructor
 		
-        int   GetMapWidth()              { return map_width;            }
-        int   GetMapHeight()             { return map_height;           }
-        int   GetTilesetWidth()          { return tileset_width;        }
-        int   GetTilesetHeight()         { return tileset_height;       }
-        int   GetTilesetCount()          { return tileset_count;        }
-        int   GetTilesetColumns()        { return tileset_columns;      }
-        int   GetTilesetTileWidth()      { return tileset_tile_width;   }
-        int   GetTilesetTileHeight()     { return tileset_tile_height;  }
+        int   GetMapWidth();
+        int   GetMapHeight();
+        int   GetTilesetWidth();
+        int   GetTilesetHeight();
+        int   GetTilesetCount();
+        int   GetTilesetColumns();
+        int   GetTilesetTileWidth();
+        int   GetTilesetTileHeight();
 
-   	    Tile* GetTile(int x, int y)      { return world_tiles[x][y]; }
-        int   GetTileValue(int x, int y) { return world_tiles[x][y]->GetValue(); }
+        Tile* GetTile(int x, int y);
+        int   GetTileValue(int x, int y);
 		
 		    ALLEGRO_BITMAP* GetWorldImage()  { return world_image;     }
 		
