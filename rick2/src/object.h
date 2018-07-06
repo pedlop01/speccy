@@ -37,12 +37,13 @@ class Object {
     bool active;
 
     // State variables
-    int prevState;
+    int prev_state;
     int state;
     int steps_in_state;
 
     // Movement variables
     int   direction;
+    int   prev_direction;
     int   face;
     float speed_x;
     float speed_x_step;
@@ -58,13 +59,30 @@ class Object {
     // Collisions
     Colbox extColExt;  // Collision with world
 
+    pugi::xml_document obj_file;
     vector<Animation*> animations;
 
   public:
 
     Object();
-    Object(int _x, int _y, int _width, int _height, bool _visible, bool _active);
+    Object(int _x, int _y, int _width, int _height, int _visible, int _active);
     ~Object();
+
+    void Init(const char* file,
+              int _x,
+              int _y,
+              int _width,
+              int _height,
+              bool _visible,
+              bool _active,
+              int _state,
+              int _direction,
+              float _speed_x_step,
+              float _speed_x_max,
+              float _speed_x_min,
+              float _speed_y_step,
+              float _speed_y_max,
+              float _speed_y_min);
 
     void SetX(int _x)              { x = _x;              };
     void SetY(int _y)              { y = _y;              };
@@ -93,18 +111,14 @@ class Object {
     void SetSpeedYMax(float _speed_y_max)   { speed_y_max = _speed_y_max;   };
     void SetSpeedYMin(float _speed_y_min)   { speed_y_min = _speed_y_min;   };
     void SetSpeedYStep(float _speed_y_step) { speed_y_step = _speed_y_step; };
-    void SetSpeeds(float _speed_x,
-                   float _speed_x_max,
+    void SetSpeeds(float _speed_x_max,
                    float _speed_x_min,
-                   float _speed_x_step,
-                   float _speed_y,
+                   float _speed_x_step,                   
                    float _speed_y_max,
                    float _speed_y_min,
-                   float _speed_y_step)     { speed_x = _speed_x;
-                                              speed_x_max = _speed_x_max;
+                   float _speed_y_step)     { speed_x_max = _speed_x_max;
                                               speed_x_min = _speed_x_min;
                                               speed_x_step = _speed_x_step;
-                                              speed_y = _speed_y;
                                               speed_y_max = _speed_y_max;
                                               speed_y_min = _speed_y_min;
                                               speed_y_step = _speed_y_step; };
@@ -115,6 +129,9 @@ class Object {
     void ComputeNextSpeed();
 
     void ObjectStep(World* map);
+
+    ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
+    int GetCurrentAnimationBitmapAttributes();
 
   private:
     void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);

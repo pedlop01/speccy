@@ -185,6 +185,15 @@ void Camera::DrawScreen(World* world, Character* player) {
                              al_map_rgb(0xFF, 0xFF, 0xFF));
   }
 
+  vector<Object*>* objects = world->GetObjects();
+  for (vector<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+    Object* object = *it;
+    al_draw_bitmap(object->GetCurrentAnimationBitmap(),
+                   object->GetX() - GetPosX(),
+                   object->GetY() - GetPosY(),
+                   object->GetCurrentAnimationBitmapAttributes());
+  }
+
   // Move camera to screen
   al_set_target_bitmap(screen);
   al_draw_scaled_bitmap(camera_bitmap,

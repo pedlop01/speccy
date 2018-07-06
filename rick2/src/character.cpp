@@ -83,7 +83,7 @@ Character::Character(const char* file) {
                              sprite.attribute("height").as_int());      
     }
     animations.push_back(player_anim);
-  }  
+  }
 }
 
 // class destructor

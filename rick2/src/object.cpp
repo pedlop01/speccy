@@ -15,10 +15,16 @@ Object::Object() {
   steps_in_direction_x = 0;
   steps_in_direction_y = 0;
 
+  state = OBJ_STATE_STOP;
+  prev_state = state;
+
+  direction = OBJ_DIR_STOP;
+  face = OBJ_DIR_RIGHT;
+
   id++;
 }
 
-Object::Object(int _x, int _y, int _width, int _height, bool _visible, bool _active) {
+Object::Object(int _x, int _y, int _width, int _height, int _visible, int _active) {
   x       = _x;
   y       = _y;
   width   = _width;
@@ -30,10 +36,92 @@ Object::Object(int _x, int _y, int _width, int _height, bool _visible, bool _act
   steps_in_direction_x = 0;
   steps_in_direction_y = 0;
 
+  state = OBJ_STATE_STOP;
+  prev_state = state;
+
+  direction = OBJ_DIR_STOP;
+  face = OBJ_DIR_RIGHT;
+
   id++;
 }
 
 Object::~Object() {
+}
+
+void Object::Init(const char* file,
+                  int _x,
+                  int _y,
+                  int _width,
+                  int _height,
+                  bool _visible,
+                  bool _active,
+                  int _state,
+                  int _direction,
+                  float _speed_x_step,
+                  float _speed_x_max,
+                  float _speed_x_min,
+                  float _speed_y_step,
+                  float _speed_y_max,
+                  float _speed_y_min) {
+  id++;
+
+  x       = _x;
+  y       = _y;
+  width   = _width;
+  height  = _height;
+  visible = _visible;
+  active  = _active;
+
+  steps_in_state = 0;
+  steps_in_direction_x = 0;
+  steps_in_direction_y = 0;
+
+  state = _state;
+  prev_state = state;
+
+  direction = _direction;
+  face = OBJ_DIR_RIGHT;
+
+  this->SetSpeeds(_speed_x_max, _speed_x_min, _speed_x_step,
+                  _speed_y_max, _speed_y_min, _speed_y_step);
+
+  // Read animations
+  pugi::xml_parse_result result = obj_file.load_file(file);
+  if(!result) {
+      printf("Error: loading character data from file = %s, description = %s\n", file, result.description());
+  }
+
+  printf("- Initializing object:\n");
+  // Iterate over states
+  int num_anims = 0;
+  for (pugi::xml_node state = obj_file.child("object").child("states").first_child();
+       state; state = state.next_sibling()) {
+    printf("State name = %s, id = %d\n", state.attribute("name").as_string(), state.attribute("id").as_int());
+    // Create state
+    pugi::xml_node animation = state.child("animation");
+    // Create animation and attach to state
+    printf("\tAnimation %d: file = %s, speed = %d\n", num_anims, animation.attribute("bitmap").as_string(), animation.attribute("speed").as_int());
+    ALLEGRO_BITMAP* obj_bitmap = al_load_bitmap(animation.attribute("bitmap").as_string());
+    if (!obj_bitmap) {
+      printf("Error: failed to load animation bitmap\n");
+    }
+    Animation* obj_anim = new Animation(obj_bitmap, animation.attribute("speed").as_int());
+    int num_sprites = 0;
+    // Traverse all sprites in the animation
+    for (pugi::xml_node sprite = animation.first_child(); sprite; sprite = sprite.next_sibling()) {
+      printf("\t\tSprite %d: x = %d, y = %d, width = %d, height = %d\n", num_sprites,
+                                                                         sprite.attribute("x").as_int(),
+                                                                         sprite.attribute("y").as_int(),
+                                                                         sprite.attribute("width").as_int(),
+                                                                         sprite.attribute("height").as_int());
+      obj_anim->AddSprite(sprite.attribute("x").as_int(),
+                          sprite.attribute("y").as_int(),
+                          sprite.attribute("width").as_int(),
+                          sprite.attribute("height").as_int());      
+    }
+    animations.push_back(obj_anim);
+  }
+
 }
 
 void Object::SetX(World* map, int _x) {
@@ -144,6 +232,13 @@ void Object::ComputeNextState() {
   inAir = ((extColExt.GetLeftDownCol() == 0) &&
            (extColExt.GetRightDownCol() == 0));
 
+  //printf("[OBJ] ComputeNextState: state = %d direction  = %d\n", state, direction);
+
+  // Save current state before computing next state
+  prev_state = state;
+  // Save current direction before computing next state and direction
+  prev_direction = direction;
+
   // Object implements simple states based on world collisions
   // Derivate classes should re-implement this function for more complex behaviour
   switch(state) {
@@ -162,6 +257,30 @@ void Object::ComputeNextState() {
 
     default:
       break;
+  }
+
+  // Increment steps in state if no change in state
+  if (prev_state == state)
+    steps_in_state++;
+  else
+    steps_in_state = 0;
+
+  if ((prev_direction == direction)) { 
+    if ((direction == OBJ_DIR_LEFT) || (direction == OBJ_DIR_RIGHT)) {      
+      steps_in_direction_x++;
+    } else {
+      steps_in_direction_y++;
+    }
+  } else {
+    steps_in_direction_x = 0;
+    steps_in_direction_y = 0;
+  }
+
+  // keep last direction in face
+  if (direction & OBJ_DIR_LEFT) {
+    face = OBJ_DIR_LEFT ;
+  } else if (direction & OBJ_DIR_RIGHT) {
+    face = OBJ_DIR_RIGHT;
   }
 
 }
@@ -231,4 +350,23 @@ void Object::ObjectStep(World* map) {
   this->ComputeNextState();
   this->ComputeNextPosition(map);
   this->ComputeNextSpeed();
+}
+
+ALLEGRO_BITMAP* Object::GetCurrentAnimationBitmap() {
+  ALLEGRO_BITMAP* bitmap = animations[state]->source_bitmap;
+  // Set transparent color
+  al_convert_mask_to_alpha(bitmap, al_map_rgb(255,0,255));  
+  sprite_ptr sprite = &(*animations[state]->sprites[animations[state]->GetCurrentAnim()]);
+  return al_create_sub_bitmap(bitmap,
+                              sprite->x,
+                              sprite->y,
+                              sprite->width,
+                              sprite->height);
+}
+
+int Object::GetCurrentAnimationBitmapAttributes() {
+  if (face == OBJ_DIR_LEFT) {
+    return ALLEGRO_FLIP_HORIZONTAL;
+  }
+  return 0;
 }

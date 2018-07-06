@@ -1,0 +1,10 @@
+804, 1720, 24, 8, true, true, PLATFORM_DIR_UP,    10*8  
+548, 1368, 24, 8, true, true, PLATFORM_DIR_DOWN,  14*8
+450, 1696, 24, 8, true, true, PLATFORM_DIR_LEFT,  20*8
+300, 1696, 24, 8, true, true, PLATFORM_DIR_RIGHT, 20*8
+972,  992, 24, 8, true, true, PLATFORM_DIR_LEFT,   6*8
+708, 1200, 24, 8, true, true, PLATFORM_DIR_UP,    12*8
+288, 1640, 24, 8, true, true, PLATFORM_DIR_UP,    10*8
+452, 1568, 24, 8, true, true, PLATFORM_DIR_UP,    13*8
+484, 1320, 24, 8, true, true, PLATFORM_DIR_UP,    13*8
+388, 1048, 24, 8, true, true, PLATFORM_DIR_UP,    12*8

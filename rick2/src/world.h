@@ -69,6 +69,8 @@ class World
         // Platforms belonging to this level
         vector<Platform*> platforms;
 
+        vector<Object*> objects;
+
         ALLEGRO_BITMAP* world_image;
 
         pugi::xml_document world_file;
@@ -96,6 +98,7 @@ class World
         Tile* GetTileByCoord(int x, int y);
 
         vector<Platform*>* GetPlatforms() { return &platforms; }
+        vector<Object*>*   GetObjects()   { return &objects; }
 
         void  WorldStep();
 

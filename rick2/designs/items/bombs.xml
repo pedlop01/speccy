@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="bombs">
+  <states>
+    <state name="OBJ_STATE_STOP" id="0">
+      <animation bitmap="../designs/items/items.png" speed="0">
+        <sprite x="43" y="1" width="20" height="18">
+        </sprite>
+      </animation>
+    </state>
+  </states>
+</object>
