@@ -89,16 +89,16 @@ World::World(const char *file, bool tileExtractedOption)
 
   // Read platforms
   // REVISIT: need to be read from file! refactor reading of map too!
-  Platform* platform1 = new Platform(804, 1720, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);
-  Platform* platform2 = new Platform(548, 1368, 24, 8, true, true, PLATFORM_DIR_DOWN,  14*8);
-  Platform* platform3 = new Platform(450, 1696, 24, 8, true, true, PLATFORM_DIR_LEFT,  20*8);
-  Platform* platform4 = new Platform(300, 1696, 24, 8, true, true, PLATFORM_DIR_RIGHT, 20*8);
-  Platform* platform5 = new Platform(972,  992, 24, 8, true, true, PLATFORM_DIR_LEFT,   6*8);
-  Platform* platform6 = new Platform(708, 1200, 24, 8, true, true, PLATFORM_DIR_UP,    12*8);
-  Platform* platform7 = new Platform(288, 1640, 24, 8, true, true, PLATFORM_DIR_UP,    10*8);
-  Platform* platform8 = new Platform(452, 1568, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
-  Platform* platform9 = new Platform(484, 1320, 24, 8, true, true, PLATFORM_DIR_UP,    13*8);
-  Platform* platform10 = new Platform(388, 1048, 24, 8, true, true, PLATFORM_DIR_UP,   12*8);
+  Platform* platform1 = new Platform(804, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
+  Platform* platform2 = new Platform(548, 1368, 24, 8, true, true, OBJ_DIR_DOWN,  14*8);
+  Platform* platform3 = new Platform(450, 1696, 24, 8, true, true, OBJ_DIR_LEFT,  20*8);
+  Platform* platform4 = new Platform(300, 1696, 24, 8, true, true, OBJ_DIR_RIGHT, 20*8);
+  Platform* platform5 = new Platform(972,  992, 24, 8, true, true, OBJ_DIR_LEFT,   6*8);
+  Platform* platform6 = new Platform(708, 1200, 24, 8, true, true, OBJ_DIR_UP,    12*8);
+  Platform* platform7 = new Platform(288, 1640, 24, 8, true, true, OBJ_DIR_UP,    10*8);
+  Platform* platform8 = new Platform(452, 1568, 24, 8, true, true, OBJ_DIR_UP,    13*8);
+  Platform* platform9 = new Platform(484, 1320, 24, 8, true, true, OBJ_DIR_UP,    13*8);
+  Platform* platform10 = new Platform(388, 1048, 24, 8, true, true, OBJ_DIR_UP,   12*8);
   platforms.push_back(platform1);
   platforms.push_back(platform2);
   platforms.push_back(platform3);

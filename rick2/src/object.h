@@ -6,6 +6,23 @@
 
 #include "rick_params.h"
 #include "pugixml.hpp"
+#include "animation.h"
+#include "colbox.h"
+
+// Object states
+#define OBJ_STATE_STOP   0
+#define OBJ_STATE_MOVING 1
+#define OBJ_STATE_DYING  2
+
+// Object directions
+#define OBJ_DIR_STOP  0b0000
+#define OBJ_DIR_RIGHT 0b0001
+#define OBJ_DIR_LEFT  0b0010
+#define OBJ_DIR_UP    0b0100
+#define OBJ_DIR_DOWN  0b1000
+
+// Pre-declaration
+class World;
 
 class Object {
   protected:
@@ -18,6 +35,30 @@ class Object {
 
     bool visible;
     bool active;
+
+    // State variables
+    int prevState;
+    int state;
+    int steps_in_state;
+
+    // Movement variables
+    int   direction;
+    int   face;
+    float speed_x;
+    float speed_x_step;
+    float speed_x_max;
+    float speed_x_min;
+    float speed_y;
+    float speed_y_max;
+    float speed_y_min;
+    float speed_y_step;
+    int   steps_in_direction_x;
+    int   steps_in_direction_y;
+
+    // Collisions
+    Colbox extColExt;  // Collision with world
+
+    vector<Animation*> animations;
 
   public:
 
@@ -39,6 +80,37 @@ class Object {
     int GetHeight()   { return height;  };
     bool GetVisible() { return visible; };
     bool GetActive()  { return active;  };
+
+    void SetSpeedX(float _speed_x)          { speed_x = _speed_x;           };
+    void SetSpeedXMax(float _speed_x_max)   { speed_x_max = _speed_x_max;   };
+    void SetSpeedXMin(float _speed_x_min)   { speed_x_min = _speed_x_min;   };
+    void SetSpeedXStep(float _speed_x_step) { speed_x_step = _speed_x_step; };
+    void SetSpeedY(float _speed_y)          { speed_y = _speed_y;           };
+    void SetSpeedYMax(float _speed_y_max)   { speed_y_max = _speed_y_max;   };
+    void SetSpeedYMin(float _speed_y_min)   { speed_y_min = _speed_y_min;   };
+    void SetSpeedYStep(float _speed_y_step) { speed_y_step = _speed_y_step; };
+    void SetSpeeds(float _speed_x,
+                   float _speed_x_max,
+                   float _speed_x_min,
+                   float _speed_x_step,
+                   float _speed_y,
+                   float _speed_y_max,
+                   float _speed_y_min,
+                   float _speed_y_step)     { speed_x = _speed_x;
+                                              speed_x_max = _speed_x_max;
+                                              speed_x_min = _speed_x_min;
+                                              speed_x_step = _speed_x_step;
+                                              speed_y = _speed_y;
+                                              speed_y_max = _speed_y_max;
+                                              speed_y_min = _speed_y_min;
+                                              speed_y_step = _speed_y_step; };
+
+    void ComputeCollisions(World* map);
+    void ComputeNextState();
+    void ComputeNextPosition(World* map);
+    void ComputeNextSpeed();
+
+    void ObjectStep(World* map);
 };
 
 #endif // OBJECT_H

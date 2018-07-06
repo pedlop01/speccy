@@ -27,35 +27,35 @@ Platform::~Platform() {
 
 void Platform::PlatformStep() {
 
-  if (direction == PLATFORM_DIR_UP) {
+  if (direction == OBJ_DIR_UP) {
     if (abs(y - start_y) < displacement) {
       y--;
     } else {
       start_y = start_y - displacement;
-      direction = PLATFORM_DIR_DOWN;
+      direction = OBJ_DIR_DOWN;
     }
-  } else if (direction == PLATFORM_DIR_DOWN) {
+  } else if (direction == OBJ_DIR_DOWN) {
     if (abs(y - start_y) < displacement) {
       y++;
     } else {
       start_y = start_y + displacement;
-      direction = PLATFORM_DIR_UP;
+      direction = OBJ_DIR_UP;
     }
   }
 
-  if (direction == PLATFORM_DIR_LEFT) {
+  if (direction == OBJ_DIR_LEFT) {
     if (abs(x - start_x) < displacement) {
       x--;
     } else {
       start_x = start_x - displacement;
-      direction = PLATFORM_DIR_RIGHT;
+      direction = OBJ_DIR_RIGHT;
     }
-  } else if (direction == PLATFORM_DIR_RIGHT) {
+  } else if (direction == OBJ_DIR_RIGHT) {
     if (abs(x - start_x) < displacement) {
       x++;
     } else {
       start_x = start_x + displacement;
-      direction = PLATFORM_DIR_LEFT;
+      direction = OBJ_DIR_LEFT;
     }
   }
 }

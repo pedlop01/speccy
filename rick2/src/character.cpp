@@ -570,9 +570,9 @@ void Character::ComputeNextPosition(World* map) {
   if (inPlatform) {
     // Correct y to be on top of platform
     SetPosY(map, GetPosY() - (GetPosY() + GetHeight() - inPlatformPtr->GetY()), false);
-    if (inPlatformPtr->GetDirection() == PLATFORM_DIR_RIGHT) {
+    if (inPlatformPtr->GetDirection() == OBJ_DIR_RIGHT) {
       SetPosX(map, GetPosX() + 1);
-    } else if (inPlatformPtr->GetDirection() == PLATFORM_DIR_LEFT) {
+    } else if (inPlatformPtr->GetDirection() == OBJ_DIR_LEFT) {
       SetPosX(map, GetPosX() - 1);
     }
   }
