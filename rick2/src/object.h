@@ -9,10 +9,20 @@
 #include "animation.h"
 #include "colbox.h"
 
+// Object types
+#define OBJ_NONE         0
+#define OBJ_PLATFORM     1
+#define OBJ_ITEM         2
+#define OBJ_SHOOT        3
+#define OBJ_BOMB         4
+#define OBJ_HAZARD       5
+#define OBJ_BLOCK        6
+
 // Object states
 #define OBJ_STATE_STOP   0
 #define OBJ_STATE_MOVING 1
 #define OBJ_STATE_DYING  2
+#define OBJ_STATE_DEAD   3
 
 // Object directions
 #define OBJ_DIR_STOP  0b0000
@@ -27,6 +37,8 @@ class World;
 class Object {
   protected:
     static int id;
+
+    int type;
 
     int x;
     int y;
@@ -67,6 +79,8 @@ class Object {
     Object();
     Object(int _x, int _y, int _width, int _height, int _visible, int _active);
     ~Object();
+
+    int GetType() { return type; }
 
     void Init(const char* file,
               int _x,
