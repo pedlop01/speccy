@@ -24,6 +24,8 @@ Character::Character() {
   stepsInDirectionY = 0;
 
   face = RICK_DIR_RIGHT;
+
+  inPlatform = false;
 }
 
 Character::Character(const char* file) {
@@ -44,6 +46,7 @@ Character::Character(const char* file) {
   stepsInDirectionX = 0;
   stepsInDirectionY = 0;
   face = RICK_DIR_RIGHT;
+  inPlatform = false;
 
   pugi::xml_parse_result result = character_file.load_file(file);
   if(!result) {
@@ -695,6 +698,7 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
     animations[state]->ResetAnim();
   else
     animations[state]->AnimStep();
+
 }
 
 ALLEGRO_BITMAP* Character::GetCurrentAnimationBitmap() {
