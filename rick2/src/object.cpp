@@ -1,5 +1,6 @@
 #include "object.h"
 #include "world.h"
+#include "character.h"
 
 int Object::id = 0;
 
@@ -21,6 +22,10 @@ Object::Object() {
   direction = OBJ_DIR_STOP;
   face = OBJ_DIR_RIGHT;
 
+  obj_type = OBJ_NONE;
+
+  obj_id = id;
+  printf("created obj id = %d\n", obj_id);
   id++;
 }
 
@@ -42,6 +47,10 @@ Object::Object(int _x, int _y, int _width, int _height, int _visible, int _activ
   direction = OBJ_DIR_STOP;
   face = OBJ_DIR_RIGHT;
 
+  obj_type = OBJ_NONE;
+
+  obj_id = id;
+  printf("created obj id = %d\n", obj_id);
   id++;
 }
 
@@ -63,8 +72,6 @@ void Object::Init(const char* file,
                   float _speed_y_step,
                   float _speed_y_max,
                   float _speed_y_min) {
-  id++;
-
   x       = _x;
   y       = _y;
   width   = _width;
@@ -117,9 +124,11 @@ void Object::Init(const char* file,
       obj_anim->AddSprite(sprite.attribute("x").as_int(),
                           sprite.attribute("y").as_int(),
                           sprite.attribute("width").as_int(),
-                          sprite.attribute("height").as_int());      
+                          sprite.attribute("height").as_int());
+      num_sprites++;
     }
     animations.push_back(obj_anim);
+    num_anims++;
   }
 
 }
@@ -221,9 +230,34 @@ void Object::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
                               height + 1);
 }
 
-void Object::ComputeCollisions(World* map) {
+void Object::ComputeCollisions(World* map, Character* player) {
   // Check collisions with world
   this->GetCollisionsExternalBoxExt(map, extColExt);
+
+  // Check collisions with player
+  playerCol = ((player->GetPosX() >= x) &&
+               (player->GetPosX() <= (x + width)) &&
+               (player->GetPosY() >= y) &&
+               (player->GetPosY() <= (y + height))) ||
+
+              (((player->GetPosX() + player->GetWidth()) >= x) &&
+               ((player->GetPosX() + player->GetWidth()) <= x + width) &&
+               (player->GetPosY() >= y) &&
+               (player->GetPosY() <= y + height)) ||
+
+              ((player->GetPosX() >= x) &&
+               (player->GetPosX() <= (x + width)) &&
+               ((player->GetPosY() + player->GetHeight()) >= y) &&
+               ((player->GetPosY() + player->GetHeight()) <= (y + height))) ||
+
+              (((player->GetPosX() + player->GetWidth()) >= x) &&
+               ((player->GetPosX() + player->GetWidth()) <= (x + width)) &&
+               ((player->GetPosY() + player->GetHeight()) >= y) &&
+               ((player->GetPosY() + player->GetHeight()) <= (y + height)));
+
+//  if (playerCol)
+//    printf("Player colliding with obj = %d\n", obj_id);
+
 }
 
 void Object::ComputeNextState() {
@@ -345,8 +379,8 @@ void Object::ComputeNextSpeed() {
   }
 }
 
-void Object::ObjectStep(World* map) {
-  this->ComputeCollisions(map);
+void Object::ObjectStep(World* map, Character* player) {
+  this->ComputeCollisions(map, player);
   this->ComputeNextState();
   this->ComputeNextPosition(map);
   this->ComputeNextSpeed();

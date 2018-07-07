@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     if(keyboard.PressedESC())   { return 0; }
 
     // Perform an step of all elements belonging to the world level
-    map_level1->WorldStep();
+    map_level1->WorldStep(player);
 
     // Handle player
     player->CharacterStep(map_level1, keyboard);

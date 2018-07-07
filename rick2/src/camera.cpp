@@ -168,11 +168,24 @@ void Camera::DrawScreen(World* world, Character* player) {
                     player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
                     al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
-  // Player bitmap  
-  al_draw_bitmap(player->GetCurrentAnimationBitmap(),
+  // Player bitmap
+  ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
+  al_draw_bitmap(player_bitmap,
                  player->GetPosX() - GetPosX(),
                  player->GetPosY() - GetPosY(),
                  player->GetCurrentAnimationBitmapAttributes());
+  al_destroy_bitmap(player_bitmap);
+
+  vector<Object*>* objects = world->GetObjects();
+  for (vector<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+    Object* object = *it;
+    ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+    al_draw_bitmap(object_sprite,
+                   object->GetX() - GetPosX(),
+                   object->GetY() - GetPosY(),
+                   object->GetCurrentAnimationBitmapAttributes());
+    al_destroy_bitmap(object_sprite);
+  }
 
   // Draw objects and platforms
   vector<Platform*>* platforms = world->GetPlatforms();
@@ -183,15 +196,6 @@ void Camera::DrawScreen(World* world, Character* player) {
                              platform->GetX() + platform->GetWidth() - GetPosX() - 1,
                              platform->GetY() + platform->GetHeight() - GetPosY() - 1,
                              al_map_rgb(0xFF, 0xFF, 0xFF));
-  }
-
-  vector<Object*>* objects = world->GetObjects();
-  for (vector<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
-    Object* object = *it;
-    al_draw_bitmap(object->GetCurrentAnimationBitmap(),
-                   object->GetX() - GetPosX(),
-                   object->GetY() - GetPosY(),
-                   object->GetCurrentAnimationBitmapAttributes());
   }
 
   // Move camera to screen

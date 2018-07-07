@@ -33,17 +33,18 @@
 
 // Forward declaration
 class World;
+class Character;
 
 class Object {
   protected:
     static int id;
 
-    int type;
-
     int x;
     int y;
     int width;
     int height;
+
+    int obj_id;
 
     bool visible;
     bool active;
@@ -66,13 +67,17 @@ class Object {
     float speed_y_min;
     float speed_y_step;
     int   steps_in_direction_x;
-    int   steps_in_direction_y;
+    int   steps_in_direction_y;    
+
+    int obj_type;
 
     // Collisions
     Colbox extColExt;  // Collision with world
+    bool playerCol;
+
+    vector<Animation*> animations;
 
     pugi::xml_document obj_file;
-    vector<Animation*> animations;
 
   public:
 
@@ -80,7 +85,7 @@ class Object {
     Object(int _x, int _y, int _width, int _height, int _visible, int _active);
     ~Object();
 
-    int GetType() { return type; }
+    int GetType() { return obj_type; }
 
     void Init(const char* file,
               int _x,
@@ -137,12 +142,12 @@ class Object {
                                               speed_y_min = _speed_y_min;
                                               speed_y_step = _speed_y_step; };
 
-    void ComputeCollisions(World* map);
+    void ComputeCollisions(World* map, Character* player);
     void ComputeNextState();
     void ComputeNextPosition(World* map);
     void ComputeNextSpeed();
 
-    void ObjectStep(World* map);
+    void ObjectStep(World* map, Character* player);
 
     ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
     int GetCurrentAnimationBitmapAttributes();

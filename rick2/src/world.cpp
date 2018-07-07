@@ -113,9 +113,9 @@ World::World(const char *file, bool tileExtractedOption)
   // REVISIT: adding objects manually
   Object* object1 = new Object();
   object1->Init("../designs/items/shoots.xml", 350, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.1, 3.0, 1.0);
-  Object* object2 = new Object();
-  object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);  
   objects.push_back(object1);
+  Object* object2 = new Object();
+  object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);    
   objects.push_back(object2);
 }
 
@@ -198,13 +198,13 @@ Tile* World::GetTileByCoord(int x, int y)
   return world_tiles[tile_x][tile_y];
 }
 
-void World::WorldStep() {
+void World::WorldStep(Character* player) {
   // Perform an step of all elements belonging to the world level
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
       (*it)->PlatformStep();
   }
 
   for (vector<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
-      (*it)->ObjectStep(this);
-  }  
+    (*it)->ObjectStep(this, player);
+  }
 }

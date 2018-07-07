@@ -11,6 +11,7 @@
 
 #include "pugixml.hpp"
 #include "rick_params.h"
+#include "character.h"
 #include "object.h"
 #include "platform.h"
 
@@ -100,7 +101,7 @@ class World
         vector<Platform*>* GetPlatforms() { return &platforms; }
         vector<Object*>*   GetObjects()   { return &objects; }
 
-        void  WorldStep();
+        void  WorldStep(Character* player);
 
     private:
             
