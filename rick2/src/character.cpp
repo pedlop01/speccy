@@ -40,8 +40,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 350;  // REVISIT: should be 0
-  pos_y = 1440; // REVISIT: should be 0
+  pos_x = 264;  // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
   height = 20;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
