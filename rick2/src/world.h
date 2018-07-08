@@ -7,7 +7,8 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <tgmath.h>
+#include <list>
+#include <math.h>
 #include <iostream>
 
 #include "pugixml.hpp"

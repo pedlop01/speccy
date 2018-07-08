@@ -74,7 +74,7 @@ World::World(const char *file, bool tileExtractedOption)
     world_tiles[x][y]->SetValue(tile_id);
     world_tiles[x][y]->SetType(tile_prop);
     world_tiles[x][y]->SetLeftUpX((tile_id % tileset_columns) * tileset_width);
-    world_tiles[x][y]->SetLeftUpY(ceil((tile_id/tileset_columns))*tileset_height);
+    world_tiles[x][y]->SetLeftUpY(ceil(tile_id/tileset_columns)*tileset_height);
     world_tiles[x][y]->SetRightDownX((tile_id % tileset_columns) * tileset_width + tileset_width);
     world_tiles[x][y]->SetRightDownY(ceil((tile_id/tileset_columns))*tileset_height + tileset_height);
     if (x == (map_width - 1)) {

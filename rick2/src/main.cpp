@@ -1,4 +1,6 @@
+#ifdef __WIN32
 #include <windows.h>
+#endif
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -124,9 +126,13 @@ int main(int argc, char *argv[]) {
     camera.DrawScreen(map_level1, player);
 
     // Check counter value for adding waiting time
-    double delay = ((double)timer.GetCounter());
+    double delay = timer.GetCounter();
     if(delay < 20)
+#ifdef __WIN32
       Sleep(20 - delay);
+#else
+      sleep(0.00002 - delay);
+#endif
 
     // Move bitmap into display
     al_set_target_bitmap(al_get_backbuffer(display));
