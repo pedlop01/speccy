@@ -211,7 +211,7 @@ void World::WorldStep(Character* player) {
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
     Object* object = *it;
     if (object->GetState() == OBJ_STATE_DEAD) {
-      printf("Object dead %d\n", object->GetId());
+      printf("[WorldStep] Object dead %d\n", object->GetId());
       switch (object->GetType()) {
         case OBJ_ITEM:
           delete ((Item*)object);
@@ -220,7 +220,8 @@ void World::WorldStep(Character* player) {
           printf("[WARNING] Unknown object type to be deleted in World!\n");
           break;
       }
-      objects.erase(it);                            // Remove element if it is dead.
+      it = objects.erase(it);                            // Remove element if it is dead.
+      printf("[WorldStep] Removed object from object list\n");
     } else if (object->GetActive()) {
       //printf("Object active id = %d, type = %d\n", object->GetId(), object->GetType());
       switch (object->GetType()) {
@@ -237,4 +238,5 @@ void World::WorldStep(Character* player) {
       printf("Object inactive %d\n", object->GetId());
     }
   }
+  printf("[WorldStep] End function\n");
 }

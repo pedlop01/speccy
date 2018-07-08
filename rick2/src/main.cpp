@@ -118,12 +118,16 @@ int main(int argc, char *argv[]) {
     if(keyboard.PressedESC())   { return 0; }
 
     // Perform an step of all elements belonging to the world level
+    printf("[Main] World step\n");
     map_level1->WorldStep(player);
 
     // Handle player
+    printf("[Main] Calling player step\n");
     player->CharacterStep(map_level1, keyboard);
 
+    printf("[Main] Camera position\n");
     camera.PositionBasedOnPlayer(player);
+    printf("[Main] Camera draw screen\n");
     camera.DrawScreen(map_level1, player);
 
     // Check counter value for adding waiting time
