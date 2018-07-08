@@ -218,7 +218,7 @@ void World::WorldStep(Character* player) {
       }
       objects.erase(it);                            // Remove element if it is dead.
     } else if (object->GetActive()) {
-      printf("Object active id = %d, type = %d\n", object->GetId(), object->GetType());
+      //printf("Object active id = %d, type = %d\n", object->GetId(), object->GetType());
       switch (object->GetType()) {
         case OBJ_ITEM:
           ((Item*)object)->ObjectStep(this, player);
