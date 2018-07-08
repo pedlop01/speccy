@@ -179,12 +179,14 @@ void Camera::DrawScreen(World* world, Character* player) {
   list<Object*>* objects = world->GetObjects();
   for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
     Object* object = *it;
-    ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-    al_draw_bitmap(object_sprite,
-                   object->GetX() - GetPosX(),
-                   object->GetY() - GetPosY(),
-                   object->GetCurrentAnimationBitmapAttributes());
-    al_destroy_bitmap(object_sprite);
+    if (object->GetState() != OBJ_STATE_DEAD) {
+      ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+      al_draw_bitmap(object_sprite,
+                     object->GetX() - GetPosX(),
+                     object->GetY() - GetPosY(),
+                     object->GetCurrentAnimationBitmapAttributes());
+      al_destroy_bitmap(object_sprite);
+    }
   }
 
   // Draw objects and platforms

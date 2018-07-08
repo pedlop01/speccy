@@ -153,6 +153,9 @@ class Object {
     ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
     int GetCurrentAnimationBitmapAttributes();
 
+  protected:
+    virtual void UpdateFSMState();
+
   private:
     void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
     void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);

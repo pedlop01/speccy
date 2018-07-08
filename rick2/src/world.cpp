@@ -114,7 +114,7 @@ World::World(const char *file, bool tileExtractedOption)
   Item* object1 = new Item();
   object1->Init("../designs/items/shoots.xml", 350, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.1, 3.0, 1.0);
   objects.push_back(object1);
-  Object* object2 = new Object();
+  Item* object2 = new Item();
   object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);    
   objects.push_back(object2);
 }
@@ -208,10 +208,24 @@ void World::WorldStep(Character* player) {
     Object* object = *it;
     if (object->GetState() == OBJ_STATE_DEAD) {
       printf("Object dead %d\n", object->GetId());
-      objects.erase(it);                            // Remove element if it is dead. REVISIT: is destructor called?
+      switch (object->GetType()) {
+        case OBJ_ITEM:
+          delete ((Item*)object);
+          break;
+        default:
+          printf("[WARNING] Unknown object type to be deleted in World!\n");
+          break;
+      }
+      objects.erase(it);                            // Remove element if it is dead.
     } else if (object->GetActive()) {
-      printf("Object active %d\n", object->GetId());
-      object->ObjectStep(this, player);
+      printf("Object active id = %d, type = %d\n", object->GetId(), object->GetType());
+      switch (object->GetType()) {
+        case OBJ_ITEM:
+          ((Item*)object)->ObjectStep(this, player);
+          break;
+        default:
+          break;
+      }
     } else {
       printf("Object inactive %d\n", object->GetId());
     }

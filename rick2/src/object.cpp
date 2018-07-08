@@ -55,6 +55,10 @@ Object::Object(int _x, int _y, int _width, int _height, int _visible, int _activ
 }
 
 Object::~Object() {
+  for(vector<Animation*>::iterator it = animations.begin(); it != animations.end(); it++) {
+    delete *it;
+  }
+  animations.clear();
 }
 
 void Object::Init(const char* file,
@@ -260,21 +264,12 @@ void Object::ComputeCollisions(World* map, Character* player) {
 
 }
 
-void Object::ComputeNextState() {
+void Object::UpdateFSMState() {
   bool inAir;
 
   inAir = ((extColExt.GetLeftDownCol() == 0) &&
            (extColExt.GetRightDownCol() == 0));
 
-  //printf("[OBJ] ComputeNextState: state = %d direction  = %d\n", state, direction);
-
-  // Save current state before computing next state
-  prev_state = state;
-  // Save current direction before computing next state and direction
-  prev_direction = direction;
-
-  // Object implements simple states based on world collisions
-  // Derivate classes should re-implement this function for more complex behaviour
   switch(state) {
     case OBJ_STATE_STOP:
     case OBJ_STATE_MOVING:
@@ -292,6 +287,19 @@ void Object::ComputeNextState() {
     default:
       break;
   }
+}
+
+void Object::ComputeNextState() {
+  //printf("[OBJ] ComputeNextState: state = %d direction  = %d\n", state, direction);
+
+  // Save current state before computing next state
+  prev_state = state;
+  // Save current direction before computing next state and direction
+  prev_direction = direction;
+
+  // Object implements simple states based on world collisions
+  // Derivate classes should re-implement this function for more complex behaviour
+  this->UpdateFSMState();
 
   // Increment steps in state if no change in state
   if (prev_state == state)
@@ -320,6 +328,7 @@ void Object::ComputeNextState() {
 }
 
 void Object::ComputeNextPosition(World* map) {
+  //printf("ComputeNextPosition x = %d, y = %d\n", GetX(), GetY());
 
   switch(state) {
     case OBJ_STATE_STOP:
