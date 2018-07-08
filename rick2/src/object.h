@@ -85,7 +85,8 @@ class Object {
     Object(int _x, int _y, int _width, int _height, int _visible, int _active);
     ~Object();
 
-    int GetType() { return obj_type; }
+    int GetType()  { return obj_type; }
+    int GetState() { return state;    }
 
     void Init(const char* file,
               int _x,
@@ -114,7 +115,7 @@ class Object {
     void SetX(World* map, int _x);
     void SetY(World* map, int _y);
 
-    int GetId()       { return id;      }
+    int GetId()       { return obj_id;      }
     int GetX()        { return x;       };
     int GetY()        { return y;       };
     int GetWidth()    { return width;   };

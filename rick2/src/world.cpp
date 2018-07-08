@@ -111,7 +111,7 @@ World::World(const char *file, bool tileExtractedOption)
   platforms.push_back(platform10);
 
   // REVISIT: adding objects manually
-  Object* object1 = new Object();
+  Item* object1 = new Item();
   object1->Init("../designs/items/shoots.xml", 350, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.1, 3.0, 1.0);
   objects.push_back(object1);
   Object* object2 = new Object();
@@ -137,7 +137,7 @@ World::~World()
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
       delete *it;
   }
-  for (vector<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
+  for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
       delete *it;
   }
 }
@@ -204,7 +204,16 @@ void World::WorldStep(Character* player) {
       (*it)->PlatformStep();
   }
 
-  for (vector<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
-    (*it)->ObjectStep(this, player);
+  for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
+    Object* object = *it;
+    if (object->GetState() == OBJ_STATE_DEAD) {
+      printf("Object dead %d\n", object->GetId());
+      objects.erase(it);                            // Remove element if it is dead. REVISIT: is destructor called?
+    } else if (object->GetActive()) {
+      printf("Object active %d\n", object->GetId());
+      object->ObjectStep(this, player);
+    } else {
+      printf("Object inactive %d\n", object->GetId());
+    }
   }
 }

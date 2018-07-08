@@ -176,8 +176,8 @@ void Camera::DrawScreen(World* world, Character* player) {
                  player->GetCurrentAnimationBitmapAttributes());
   al_destroy_bitmap(player_bitmap);
 
-  vector<Object*>* objects = world->GetObjects();
-  for (vector<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+  list<Object*>* objects = world->GetObjects();
+  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
     Object* object = *it;
     ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
     al_draw_bitmap(object_sprite,

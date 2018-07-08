@@ -7,6 +7,7 @@
 #include <allegro5/allegro_primitives.h>
 
 #include <stdio.h>
+#include <list>
 
 #include "world.h"
 #include "character.h"

@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <list>
 #include <tgmath.h>
 #include <iostream>
 
@@ -13,6 +14,7 @@
 #include "rick_params.h"
 #include "character.h"
 #include "object.h"
+#include "item.h"
 #include "platform.h"
 
 using namespace std;
@@ -70,7 +72,7 @@ class World
         // Platforms belonging to this level
         vector<Platform*> platforms;
 
-        vector<Object*> objects;
+        list<Object*> objects;
 
         ALLEGRO_BITMAP* world_image;
 
@@ -99,7 +101,7 @@ class World
         Tile* GetTileByCoord(int x, int y);
 
         vector<Platform*>* GetPlatforms() { return &platforms; }
-        vector<Object*>*   GetObjects()   { return &objects; }
+        list<Object*>*     GetObjects()   { return &objects; }
 
         void  WorldStep(Character* player);
 

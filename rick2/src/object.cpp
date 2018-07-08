@@ -25,7 +25,7 @@ Object::Object() {
   obj_type = OBJ_NONE;
 
   obj_id = id;
-  printf("created obj id = %d\n", obj_id);
+  printf("Created object id = %d\n", obj_id);
   id++;
 }
 
