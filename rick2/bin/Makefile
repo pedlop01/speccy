@@ -1,9 +1,10 @@
-ifeq  ($(PLATFORM),Windows_NT)
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
-else
+PLATFORM := $(shell uname -o)
+ifeq  ($(PLATFORM),GNU/Linux)
 rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o
 	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5`
+else
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
 endif
 
 world.o: ../src/world.cpp
