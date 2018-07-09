@@ -13,7 +13,7 @@
 #define OBJ_NONE         0
 #define OBJ_PLATFORM     1
 #define OBJ_ITEM         2
-#define OBJ_SHOOT        3
+#define OBJ_LASER        3
 #define OBJ_BOMB         4
 #define OBJ_HAZARD       5
 #define OBJ_BLOCK        6
@@ -150,8 +150,9 @@ class Object {
 
     void ObjectStep(World* map, Character* player);
 
+    Animation*      GetCurrentAnimation();
     ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
-    int GetCurrentAnimationBitmapAttributes();
+    int             GetCurrentAnimationBitmapAttributes();
 
   protected:
     virtual void UpdateFSMState();

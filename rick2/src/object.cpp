@@ -304,8 +304,11 @@ void Object::ComputeNextState() {
   // Increment steps in state if no change in state
   if (prev_state == state)
     steps_in_state++;
-  else
+  else {
     steps_in_state = 0;
+    if (state != OBJ_STATE_DEAD)  // Check if there is an animation before resetting
+      GetCurrentAnimation()->ResetAnim();
+  }
 
   if ((prev_direction == direction)) { 
     if ((direction == OBJ_DIR_LEFT) || (direction == OBJ_DIR_RIGHT)) {      
@@ -393,6 +396,20 @@ void Object::ObjectStep(World* map, Character* player) {
   this->ComputeNextState();
   this->ComputeNextPosition(map);
   this->ComputeNextSpeed();
+  // If non-dead object then handle updates on animations.
+  // This is used in some objects to control how long an animation
+  // takes. For instance, an object dying like a laser, should
+  // wait until the animation completes to transition to the next state.
+  if (state != OBJ_STATE_DEAD) {
+    if (direction == OBJ_DIR_STOP)
+      animations[state]->ResetAnim();
+    else
+      animations[state]->AnimStep();
+  }
+}
+
+Animation* Object::GetCurrentAnimation() {
+  return animations[state];
 }
 
 ALLEGRO_BITMAP* Object::GetCurrentAnimationBitmap() {

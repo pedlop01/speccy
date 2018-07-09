@@ -17,7 +17,7 @@ class Platform : public Object {
 
   public:
     Platform();
-    Platform(int _x, int _y, int _width, int _height, bool _visible, bool _active, int _dir, int _displacement);
+    Platform(const char* file, int _x, int _y, int _width, int _height, bool _visible, bool _active, int _dir, int _displacement);
     ~Platform();
 
     void PlatformStep();

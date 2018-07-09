@@ -3,6 +3,7 @@
 
 #include <allegro5/allegro.h>
 #include <vector>
+#include <stdio.h>
 #include "sprite.h" // inheriting class's header file
 
 using namespace std;
@@ -28,7 +29,10 @@ class Animation
     void AnimStep();
     void ResetAnim();
 
-    int GetCurrentAnim() { return current_anim; }
+    int GetCurrentAnim() { return current_anim;  }
+    int GetStepsInAnim() { return steps_in_anim; }
+
+    bool IsLastAnim() { return (current_anim == (sprites.size() - 1)); }
 };
 
 #endif // ANIMATION_H

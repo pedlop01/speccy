@@ -1,10 +1,12 @@
 #include "platform.h"
 
 Platform::Platform() {
+  obj_type = OBJ_PLATFORM;
   moving = true;
 }
 
-Platform::Platform(int _x,
+Platform::Platform(const char* file,
+                   int _x,
                    int _y,
                    int _width,
                    int _height,
@@ -13,18 +15,23 @@ Platform::Platform(int _x,
                    int _dir,
                    int _displacement) : 
   Object(_x, _y, _width, _height, _visible, _active) {
+  obj_type = OBJ_PLATFORM;
 
   moving = true;
   direction = _dir;
   displacement = _displacement;
   start_x = _x;
   start_y = _y;
+
+  // Initialize animations from parent class
+  Object::Init(file, x, y, width, height, visible, active, OBJ_STATE_STOP, direction, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
 }
 
 Platform::~Platform() {
 
 }
 
+// No use of ObjectStep
 void Platform::PlatformStep() {
 
   if (direction == OBJ_DIR_UP) {

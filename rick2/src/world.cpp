@@ -89,16 +89,16 @@ World::World(const char *file, bool tileExtractedOption)
 
   // Read platforms
   // REVISIT: need to be read from file! refactor reading of map too!
-  Platform* platform1 = new Platform(804, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
-  Platform* platform2 = new Platform(548, 1368, 24, 8, true, true, OBJ_DIR_DOWN,  14*8);
-  Platform* platform3 = new Platform(450, 1696, 24, 8, true, true, OBJ_DIR_LEFT,  20*8);
-  Platform* platform4 = new Platform(300, 1696, 24, 8, true, true, OBJ_DIR_RIGHT, 20*8);
-  Platform* platform5 = new Platform(972,  992, 24, 8, true, true, OBJ_DIR_LEFT,   6*8);
-  Platform* platform6 = new Platform(708, 1200, 24, 8, true, true, OBJ_DIR_UP,    12*8);
-  Platform* platform7 = new Platform(288, 1640, 24, 8, true, true, OBJ_DIR_UP,    10*8);
-  Platform* platform8 = new Platform(452, 1568, 24, 8, true, true, OBJ_DIR_UP,    13*8);
-  Platform* platform9 = new Platform(484, 1320, 24, 8, true, true, OBJ_DIR_UP,    13*8);
-  Platform* platform10 = new Platform(388, 1048, 24, 8, true, true, OBJ_DIR_UP,   12*8);
+  Platform* platform1 = new Platform("../designs/platforms/platforms.xml", 804, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
+  Platform* platform2 = new Platform("../designs/platforms/platforms.xml", 548, 1368, 24, 8, true, true, OBJ_DIR_DOWN,  14*8);
+  Platform* platform3 = new Platform("../designs/platforms/platforms.xml", 450, 1696, 24, 8, true, true, OBJ_DIR_LEFT,  20*8);
+  Platform* platform4 = new Platform("../designs/platforms/platforms.xml", 300, 1696, 24, 8, true, true, OBJ_DIR_RIGHT, 20*8);
+  Platform* platform5 = new Platform("../designs/platforms/platforms.xml", 972,  992, 24, 8, true, true, OBJ_DIR_LEFT,   6*8);
+  Platform* platform6 = new Platform("../designs/platforms/platforms.xml", 708, 1200, 24, 8, true, true, OBJ_DIR_UP,    12*8);
+  Platform* platform7 = new Platform("../designs/platforms/platforms.xml", 288, 1640, 24, 8, true, true, OBJ_DIR_UP,    10*8);
+  Platform* platform8 = new Platform("../designs/platforms/platforms.xml", 452, 1568, 24, 8, true, true, OBJ_DIR_UP,    13*8);
+  Platform* platform9 = new Platform("../designs/platforms/platforms.xml", 484, 1320, 24, 8, true, true, OBJ_DIR_UP,    13*8);
+  Platform* platform10 = new Platform("../designs/platforms/platforms.xml", 388, 1048, 24, 8, true, true, OBJ_DIR_UP,   12*8);
   platforms.push_back(platform1);
   platforms.push_back(platform2);
   platforms.push_back(platform3);
@@ -117,6 +117,10 @@ World::World(const char *file, bool tileExtractedOption)
   Item* object2 = new Item();
   object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);    
   objects.push_back(object2);
+
+  // REVISIT: adding lasers manually
+  Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
+  objects.push_back(laser1);
 }
 
 // class destructor
@@ -223,6 +227,9 @@ void World::WorldStep(Character* player) {
         case OBJ_ITEM:
           ((Item*)object)->ObjectStep(this, player);
           break;
+        case OBJ_LASER:
+          ((Laser*)object)->ObjectStep(this, player);
+          break;          
         default:
           break;
       }

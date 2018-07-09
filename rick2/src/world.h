@@ -17,6 +17,7 @@
 #include "object.h"
 #include "item.h"
 #include "platform.h"
+#include "laser.h"
 
 using namespace std;
 
