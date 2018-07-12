@@ -27,6 +27,15 @@ Object::Object() {
   obj_id = id;
   printf("Created object id = %d\n", obj_id);
   id++;
+
+  initial_x = x;
+  initial_y = y;
+  initial_visible = visible;
+  intial_active = active;
+  initial_direction = direction;
+  initial_speed_x = speed_x;
+  initial_speed_y = speed_y;
+  initial_state = state;
 }
 
 Object::Object(int _x, int _y, int _width, int _height, int _visible, int _active) {
@@ -52,6 +61,15 @@ Object::Object(int _x, int _y, int _width, int _height, int _visible, int _activ
   obj_id = id;
   printf("created obj id = %d\n", obj_id);
   id++;
+
+  initial_x = x;
+  initial_y = y;
+  initial_visible = visible;
+  intial_active = active;
+  initial_direction = direction;
+  initial_speed_x = speed_x;
+  initial_speed_y = speed_y;
+  initial_state = state;
 }
 
 Object::~Object() {
@@ -135,6 +153,17 @@ void Object::Init(const char* file,
     num_anims++;
   }
 
+}
+
+void Object::Reset() {
+  x = initial_x;
+  y = initial_y;
+  visible = initial_visible;
+  active = intial_active;
+  direction = initial_direction;
+  speed_x = initial_speed_x;
+  speed_y = initial_speed_y;
+  state = initial_state;
 }
 
 void Object::SetX(World* map, int _x) {
@@ -238,26 +267,30 @@ void Object::ComputeCollisions(World* map, Character* player) {
   // Check collisions with world
   this->GetCollisionsExternalBoxExt(map, extColExt);
 
-  // Check collisions with player
-  playerCol = ((player->GetPosX() >= x) &&
-               (player->GetPosX() <= (x + width)) &&
-               (player->GetPosY() >= y) &&
-               (player->GetPosY() <= (y + height))) ||
+  // Check collisions with player. Player does not collision
+  // when DYING or DEAD
+  playerCol = ((player->GetState() != RICK_STATE_DYING) &&
+               (player->GetState() != RICK_STATE_DEAD)) &&
 
-              (((player->GetPosX() + player->GetWidth()) >= x) &&
-               ((player->GetPosX() + player->GetWidth()) <= x + width) &&
-               (player->GetPosY() >= y) &&
-               (player->GetPosY() <= y + height)) ||
+              (((player->GetPosX() >= x) &&
+                (player->GetPosX() <= (x + width)) &&
+                (player->GetPosY() >= y) &&
+                (player->GetPosY() <= (y + height))) ||
 
-              ((player->GetPosX() >= x) &&
-               (player->GetPosX() <= (x + width)) &&
-               ((player->GetPosY() + player->GetHeight()) >= y) &&
-               ((player->GetPosY() + player->GetHeight()) <= (y + height))) ||
+               (((player->GetPosX() + player->GetWidth()) >= x) &&
+                ((player->GetPosX() + player->GetWidth()) <= x + width) &&
+                (player->GetPosY() >= y) &&
+                (player->GetPosY() <= y + height)) ||
 
-              (((player->GetPosX() + player->GetWidth()) >= x) &&
-               ((player->GetPosX() + player->GetWidth()) <= (x + width)) &&
-               ((player->GetPosY() + player->GetHeight()) >= y) &&
-               ((player->GetPosY() + player->GetHeight()) <= (y + height)));
+               ((player->GetPosX() >= x) &&
+                (player->GetPosX() <= (x + width)) &&
+                ((player->GetPosY() + player->GetHeight()) >= y) &&
+                ((player->GetPosY() + player->GetHeight()) <= (y + height))) ||
+
+               (((player->GetPosX() + player->GetWidth()) >= x) &&
+                ((player->GetPosX() + player->GetWidth()) <= (x + width)) &&
+                ((player->GetPosY() + player->GetHeight()) >= y) &&
+                ((player->GetPosY() + player->GetHeight()) <= (y + height))));
 
 //  if (playerCol)
 //    printf("Player colliding with obj = %d\n", obj_id);

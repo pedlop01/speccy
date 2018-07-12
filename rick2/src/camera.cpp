@@ -49,6 +49,8 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
 }
 
 void Camera::PositionBasedOnPlayer(Character* player) {
+  // Do not move the camera when DYING
+  if (player->GetState() == RICK_STATE_DYING) return;
   SetPosX(player->GetCorrectedPosX() - pixels_width/2);
   SetPosY(player->GetCorrectedPosY() - pixels_height/2);
 }
@@ -131,21 +133,35 @@ void Camera::DrawScreen(World* world, Character* player) {
                               dest_x,
                               dest_y,
                               0);        
-        if (tile->GetType() != 0) {
+        /*if (tile->GetType() != 0) {
           al_draw_filled_rectangle(dest_x,
                                    dest_y,
                                    dest_x + tile_width,
                                    dest_y + tile_height,
                                   al_map_rgb(tile->GetType()*0x0F, tile->GetType()*0x0F, tile->GetType()*0x0F));
-        }
+        }*/
       }
       tile_x++;
     }
     tile_y++;
   }  
-  
+
+  // Draw objects
+  list<Object*>* objects = world->GetObjects();
+  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+    Object* object = *it;
+    if (object->GetState() != OBJ_STATE_DEAD) {
+      ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+      al_draw_bitmap(object_sprite,
+                     object->GetX() - GetPosX(),
+                     object->GetY() - GetPosY(),
+                     object->GetCurrentAnimationBitmapAttributes());
+      al_destroy_bitmap(object_sprite);
+    }
+  }
+
   // Draw the player in front of back tiles
-  al_draw_rectangle(player->GetPosX() - GetPosX(),
+/*  al_draw_rectangle(player->GetPosX() - GetPosX(),
                     player->GetPosY() - GetPosY(),
                     player->GetPosX() + player->GetWidth() - GetPosX() - 1,
                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
@@ -167,28 +183,32 @@ void Camera::DrawScreen(World* world, Character* player) {
                     player->GetPosY() - GetPosY(),
                     player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
                     player->GetPosY() + player->GetHeight() - GetPosY() - 1,
-                    al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);
-  // Player bitmap
-  ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
-  al_draw_bitmap(player_bitmap,
-                 player->GetPosX() - GetPosX(),
-                 player->GetPosY() - GetPosY(),
-                 player->GetCurrentAnimationBitmapAttributes());
-  al_destroy_bitmap(player_bitmap);
+                    al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);*/
 
-  // Draw objects
-  list<Object*>* objects = world->GetObjects();
-  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
-    Object* object = *it;
-    if (object->GetState() != OBJ_STATE_DEAD) {
-      ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-      al_draw_bitmap(object_sprite,
-                     object->GetX() - GetPosX(),
-                     object->GetY() - GetPosY(),
-                     object->GetCurrentAnimationBitmapAttributes());
-      al_destroy_bitmap(object_sprite);
+  // Player bitmap
+  // DYING animation requires an special function to scale the sprite
+  if (player->GetState() != RICK_STATE_DEAD) {
+    ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
+    if (player->GetState() == RICK_STATE_DYING) {
+      al_draw_scaled_bitmap(player_bitmap,
+        0,
+        0,
+        player->GetCurrentAnimationWidth(),
+        player->GetCurrentAnimationHeight(),
+        player->GetPosX() - GetPosX(),
+        player->GetPosY() - GetPosY(),
+        player->GetCurrentAnimationWidth()*player->GetCurrentAnimationScalingFactor(),
+        player->GetCurrentAnimationHeight()*player->GetCurrentAnimationScalingFactor(),
+        player->GetCurrentAnimationBitmapAttributes());
+  
+    } else {
+      al_draw_bitmap(player_bitmap,
+                     player->GetPosX() - GetPosX(),
+                     player->GetPosY() - GetPosY(),
+                     player->GetCurrentAnimationBitmapAttributes());
     }
-  }
+    al_destroy_bitmap(player_bitmap);
+  } 
 
   // Draw platforms
   vector<Platform*>* platforms = world->GetPlatforms();

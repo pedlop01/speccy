@@ -71,6 +71,16 @@ class Object {
 
     int obj_type;
 
+    // Initial values for main variables
+    int  initial_x;
+    int  initial_y;
+    bool initial_visible;
+    bool intial_active;
+    int  initial_direction;
+    int  initial_speed_x;
+    int  initial_speed_y;
+    int  initial_state;
+
     // Collisions
     Colbox extColExt;  // Collision with world
     bool playerCol;
@@ -103,6 +113,8 @@ class Object {
               float _speed_y_step,
               float _speed_y_max,
               float _speed_y_min);
+
+    void Reset();
 
     void SetX(int _x)              { x = _x;              };
     void SetY(int _y)              { y = _y;              };

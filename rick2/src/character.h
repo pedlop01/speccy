@@ -18,6 +18,8 @@
 #define RICK_STATE_RUNNING   2
 #define RICK_STATE_CLIMBING  3
 #define RICK_STATE_CROUCHING 4
+#define RICK_STATE_DYING     5
+#define RICK_STATE_DEAD      6
 
 // REVISIT: direction will be provided from a file
 #define RICK_DIR_STOP  0b0000
@@ -33,6 +35,7 @@
 #define VERT_SPEED_MIN  1.0
 #define VERT_SPEED_STEP 0.1
 
+class Camera;
 class Character {
   private:
     int pos_x;
@@ -83,6 +86,15 @@ class Character {
     bool collisionHeadOrig;
     bool overStairsLeft;
     bool overStairsRight;
+    // Initial values for main variables
+    int  initial_x;
+    int  initial_y;
+    int  initial_direction;
+    int  initial_speed_x;
+    int  initial_speed_y;
+    int  initial_state;
+
+    float animation_scaling_factor;
 
     Platform* inPlatformPtr;
 
@@ -91,12 +103,18 @@ class Character {
     // Animations
     vector<Animation*> animations;
 
+    // Camera pointer
+    // - Needed to localize rick in the screen. Used for some animations.
+    Camera* camera;
+
   public:    
 	  Character();    // class constructor
     Character(const char* file);    
 
     ~Character();   // class desructor
-    
+
+    void Reset();
+
     void SetPosX(World* map, int x);
     void SetPosY(World* map, int y, bool all);
 
@@ -133,6 +151,11 @@ class Character {
 
     ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
     int GetCurrentAnimationBitmapAttributes();
+    int GetCurrentAnimationWidth();
+    int GetCurrentAnimationHeight();
+    float GetCurrentAnimationScalingFactor();
+
+    void RegisterCamera(Camera* _camera) { camera = _camera; }
 
   private:
     void FixHorizontalDirection(Keyboard& keyboard);

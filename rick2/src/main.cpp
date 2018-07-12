@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   }
 
   al_set_new_display_flags(ALLEGRO_WINDOWED);
-  display = al_create_display(640, 480);
+  display = al_create_display(SCREEN_X, SCREEN_Y);
   if(!display) {
     printf("Error: failed to create display!\n");
     return -1;
@@ -98,8 +98,9 @@ int main(int argc, char *argv[]) {
 
   // Game initializations
   map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
-  camera.InitCamera(0, 0, 320, 240, map_level1, bitmap);
+  camera.InitCamera(0, 0, CAMERA_X, CAMERA_Y, map_level1, bitmap);
   player = new Character("../characters/rick.xml");
+  player->RegisterCamera(&camera);
 
   // Start counter for first iteration
   timer.StartCounter();
