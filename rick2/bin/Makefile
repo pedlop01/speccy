@@ -1,10 +1,10 @@
 PLATFORM := $(shell uname -o)
 ifeq  ($(PLATFORM),GNU/Linux)
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5`
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o static_object.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o static_object.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5`
 else
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o  pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o static_object.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o static_object.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
 endif
 
 world.o: ../src/world.cpp
@@ -42,6 +42,9 @@ item.o: ../src/item.cpp
 
 laser.o: ../src/laser.cpp
 	g++ -c ../src/laser.cpp
+
+static_object.o: ../src/static_object.cpp
+	g++ -c ../src/static_object.cpp
 
 pugixml.o: ../src/pugixml.cpp
 	g++ -c ../src/pugixml.cpp

@@ -24,8 +24,8 @@ Animation::~Animation()
     al_destroy_bitmap(source_bitmap);
 }
 
-void Animation::AddSprite(int _x, int _y, int _width, int _height) {
-  sprite_ptr sprite = new Sprite(_x, _y, _width, _height);
+void Animation::AddSprite(ALLEGRO_BITMAP* _sprite_bitmap, int _x, int _y, int _width, int _height) {
+  sprite_ptr sprite = new Sprite(_sprite_bitmap, _x, _y, _width, _height);
   sprites.push_back(sprite);
 }
 

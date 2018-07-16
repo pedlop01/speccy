@@ -149,14 +149,19 @@ void Camera::DrawScreen(World* world, Character* player) {
   // Draw objects
   list<Object*>* objects = world->GetObjects();
   for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
-    Object* object = *it;
+    Object* object = *it;    
     if (object->GetState() != OBJ_STATE_DEAD) {
-      ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-      al_draw_bitmap(object_sprite,
-                     object->GetX() - GetPosX(),
-                     object->GetY() - GetPosY(),
-                     object->GetCurrentAnimationBitmapAttributes());
-      al_destroy_bitmap(object_sprite);
+      // Only draw object in camera
+      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
+          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
+        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+        al_draw_bitmap(object_sprite,
+                       object->GetX() - GetPosX(),
+                       object->GetY() - GetPosY(),
+                       object->GetCurrentAnimationBitmapAttributes());
+      }
     }
   }
 
@@ -207,7 +212,6 @@ void Camera::DrawScreen(World* world, Character* player) {
                      player->GetPosY() - GetPosY(),
                      player->GetCurrentAnimationBitmapAttributes());
     }
-    al_destroy_bitmap(player_bitmap);
   } 
 
   // Draw platforms
@@ -219,7 +223,7 @@ void Camera::DrawScreen(World* world, Character* player) {
                      platform->GetX() - GetPosX(),
                      platform->GetY() - GetPosY(),
                      platform->GetCurrentAnimationBitmapAttributes());
-      al_destroy_bitmap(platform_sprite);
+
   }
 
   // Move camera to screen
@@ -227,4 +231,11 @@ void Camera::DrawScreen(World* world, Character* player) {
   al_draw_scaled_bitmap(camera_bitmap,
                         0, 0, pixels_width, pixels_height,
                         0, 0, 320, 240, 0);
+}
+
+bool Camera::CoordsWithinCamera(int x, int y) {
+  return ((x >= pos_x) &&
+          (x <= pos_x + pixels_width) &&
+          (y >= pos_y) &&
+          (y <= pos_y + pixels_height));
 }

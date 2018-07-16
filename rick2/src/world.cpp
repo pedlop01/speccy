@@ -2,6 +2,7 @@
 
 #include "world.h" // class's header file
 
+
 // class constructor
 World::World()
 {
@@ -121,6 +122,108 @@ World::World(const char *file, bool tileExtractedOption)
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
   objects.push_back(laser1);
+
+  // REVISIT: adding static objects manually
+  StaticObject* static_obj1 = new StaticObject();
+  static_obj1->Init("../designs/backgrounds/level1_biglight.xml", 608, 1752, 8, 8, 0);
+  objects.push_back(static_obj1);
+  StaticObject* static_obj2 = new StaticObject();
+  static_obj2->Init("../designs/backgrounds/level1_biglight.xml", 912, 1760, 8, 8, 0);
+  objects.push_back(static_obj2);
+  StaticObject* static_obj3 = new StaticObject();
+  static_obj3->Init("../designs/backgrounds/level1_biglight.xml", 960, 1496, 8, 8, 0);
+  objects.push_back(static_obj3);
+  StaticObject* static_obj4 = new StaticObject();
+  static_obj4->Init("../designs/backgrounds/level1_biglight.xml", 1152, 1368, 8, 8, 0);
+  objects.push_back(static_obj4);
+  StaticObject* static_obj5 = new StaticObject();
+  static_obj5->Init("../designs/backgrounds/level1_biglight.xml", 944, 1280, 8, 8, 0);
+  objects.push_back(static_obj5);
+  StaticObject* static_obj6 = new StaticObject();
+  static_obj6->Init("../designs/backgrounds/level1_biglight.xml", 464, 1408, 8, 8, 0);
+  objects.push_back(static_obj6);
+
+  StaticObject* static_obj7 = new StaticObject();
+  static_obj7->Init("../designs/backgrounds/level1_smalllight.xml", 904, 1776, 8, 8, 0);
+  objects.push_back(static_obj7);
+  StaticObject* static_obj8 = new StaticObject();
+  static_obj8->Init("../designs/backgrounds/level1_smalllight.xml", 912, 1752, 8, 8, 2);
+  objects.push_back(static_obj8);
+  StaticObject* static_obj9 = new StaticObject();
+  static_obj9->Init("../designs/backgrounds/level1_smalllight.xml", 1176, 1384, 8, 8, 0);
+  objects.push_back(static_obj9);
+  StaticObject* static_obj10 = new StaticObject();
+  static_obj10->Init("../designs/backgrounds/level1_smalllight.xml", 936, 1296, 8, 8, 2);
+  objects.push_back(static_obj10);
+  StaticObject* static_obj11 = new StaticObject();
+  static_obj11->Init("../designs/backgrounds/level1_smalllight.xml", 944, 1272, 8, 8, 0);
+  objects.push_back(static_obj11);
+  StaticObject* static_obj12 = new StaticObject();
+  static_obj12->Init("../designs/backgrounds/level1_smalllight.xml", 464, 1400, 8, 8, 0);
+  objects.push_back(static_obj12);
+  StaticObject* static_obj13 = new StaticObject();
+  static_obj13->Init("../designs/backgrounds/level1_smalllight.xml", 456, 1424, 8, 8, 0);
+  objects.push_back(static_obj13);
+  StaticObject* static_obj14 = new StaticObject();
+  static_obj14->Init("../designs/backgrounds/level1_smalllight.xml", 632, 1768, 8, 8, 0);
+  objects.push_back(static_obj14);
+
+  StaticObject* static_obj15 = new StaticObject();
+  static_obj15->Init("../designs/backgrounds/level1_liquid.xml", 836, 1216, 16, 16, 0);
+  objects.push_back(static_obj15);
+  StaticObject* static_obj16 = new StaticObject();
+  static_obj16->Init("../designs/backgrounds/level1_liquid.xml", 836, 1224, 16, 16, 2);
+  objects.push_back(static_obj16);
+  StaticObject* static_obj17 = new StaticObject();
+  static_obj17->Init("../designs/backgrounds/level1_liquid.xml", 930, 1216, 16, 16, 1);
+  objects.push_back(static_obj17);
+  StaticObject* static_obj18 = new StaticObject();
+  static_obj18->Init("../designs/backgrounds/level1_liquid.xml", 930, 1224, 16, 16, 3);
+  objects.push_back(static_obj18);
+  StaticObject* static_obj19 = new StaticObject();
+  static_obj19->Init("../designs/backgrounds/level1_liquid.xml", 354, 1440, 16, 16, 0);
+  objects.push_back(static_obj19);
+  StaticObject* static_obj20 = new StaticObject();
+  static_obj20->Init("../designs/backgrounds/level1_liquid.xml", 354, 1448, 16, 16, 2);
+  objects.push_back(static_obj20);
+
+  StaticObject* static_obj21 = new StaticObject();
+  static_obj21->Init("../designs/backgrounds/level1_water.xml", 616, 64, 16, 24, 0);
+  objects.push_back(static_obj21);
+  StaticObject* static_obj22 = new StaticObject();
+  static_obj22->Init("../designs/backgrounds/level1_water.xml", 616, 88, 16, 24, 2);
+  objects.push_back(static_obj22);
+  StaticObject* static_obj23 = new StaticObject();
+  static_obj23->Init("../designs/backgrounds/level1_water.xml", 648, 64, 16, 24, 0);
+  objects.push_back(static_obj23);
+  StaticObject* static_obj24 = new StaticObject();
+  static_obj24->Init("../designs/backgrounds/level1_water.xml", 648, 88, 16, 24, 2);
+  objects.push_back(static_obj24);
+
+  StaticObject* static_obj25 = new StaticObject();
+  static_obj25->Init("../designs/backgrounds/level1_lighttiles.xml", 616, 952, 16, 16, 0);
+  objects.push_back(static_obj25);
+  StaticObject* static_obj26 = new StaticObject();
+  static_obj26->Init("../designs/backgrounds/level1_lighttiles.xml", 616, 968, 16, 16, 1);
+  objects.push_back(static_obj26);
+  StaticObject* static_obj27 = new StaticObject();
+  static_obj27->Init("../designs/backgrounds/level1_lighttiles.xml", 648, 952, 16, 16, 2);
+  objects.push_back(static_obj27);
+  StaticObject* static_obj28 = new StaticObject();
+  static_obj28->Init("../designs/backgrounds/level1_lighttiles.xml", 648, 968, 16, 16, 3);
+  objects.push_back(static_obj28);
+  StaticObject* static_obj29 = new StaticObject();
+  static_obj29->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 824, 16, 16, 0);
+  objects.push_back(static_obj29);
+  StaticObject* static_obj30 = new StaticObject();
+  static_obj30->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 840, 16, 16, 0);
+  objects.push_back(static_obj30);
+  StaticObject* static_obj31 = new StaticObject();
+  static_obj31->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 856, 16, 16, 0);
+  objects.push_back(static_obj31);
+  StaticObject* static_obj32 = new StaticObject();
+  static_obj32->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 872, 16, 16, 0);
+  objects.push_back(static_obj32);
 }
 
 // class destructor
@@ -211,7 +314,8 @@ void World::WorldStep(Character* player) {
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
     Object* object = *it;
     if (object->GetState() == OBJ_STATE_DEAD) {
-      printf("[WorldStep] Object dead %d\n", object->GetId());
+      //printf("[WorldStep] Object dead %d\n", object->GetId());
+      // REVISIT: need to add STATIC OBJECT here? Same for other objects that may persists (LASER)
       switch (object->GetType()) {
         case OBJ_ITEM:
           delete ((Item*)object);
@@ -228,6 +332,9 @@ void World::WorldStep(Character* player) {
         case OBJ_ITEM:
           ((Item*)object)->ObjectStep(this, player);
           break;
+        case OBJ_STATIC:
+          ((StaticObject*)object)->StaticObjectStep();
+          break;
         case OBJ_LASER:
           ((Laser*)object)->ObjectStep(this, player);
           break;          
@@ -238,5 +345,5 @@ void World::WorldStep(Character* player) {
       printf("Object inactive %d\n", object->GetId());
     }
   }
-  printf("[WorldStep] End function\n");
+  //printf("[WorldStep] End function\n");
 }

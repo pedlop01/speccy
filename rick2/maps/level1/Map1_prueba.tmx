@@ -40813,7 +40813,7 @@
    <tile gid="0"/>
   </data>
  </layer>
- <layer name="Collisions" width="160" height="255" visible="0">
+ <layer name="Collisions" width="160" height="255">
   <data>
    <tile gid="0"/>
    <tile gid="0"/>
@@ -47767,18 +47767,18 @@
    <tile gid="309"/>
    <tile gid="309"/>
    <tile gid="309"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
-   <tile gid="0"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
+   <tile gid="309"/>
    <tile gid="309"/>
    <tile gid="312"/>
    <tile gid="312"/>

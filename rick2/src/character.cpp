@@ -40,8 +40,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 350;  // REVISIT: should be 0
+  pos_y = 1440; // REVISIT: should be 0
   height = 20;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
@@ -92,15 +92,24 @@ Character::Character(const char* file) {
     int num_sprites = 0;
     // Traverse all sprites in the animation
     for (pugi::xml_node sprite = animation.first_child(); sprite; sprite = sprite.next_sibling()) {
+      int sprite_x      = sprite.attribute("x").as_int();
+      int sprite_y      = sprite.attribute("y").as_int();
+      int sprite_width  = sprite.attribute("width").as_int();
+      int sprite_height = sprite.attribute("height").as_int();
+
       printf("\t\tSprite %d: x = %d, y = %d, width = %d, height = %d\n", num_sprites,
-                                                                         sprite.attribute("x").as_int(),
-                                                                         sprite.attribute("y").as_int(),
-                                                                         sprite.attribute("width").as_int(),
-                                                                         sprite.attribute("height").as_int());
-      player_anim->AddSprite(sprite.attribute("x").as_int(),
-                             sprite.attribute("y").as_int(),
-                             sprite.attribute("width").as_int(),
-                             sprite.attribute("height").as_int());      
+                                                                         sprite_x,
+                                                                         sprite_y,
+                                                                         sprite_width,
+                                                                         sprite_height);
+
+      ALLEGRO_BITMAP* sprite_bitmap = al_create_sub_bitmap(anim_bitmap, sprite_x, sprite_y, sprite_width, sprite_height);
+
+      player_anim->AddSprite(sprite_bitmap,
+                             sprite_x,
+                             sprite_y,
+                             sprite_width,
+                             sprite_height);      
     }
     animations.push_back(player_anim);
   }
@@ -357,7 +366,7 @@ void Character::ComputeCollisions(World* map) {
       heightColInt.GetLeftDownCol());*/
 
   // First check if there is collision with an object over the tiles
-  printf("[ComputeCollisions] Checking collisions with platforms\n");
+  //printf("[ComputeCollisions] Checking collisions with platforms\n");
   vector<Platform*> *platforms = map->GetPlatforms();
 
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
@@ -379,7 +388,7 @@ void Character::ComputeCollisions(World* map) {
     }
   } 
 
-  printf("[ComputeCollisions] Getting simple collisions checks\n");
+  //printf("[ComputeCollisions] Getting simple collisions checks\n");
   // Check if there is a collision with the tiles
   inStairs = ((heightColInt.GetLeftUpCol() == TILE_STAIRS) ||
               (heightColInt.GetRightUpCol() == TILE_STAIRS) ||

@@ -24,7 +24,7 @@ class Animation
 
     Animation(ALLEGRO_BITMAP* _source_bitmap, int _speed);
 
-    void AddSprite(int _x, int _y, int _width, int _height);
+    void AddSprite(ALLEGRO_BITMAP* _sprite_bitmap, int _x, int _y, int _width, int _height);
 
     void AnimStep();
     void ResetAnim();

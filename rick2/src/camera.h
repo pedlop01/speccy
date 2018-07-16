@@ -63,6 +63,9 @@ class Camera
 
     void DrawScreen(World* world, Character *player);
 
+  private:
+    bool CoordsWithinCamera(int x, int y);
+
 };
 
 #endif // CAMERA_H

@@ -17,6 +17,7 @@
 #define OBJ_BOMB         4
 #define OBJ_HAZARD       5
 #define OBJ_BLOCK        6
+#define OBJ_STATIC       7
 
 // Object states
 #define OBJ_STATE_STOP   0

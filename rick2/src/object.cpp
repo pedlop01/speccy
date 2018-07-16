@@ -139,15 +139,26 @@ void Object::Init(const char* file,
     int num_sprites = 0;
     // Traverse all sprites in the animation
     for (pugi::xml_node sprite = animation.first_child(); sprite; sprite = sprite.next_sibling()) {
+      int sprite_x      = sprite.attribute("x").as_int();
+      int sprite_y      = sprite.attribute("y").as_int();
+      int sprite_width  = sprite.attribute("width").as_int();
+      int sprite_height = sprite.attribute("height").as_int();
+
       printf("\t\tSprite %d: x = %d, y = %d, width = %d, height = %d\n", num_sprites,
-                                                                         sprite.attribute("x").as_int(),
-                                                                         sprite.attribute("y").as_int(),
-                                                                         sprite.attribute("width").as_int(),
-                                                                         sprite.attribute("height").as_int());
-      obj_anim->AddSprite(sprite.attribute("x").as_int(),
-                          sprite.attribute("y").as_int(),
-                          sprite.attribute("width").as_int(),
-                          sprite.attribute("height").as_int());
+                                                                         sprite_x,
+                                                                         sprite_y,
+                                                                         sprite_width,
+                                                                         sprite_height);
+      // Set transparent color
+      al_convert_mask_to_alpha(obj_bitmap, al_map_rgb(255,0,255));
+      ALLEGRO_BITMAP* sprite_bitmap = al_create_sub_bitmap(obj_bitmap, sprite_x, sprite_y, sprite_width, sprite_height);
+
+      obj_anim->AddSprite(sprite_bitmap,
+                          sprite_x,
+                          sprite_y,
+                          sprite_width,
+                          sprite_height);
+
       num_sprites++;
     }
     animations.push_back(obj_anim);
@@ -452,15 +463,8 @@ Animation* Object::GetCurrentAnimation() {
 }
 
 ALLEGRO_BITMAP* Object::GetCurrentAnimationBitmap() {
-  ALLEGRO_BITMAP* bitmap = animations[state]->source_bitmap;
-  // Set transparent color
-  al_convert_mask_to_alpha(bitmap, al_map_rgb(255,0,255));  
   sprite_ptr sprite = &(*animations[state]->sprites[animations[state]->GetCurrentAnim()]);
-  return al_create_sub_bitmap(bitmap,
-                              sprite->x,
-                              sprite->y,
-                              sprite->width,
-                              sprite->height);
+  return sprite->GetBitmap();
 }
 
 int Object::GetCurrentAnimationBitmapAttributes() {

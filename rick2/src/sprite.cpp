@@ -5,7 +5,8 @@ Sprite::Sprite() {
 	// insert your code here
 }
 
-Sprite::Sprite(int _x, int _y, int _width, int _height) {
+Sprite::Sprite(ALLEGRO_BITMAP* _sprite_bitmap, int _x, int _y, int _width, int _height) {
+  sprite_bitmap = _sprite_bitmap;
   x = _x;
   y = _y;
   width = _width;
@@ -14,4 +15,5 @@ Sprite::Sprite(int _x, int _y, int _width, int _height) {
 
 // class destructor
 Sprite::~Sprite() {
+  al_destroy_bitmap(sprite_bitmap);
 }
