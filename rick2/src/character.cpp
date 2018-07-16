@@ -325,7 +325,7 @@ void Character::ComputeCollisions(World* map) {
   int down_right_x;
   int down_y;
 
-  printf("[ComputeCollisions] state = %d\n", state);
+//  printf("[ComputeCollisions] state = %d\n", state);
 
   // Do not check collisions when DYING
   if ((state == RICK_STATE_DYING) || (state == RICK_STATE_DEAD)) return;
@@ -778,19 +778,19 @@ void Character::ComputeNextSpeed() {
 
 void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Collisions with world and platforms
-  printf("[CharacterStep] ComputeCollisions\n");
+//  printf("[CharacterStep] ComputeCollisions\n");
   this->ComputeCollisions(map);
   // Compute next state
-  printf("[CharacterStep] ComputeNextState\n");
+//  printf("[CharacterStep] ComputeNextState\n");
   this->ComputeNextState(keyboard);
   // Compute next position
-  printf("[CharacterStep] ComputeNextPosition\n");
+//  printf("[CharacterStep] ComputeNextPosition\n");
   this->ComputeNextPosition(map);
   // Re-calulate speed
-  printf("[CharacterStep] ComputeNextSpeed\n");
+//  printf("[CharacterStep] ComputeNextSpeed\n");
   this->ComputeNextSpeed();
   // Compute next animation frame
-  printf("[CharacterStep] ComputeNextAnimation\n");
+//  printf("[CharacterStep] ComputeNextAnimation\n");
   if (direction == RICK_DIR_STOP)
     animations[state]->ResetAnim();
   else if (state != RICK_STATE_DEAD)
@@ -802,7 +802,7 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   else if (state == RICK_STATE_DEAD)
     animation_scaling_factor = 1.0;
   
-  printf("[CharacterStep] End CharacterStep\n");
+//  printf("[CharacterStep] End CharacterStep\n");
 }
 
 ALLEGRO_BITMAP* Character::GetCurrentAnimationBitmap() {
