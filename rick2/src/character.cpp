@@ -40,8 +40,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 310;  // REVISIT: should be 0
+  pos_y = 1320; // REVISIT: should be 0
   height = 20;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
@@ -240,6 +240,31 @@ void Character::SetPosY(World* map, int y, bool all) {
   }
 }
 
+bool Character::ComputeCollisionBlocks(World* map) {
+  blockCollisionRight = false;
+  blockCollisionLeft = false;
+  blockCollisionPtr = 0;
+
+  list<Block*> *blocks = map->GetBlocks();
+  for (list<Block*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
+    Block* block = *it;
+
+    if (block->CoordsWithinObject(GetPosX() + GetWidth(), GetPosY()) ||        
+        block->CoordsWithinObject(GetPosX() + GetWidth(), GetPosY() + GetHeight())) {
+      blockCollisionRight = true;
+      blockCollisionPtr = block;
+      // Take first block with collision
+      break;
+    } else if (block->CoordsWithinObject(GetPosX(), GetPosY()) ||
+               block->CoordsWithinObject(GetPosX(), GetPosY() + GetHeight())) {
+      blockCollisionLeft = true;
+      blockCollisionPtr = block;
+      // Take first block with collision
+      break;
+    }
+  } 
+}
+
 void Character::GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height) {
   mask_col.SetLeftUpCol(map->GetTileByCoord(left_up_x, left_up_y)->GetType());
   mask_col.SetRightUpCol(map->GetTileByCoord(left_up_x + width, left_up_y)->GetType());
@@ -368,7 +393,6 @@ void Character::ComputeCollisions(World* map) {
   // First check if there is collision with an object over the tiles
   //printf("[ComputeCollisions] Checking collisions with platforms\n");
   vector<Platform*> *platforms = map->GetPlatforms();
-
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
     down_left_x = pos_x;
     down_right_x = pos_x + width;
@@ -721,6 +745,21 @@ void Character::ComputeNextPosition(World* map) {
   //printf("POST: pos_x = %d pos_y %d\n", pos_x, pos_y);
 }
 
+void Character::ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard) {
+  // If no block coliision then return
+  bool blockCollision = blockCollisionLeft || blockCollisionRight;
+
+  if (blockCollision && keyboard.PressedSpace()) blockCollisionPtr->SetTrigger(true);
+
+  if (!blockCollision) return;
+
+  if (blockCollisionRight && (direction & RICK_DIR_RIGHT)) {
+    SetPosX(map, GetPosX() - abs(pos_x + width - blockCollisionPtr->GetX()));
+  } else if (blockCollisionLeft && (direction & RICK_DIR_LEFT)) {
+    SetPosX(map, GetPosX() + abs(blockCollisionPtr->GetX() + blockCollisionPtr->GetWidth() - pos_x));
+  }
+}
+
 void Character::ComputeNextSpeed() {
   
   switch (state) {
@@ -795,6 +834,10 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Compute next position
 //  printf("[CharacterStep] ComputeNextPosition\n");
   this->ComputeNextPosition(map);
+  // Check now collisions about static blocks and recalculate position
+  // if necessary
+  this->ComputeCollisionBlocks(map);
+  this->ComputeNextPositionBasedOnBlocks(map, keyboard);
   // Re-calulate speed
 //  printf("[CharacterStep] ComputeNextSpeed\n");
   this->ComputeNextSpeed();

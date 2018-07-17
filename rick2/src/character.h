@@ -8,6 +8,7 @@
 #include "pugixml.hpp"
 #include "world.h"
 #include "platform.h"
+#include "block.h"
 #include "keyboard.h"
 #include "colbox.h"
 #include "animation.h"
@@ -86,6 +87,8 @@ class Character {
     bool collisionHeadOrig;
     bool overStairsLeft;
     bool overStairsRight;
+    bool blockCollisionLeft;
+    bool blockCollisionRight;
     // Initial values for main variables
     int  initial_x;
     int  initial_y;
@@ -97,6 +100,7 @@ class Character {
     float animation_scaling_factor;
 
     Platform* inPlatformPtr;
+    Block*    blockCollisionPtr;
 
     pugi::xml_document character_file;
 
@@ -142,9 +146,12 @@ class Character {
     void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
     void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
 
+    bool ComputeCollisionBlocks(World* map);
+
     void ComputeCollisions(World* map);
     void ComputeNextState(Keyboard& keyboard);
     void ComputeNextPosition(World* map);
+    void ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard);   // REVISIT: using keyboard to test block destruction
     void ComputeNextSpeed();
 
     void CharacterStep(World* map, Keyboard& keyboard);

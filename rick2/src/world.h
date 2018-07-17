@@ -19,6 +19,7 @@
 #include "platform.h"
 #include "laser.h"
 #include "static_object.h"
+#include "block.h"
 
 using namespace std;
 
@@ -74,8 +75,10 @@ class World
 
         // Platforms belonging to this level
         vector<Platform*> platforms;
-
+        // General objects belonging to this level
         list<Object*> objects;
+        // Block belonging to this level
+        list<Block*> blocks;
 
         ALLEGRO_BITMAP* world_image;
 
@@ -104,7 +107,8 @@ class World
         Tile* GetTileByCoord(int x, int y);
 
         vector<Platform*>* GetPlatforms() { return &platforms; }
-        list<Object*>*     GetObjects()   { return &objects; }
+        list<Object*>*     GetObjects()   { return &objects;   }
+        list<Block*>*      GetBlocks()    { return &blocks;    }
 
         void  WorldStep(Character* player);
 

@@ -156,9 +156,9 @@ class Object {
                                               speed_y_min = _speed_y_min;
                                               speed_y_step = _speed_y_step; };
 
-    void ComputeCollisions(World* map, Character* player);
+    virtual void ComputeCollisions(World* map, Character* player);
     void ComputeNextState();
-    void ComputeNextPosition(World* map);
+    virtual void ComputeNextPosition(World* map);
     void ComputeNextSpeed();
 
     void ObjectStep(World* map, Character* player);
@@ -166,6 +166,8 @@ class Object {
     Animation*      GetCurrentAnimation();
     ALLEGRO_BITMAP* GetCurrentAnimationBitmap();
     int             GetCurrentAnimationBitmapAttributes();
+
+    bool CoordsWithinObject(int _x, int _y);
 
   protected:
     virtual void UpdateFSMState();

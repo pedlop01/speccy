@@ -473,3 +473,8 @@ int Object::GetCurrentAnimationBitmapAttributes() {
   }
   return 0;
 }
+
+bool Object::CoordsWithinObject(int _x, int _y) {
+  return ((_x >= x) && (_x <= x + width) &&
+          (_y >= y) && (_y <= y + height));
+}

@@ -1,0 +1,31 @@
+#ifndef BLOCK_H
+#define BLOCK_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <vector>
+
+#include "rick_params.h"
+#include "object.h"
+
+class Block : public Object {
+  private:
+    int  start_x;
+    bool exploits;
+    bool trigger;
+
+  private:
+    void UpdateFSMState();
+    void ComputeCollisions(World* map, Character* player);
+    void ComputeNextPosition(World* map);
+
+  public:
+    Block();    
+    ~Block();
+
+    void SetTrigger(bool _trigger) { trigger = _trigger; };
+
+    void Init(const char* _file, int _x, int _y, int _width, int _height, bool _exploits);
+};
+
+#endif // BLOCK_H

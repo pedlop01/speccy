@@ -12,6 +12,7 @@
 #include "world.h"
 #include "character.h"
 #include "platform.h"
+#include "block.h"
 
 using namespace std;
 

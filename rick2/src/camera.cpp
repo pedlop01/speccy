@@ -219,11 +219,24 @@ void Camera::DrawScreen(World* world, Character* player) {
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
     Platform* platform = *it;
     ALLEGRO_BITMAP* platform_sprite = platform->GetCurrentAnimationBitmap();
-      al_draw_bitmap(platform_sprite,
-                     platform->GetX() - GetPosX(),
-                     platform->GetY() - GetPosY(),
-                     platform->GetCurrentAnimationBitmapAttributes());
+    al_draw_bitmap(platform_sprite,
+                   platform->GetX() - GetPosX(),
+                   platform->GetY() - GetPosY(),
+                   platform->GetCurrentAnimationBitmapAttributes());
 
+  }
+
+  // Draw blocks
+  list<Block*>* blocks = world->GetBlocks();
+  for (list<Block*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
+    Block* block = *it;
+    if (block->GetState() != OBJ_STATE_DEAD) {
+      ALLEGRO_BITMAP* block_sprite = block->GetCurrentAnimationBitmap();
+      al_draw_bitmap(block_sprite,
+                     block->GetX() - GetPosX(),
+                     block->GetY() - GetPosY(),
+                     block->GetCurrentAnimationBitmapAttributes());
+    }
   }
 
   // Move camera to screen

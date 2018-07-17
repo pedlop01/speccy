@@ -224,6 +224,32 @@ World::World(const char *file, bool tileExtractedOption)
   StaticObject* static_obj32 = new StaticObject();
   static_obj32->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 872, 16, 16, 0);
   objects.push_back(static_obj32);
+
+  // REVISIT: adding blocks manually
+  Block* block1 = new Block();
+  block1->Init("../designs/blocks/level1_bigblock.xml", 736, 2011, 24, 21, true);
+  blocks.push_back(block1);
+  Block* block2 = new Block();
+  block2->Init("../designs/blocks/level1_smallblock.xml", 896, 1411, 24, 21, true);
+  blocks.push_back(block2);
+  Block* block3 = new Block();
+  block3->Init("../designs/blocks/level1_smallblock.xml", 944, 1411, 24, 21, true);
+  blocks.push_back(block3);
+  Block* block4 = new Block();
+  block4->Init("../designs/blocks/level1_bigblock.xml", 512, 1699, 24, 21, true);
+  blocks.push_back(block4);
+  Block* block5 = new Block();
+  block5->Init("../designs/blocks/level1_bigblock.xml", 256, 1667, 24, 21, true);
+  blocks.push_back(block5);
+  Block* block6 = new Block();
+  block6->Init("../designs/blocks/level1_smallblock.xml", 320, 1315, 24, 21, true);
+  blocks.push_back(block6);
+  Block* block7 = new Block();
+  block7->Init("../designs/blocks/level1_smallblock.xml", 416, 1315, 24, 21, false);
+  blocks.push_back(block7);
+  Block* block8 = new Block();
+  block8->Init("../designs/blocks/level1_smallblock.xml", 640, 707, 24, 21, true);
+  blocks.push_back(block8);
 }
 
 // class destructor
@@ -245,6 +271,9 @@ World::~World()
       delete *it;
   }
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
+      delete *it;
+  }
+  for (list<Block*>::iterator it = blocks.begin() ; it != blocks.end(); ++it) {
       delete *it;
   }
 }
@@ -311,6 +340,17 @@ void World::WorldStep(Character* player) {
       (*it)->PlatformStep();
   }
 
+  // Blocks
+  for (list<Block*>::iterator it = blocks.begin() ; it != blocks.end(); ++it) {
+    Block* block = *it;
+    if (block->GetState() == OBJ_STATE_DEAD) {
+      delete block;
+      it = blocks.erase(it);
+    } else if (block->GetActive()) {
+      block->ObjectStep(this, player);
+    }
+  }
+  // Global objects
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
     Object* object = *it;
     if (object->GetState() == OBJ_STATE_DEAD) {
