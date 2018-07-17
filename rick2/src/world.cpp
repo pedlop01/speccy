@@ -119,6 +119,10 @@ World::World(const char *file, bool tileExtractedOption)
   object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);    
   objects.push_back(object2);
 
+  Item* object3 = new Item();
+  object3->Init("../designs/items/bonus.xml", 832, 2008, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 1.0, 1.0);    
+  objects.push_back(object3);
+
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
   objects.push_back(laser1);

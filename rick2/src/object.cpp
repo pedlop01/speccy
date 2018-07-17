@@ -77,6 +77,7 @@ Object::~Object() {
     delete *it;
   }
   animations.clear();
+  free(name);
   printf("Object destructor\n");
 }
 
@@ -123,7 +124,9 @@ void Object::Init(const char* file,
 
   printf("- Initializing object:\n");
   // Iterate over states
-  int num_anims = 0;
+  int num_anims = 0;  
+  sprintf(name, "%s", obj_file.child("object").attribute("name").as_string());
+  printf("Object name = %s\n", name);
   for (pugi::xml_node state = obj_file.child("object").child("states").first_child();
        state; state = state.next_sibling()) {
     printf("State name = %s, id = %d\n", state.attribute("name").as_string(), state.attribute("id").as_int());
@@ -451,7 +454,7 @@ void Object::ObjectStep(World* map, Character* player) {
   // wait until the animation completes to transition to the next state.
 //  printf("[Object] ComputeAnimationStep\n");
   if (state != OBJ_STATE_DEAD) {
-    if (direction == OBJ_DIR_STOP)
+    if ((prev_direction != direction) && (direction == OBJ_DIR_STOP))
       animations[state]->ResetAnim();
     else
       animations[state]->AnimStep();

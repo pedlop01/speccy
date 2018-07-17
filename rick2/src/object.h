@@ -40,6 +40,8 @@ class Object {
   protected:
     static int id;
 
+    char name[40];
+
     int x;
     int y;
     int width;

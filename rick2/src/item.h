@@ -10,6 +10,7 @@
 
 class Item : public Object {
   private:
+    int steps_dying;
 
   private:
     void UpdateFSMState();
@@ -18,6 +19,8 @@ class Item : public Object {
     Item();    
     ~Item();
 
+    // Re-write computeation of next position
+    void ComputeNextPosition(World* map);
     // Re-write step from parent class
     void ObjectStep(World* map, Character* player);
 };
