@@ -3,35 +3,35 @@
   <states>
     <state name="RICK_STATE_STOP" id="0">
       <animation bitmap="../characters/rick.png" speed="0">
-        <sprite x="1" y="1" width="20" height="20">
+        <sprite x="1" y="1" width="21" height="21">
         </sprite>
       </animation>
     </state>
     <state name="RICK_STATE_JUMPING" id="1">
       <animation bitmap="../characters/rick.png" speed="1">
-        <sprite x="1" y="23" width="20" height="20">
+        <sprite x="1" y="23" width="21" height="21">
         </sprite>
       </animation>
     </state>
     <state name="RICK_STATE_RUNNING" id="2">
       <animation bitmap="../characters/rick.png" speed="5">
-        <sprite x="23" y="1" width="20" height="20">
+        <sprite x="23" y="1" width="21" height="21">
         </sprite>
-        <sprite x="45" y="1" width="20" height="20">
+        <sprite x="45" y="1" width="21" height="21">
         </sprite>
-        <sprite x="67" y="1" width="20" height="20">
+        <sprite x="67" y="1" width="21" height="21">
         </sprite>
-        <sprite x="89" y="1" width="20" height="20">
+        <sprite x="89" y="1" width="21" height="21">
         </sprite>
-        <sprite x="111" y="1" width="20" height="20">
+        <sprite x="111" y="1" width="21" height="21">
         </sprite>
       </animation>
     </state>
     <state name="RICK_STATE_CLIMBING" id="3">
       <animation bitmap="../characters/rick.png" speed="3">
-        <sprite x="1" y="45" width="20" height="20">
+        <sprite x="1" y="45" width="21" height="21">
         </sprite>
-        <sprite x="23" y="45" width="20" height="20">
+        <sprite x="23" y="45" width="21" height="21">
         </sprite>
       </animation>
     </state>
@@ -41,6 +41,21 @@
         </sprite>
         <sprite x="25" y="67" width="23" height="15">
         </sprite>
+      </animation>
+    </state>
+    <state name="RICK_STATE_SHOOTING" id="4">
+      <animation bitmap="../characters/rick.png" speed="3">
+        <sprite x="1" y="105" width="23" height="21"> </sprite>
+      </animation>
+    </state>
+    <state name="RICK_STATE_BOMBING" id="4">
+      <animation bitmap="../characters/rick.png" speed="3">
+        <sprite x="1" y="127" width="18" height="21"> </sprite>
+      </animation>
+    </state>
+    <state name="RICK_STATE_HITTING" id="4">
+      <animation bitmap="../characters/rick.png" speed="3">
+        <sprite x="1" y="149" width="22" height="21"> </sprite>
       </animation>
     </state>
     <state name="RICK_STATE_DYING" id="5">

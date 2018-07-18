@@ -19,8 +19,11 @@
 #define RICK_STATE_RUNNING   2
 #define RICK_STATE_CLIMBING  3
 #define RICK_STATE_CROUCHING 4
-#define RICK_STATE_DYING     5
-#define RICK_STATE_DEAD      6
+#define RICK_STATE_SHOOTING  5
+#define RICK_STATE_BOMBING   6
+#define RICK_STATE_HITTING   7
+#define RICK_STATE_DYING     8
+#define RICK_STATE_DEAD      9
 
 // REVISIT: direction will be provided from a file
 #define RICK_DIR_STOP  0b0000

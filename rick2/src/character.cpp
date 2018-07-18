@@ -6,7 +6,7 @@ Character::Character() {
   pos_x = 264;  // REVISIT: should be 0
   pos_y = 2000; // REVISIT: should be 0
 
-  height = 20;  // REVISIT: should be 0
+  height = 21;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
   width_orig = width;
@@ -42,7 +42,7 @@ Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
   pos_x = 264;  // REVISIT: should be 0
   pos_y = 2000; // REVISIT: should be 0
-  height = 20;  // REVISIT: should be 0
+  height = 21;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
   width_orig = width;
@@ -477,7 +477,6 @@ void Character::ComputeNextState(Keyboard& keyboard) {
 
   //printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
 
-
   // No matter what is the state update, if rick is being killed, then
   // the kill takes precedence
   if (keyboard.PressedK()) {
@@ -489,6 +488,22 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   } else {
     switch(state) {
       case RICK_STATE_STOP:
+
+        if (keyboard.PressedSpace()) {
+          if (keyboard.PressedUp()) {
+            state = RICK_STATE_SHOOTING;
+          } else if (keyboard.PressedDown()) {            
+            state = RICK_STATE_BOMBING;
+          } else if (keyboard.PressedLeft()) {
+            state = RICK_STATE_HITTING;
+            direction = RICK_DIR_LEFT;
+          } else if (keyboard.PressedRight()) {
+            state = RICK_STATE_HITTING;
+            direction = RICK_DIR_RIGHT;
+          }
+          break;
+        }
+
       case RICK_STATE_RUNNING:
   
         if (inAir) {
@@ -568,7 +583,7 @@ void Character::ComputeNextState(Keyboard& keyboard) {
       case RICK_STATE_CROUCHING:
         if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {
           pos_y = pos_y - (height_orig - height);
-          height = 20;                            // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
+          height = 21;                            // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
           state = RICK_STATE_STOP;
         }
   
@@ -606,6 +621,38 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   
         // Fix horizontal direction based on keyboard input
         this->FixHorizontalDirection(keyboard);
+        break;
+
+      case RICK_STATE_SHOOTING:
+        if (!(keyboard.PressedSpace() && keyboard.PressedUp())) {
+          state = RICK_STATE_STOP;
+        }
+        break;
+
+      case RICK_STATE_BOMBING:
+        if (keyboard.PressedLeft()) {              
+          direction = RICK_DIR_LEFT;
+        } else if (keyboard.PressedRight()) {              
+          direction = RICK_DIR_RIGHT;
+        } else {
+          direction = RICK_DIR_STOP;
+        }
+
+        if (!(keyboard.PressedSpace() && keyboard.PressedDown())) {
+          state = RICK_STATE_STOP;
+        }
+        break;
+
+      case RICK_STATE_HITTING:
+        if (keyboard.PressedSpace() && keyboard.PressedLeft()) {
+          state = RICK_STATE_HITTING;
+          direction = RICK_DIR_LEFT;
+        } else if (keyboard.PressedSpace() && keyboard.PressedRight()) {
+          state = RICK_STATE_HITTING;
+          direction = RICK_DIR_RIGHT;
+        } else {
+          state = RICK_STATE_STOP;
+        }
         break;
 
       case RICK_STATE_DYING:
