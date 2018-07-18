@@ -1,10 +1,10 @@
 PLATFORM := $(shell uname -o)
 ifeq  ($(PLATFORM),GNU/Linux)
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o static_object.o block.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o static_object.o block.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5 allegro_font-5 allegro_ttf-5`
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5 allegro_font-5 allegro_ttf-5`
 else
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o static_object.o block.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o static_object.o block.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
+rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
 endif
 
 world.o: ../src/world.cpp
@@ -45,6 +45,9 @@ laser.o: ../src/laser.cpp
 
 shoot.o: ../src/shoot.cpp
 	g++ -c ../src/shoot.cpp
+
+bomb.o: ../src/bomb.cpp
+	g++ -c ../src/bomb.cpp
 
 static_object.o: ../src/static_object.cpp
 	g++ -c ../src/static_object.cpp

@@ -146,25 +146,6 @@ void Camera::DrawScreen(World* world, Character* player) {
     tile_y++;
   }  
 
-  // Draw objects
-  list<Object*>* objects = world->GetObjects();
-  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
-    Object* object = *it;    
-    if (object->GetState() != OBJ_STATE_DEAD) {
-      // Only draw object in camera
-      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
-          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
-        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-        al_draw_bitmap(object_sprite,
-                       object->GetX() - GetPosX(),
-                       object->GetY() - GetPosY(),
-                       object->GetCurrentAnimationBitmapAttributes());
-      }
-    }
-  }
-
   // Draw the player in front of back tiles
 /*  al_draw_rectangle(player->GetPosX() - GetPosX(),
                     player->GetPosY() - GetPosY(),
@@ -213,6 +194,25 @@ void Camera::DrawScreen(World* world, Character* player) {
                      player->GetCurrentAnimationBitmapAttributes());
     }
   } 
+
+  // Draw objects
+  list<Object*>* objects = world->GetObjects();
+  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+    Object* object = *it;    
+    if (object->GetState() != OBJ_STATE_DEAD) {
+      // Only draw object in camera
+      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
+          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
+        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+        al_draw_bitmap(object_sprite,
+                       object->GetX() - GetPosX(),
+                       object->GetY() - GetPosY(),
+                       object->GetCurrentAnimationBitmapAttributes());
+      }
+    }
+  }
 
   // Draw platforms
   vector<Platform*>* platforms = world->GetPlatforms();

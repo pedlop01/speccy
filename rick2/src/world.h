@@ -21,6 +21,7 @@
 #include "static_object.h"
 #include "block.h"
 #include "shoot.h"
+#include "bomb.h"
 
 using namespace std;
 
@@ -82,6 +83,7 @@ class World
         list<Block*> blocks;
 
         bool shoot_exists;
+        bool bomb_exists;
 
         ALLEGRO_BITMAP* world_image;
 
@@ -116,6 +118,7 @@ class World
         void  WorldStep(Character* player);
 
         void  CreateNewShoot(int x, int y, int direction);
+        void  CreateNewBomb(int x, int y, int direction);
 
     private:
             

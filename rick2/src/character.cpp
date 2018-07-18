@@ -633,10 +633,13 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
       case RICK_STATE_BOMBING:
         if (keyboard.PressedLeft()) {              
           direction = RICK_DIR_LEFT;
-        } else if (keyboard.PressedRight()) {              
+          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_LEFT);
+        } else if (keyboard.PressedRight()) {
           direction = RICK_DIR_RIGHT;
+          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_RIGHT);
         } else {
           direction = RICK_DIR_STOP;
+          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_STOP);
         }
 
         if (!(keyboard.PressedSpace() && keyboard.PressedDown())) {

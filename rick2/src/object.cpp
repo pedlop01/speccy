@@ -385,6 +385,7 @@ void Object::ComputeNextPosition(World* map) {
       break;
 
     case OBJ_STATE_MOVING:
+
       if (direction & OBJ_DIR_UP)
         SetY(map, GetY() - speed_y);
       else if (direction & OBJ_DIR_DOWN)

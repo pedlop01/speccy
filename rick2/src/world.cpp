@@ -256,6 +256,7 @@ World::World(const char *file, bool tileExtractedOption)
   blocks.push_back(block8);
 
   shoot_exists = false;
+  bomb_exists = false;
 }
 
 // class destructor
@@ -370,6 +371,10 @@ void World::WorldStep(Character* player) {
           delete ((Shoot*)object);
           shoot_exists = false;
           break;
+        case OBJ_BOMB:
+          delete ((Bomb*)object);
+          bomb_exists = false;
+          break;
         default:
           printf("[WARNING] Unknown object type to be deleted in World!\n");
           break;
@@ -391,6 +396,9 @@ void World::WorldStep(Character* player) {
         case OBJ_SHOOT:
           ((Shoot*)object)->ObjectStep(this, player);
           break;
+        case OBJ_BOMB:
+          ((Bomb*)object)->ObjectStep(this, player);
+          break;
         default:
           break;
       }
@@ -407,5 +415,14 @@ void World::CreateNewShoot(int x, int y, int direction) {
     Shoot* shoot = new Shoot("../designs/shoot/shoot.xml", x, y, 12, 6, direction);
     objects.push_back(shoot);
     shoot_exists = true;
+  }
+}
+
+void World::CreateNewBomb(int x, int y, int direction) {
+  // Allow only one bomb to be created right now
+  if (!bomb_exists) {
+    Bomb* shoot = new Bomb("../designs/bomb/bomb.xml", x, y - 1, 25, 22, direction);
+    objects.push_back(shoot);
+    bomb_exists = true;
   }
 }
