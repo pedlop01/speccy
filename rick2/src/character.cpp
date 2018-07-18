@@ -488,8 +488,12 @@ void Character::ComputeNextState(Keyboard& keyboard) {
   } else {
     switch(state) {
       case RICK_STATE_STOP:
+      case RICK_STATE_RUNNING:
 
-        if (keyboard.PressedSpace()) {
+        if (inAir) {
+          state = RICK_STATE_JUMPING;
+          direction = RICK_DIR_DOWN;
+        } else if (keyboard.PressedSpace()) {
           if (keyboard.PressedUp()) {
             state = RICK_STATE_SHOOTING;
           } else if (keyboard.PressedDown()) {            
@@ -501,14 +505,6 @@ void Character::ComputeNextState(Keyboard& keyboard) {
             state = RICK_STATE_HITTING;
             direction = RICK_DIR_RIGHT;
           }
-          break;
-        }
-
-      case RICK_STATE_RUNNING:
-  
-        if (inAir) {
-          state = RICK_STATE_JUMPING;
-          direction = RICK_DIR_DOWN;
         } else if (keyboard.PressedUp()) {
           if (inStairs) {
             // In stairs
