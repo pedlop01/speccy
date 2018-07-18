@@ -20,6 +20,7 @@
         <sprite x="1" y="39" width="20" height="18"></sprite>
         <sprite x="22" y="39" width="20" height="18"></sprite>
         <sprite x="43" y="39" width="20" height="18"></sprite>
+        <sprite x="22" y="39" width="20" height="18"></sprite>
       </animation>
     </state>
   </states>
