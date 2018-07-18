@@ -152,7 +152,7 @@ class Character {
     bool ComputeCollisionBlocks(World* map);
 
     void ComputeCollisions(World* map);
-    void ComputeNextState(Keyboard& keyboard);
+    void ComputeNextState(World* map, Keyboard& keyboard);
     void ComputeNextPosition(World* map);
     void ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard);   // REVISIT: using keyboard to test block destruction
     void ComputeNextSpeed();

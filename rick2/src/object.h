@@ -18,6 +18,7 @@
 #define OBJ_HAZARD       5
 #define OBJ_BLOCK        6
 #define OBJ_STATIC       7
+#define OBJ_SHOOT        8
 
 // Object states
 #define OBJ_STATE_STOP   0

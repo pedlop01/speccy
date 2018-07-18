@@ -20,6 +20,7 @@
 #include "laser.h"
 #include "static_object.h"
 #include "block.h"
+#include "shoot.h"
 
 using namespace std;
 
@@ -80,6 +81,8 @@ class World
         // Block belonging to this level
         list<Block*> blocks;
 
+        bool shoot_exists;
+
         ALLEGRO_BITMAP* world_image;
 
         pugi::xml_document world_file;
@@ -111,6 +114,8 @@ class World
         list<Block*>*      GetBlocks()    { return &blocks;    }
 
         void  WorldStep(Character* player);
+
+        void  CreateNewShoot(int x, int y, int direction);
 
     private:
             

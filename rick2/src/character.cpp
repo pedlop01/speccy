@@ -467,7 +467,7 @@ void Character::FixHorizontalDirection(Keyboard& keyboard) {
   }
 }
 
-void Character::ComputeNextState(Keyboard& keyboard) {  
+void Character::ComputeNextState(World* map, Keyboard& keyboard) {  
   int prevDirection;
   
   // Save current state before computing next state
@@ -620,6 +620,11 @@ void Character::ComputeNextState(Keyboard& keyboard) {
         break;
 
       case RICK_STATE_SHOOTING:
+        if (face == RICK_DIR_RIGHT) {
+          map->CreateNewShoot(pos_x + 23, pos_y + 8, OBJ_DIR_RIGHT);
+        } else {
+          map->CreateNewShoot(pos_x, pos_y + 8, OBJ_DIR_LEFT);
+        }
         if (!(keyboard.PressedSpace() && keyboard.PressedUp())) {
           state = RICK_STATE_STOP;
         }
@@ -873,7 +878,7 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   this->ComputeCollisions(map);
   // Compute next state
 //  printf("[CharacterStep] ComputeNextState\n");
-  this->ComputeNextState(keyboard);
+  this->ComputeNextState(map, keyboard);
   // Compute next position
 //  printf("[CharacterStep] ComputeNextPosition\n");
   this->ComputeNextPosition(map);

@@ -254,6 +254,8 @@ World::World(const char *file, bool tileExtractedOption)
   Block* block8 = new Block();
   block8->Init("../designs/blocks/level1_smallblock.xml", 640, 707, 24, 21, true);
   blocks.push_back(block8);
+
+  shoot_exists = false;
 }
 
 // class destructor
@@ -364,6 +366,10 @@ void World::WorldStep(Character* player) {
         case OBJ_ITEM:
           delete ((Item*)object);
           break;
+        case OBJ_SHOOT:
+          delete ((Shoot*)object);
+          shoot_exists = false;
+          break;
         default:
           printf("[WARNING] Unknown object type to be deleted in World!\n");
           break;
@@ -381,7 +387,10 @@ void World::WorldStep(Character* player) {
           break;
         case OBJ_LASER:
           ((Laser*)object)->ObjectStep(this, player);
-          break;          
+          break;
+        case OBJ_SHOOT:
+          ((Shoot*)object)->ObjectStep(this, player);
+          break;
         default:
           break;
       }
@@ -390,4 +399,13 @@ void World::WorldStep(Character* player) {
     }
   }
   //printf("[WorldStep] End function\n");
+}
+
+void World::CreateNewShoot(int x, int y, int direction) {
+  // Allow only one shoot to be created right now
+  if (!shoot_exists) {
+    Shoot* shoot = new Shoot("../designs/shoot/shoot.xml", x, y, 12, 6, direction);
+    objects.push_back(shoot);
+    shoot_exists = true;
+  }
 }

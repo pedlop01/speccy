@@ -207,7 +207,7 @@ void Object::SetX(World* map, int _x) {
       int correction = (x + desp_x + obj_width) % tile_width;
       x = x + desp_x - correction;
     }
-  } else if ((_x > 0) && (x < x)) {
+  } else if ((_x > 0) && (_x < x)) {
     // Collision moving left
     tile_col_x = (x - desp_x) / tile_width;
     if ((map->GetTile(tile_col_x, tile_col_up_y)->GetType() != TILE_COL) &&
@@ -379,7 +379,6 @@ void Object::ComputeNextState() {
 }
 
 void Object::ComputeNextPosition(World* map) {
-  //printf("ComputeNextPosition x = %d, y = %d\n", GetX(), GetY());
 
   switch(state) {
     case OBJ_STATE_STOP:
@@ -393,8 +392,9 @@ void Object::ComputeNextPosition(World* map) {
 
       if (direction & OBJ_DIR_RIGHT)
         SetX(map, GetX() + speed_x);
-      else if (direction & OBJ_DIR_LEFT)
+      else if (direction & OBJ_DIR_LEFT) {
         SetX(map, GetX() - speed_x);
+      }
 
       break;
 
