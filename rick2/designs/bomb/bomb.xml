@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="bomb">
+  <states>
+    <state name="OBJ_STATE_STOP" id="0">
+      <animation bitmap="../designs/bomb/bomb.png" speed="0">
+        <sprite x="1" y="1" width="25" height="22"></sprite>
+      </animation>
+    </state>
+    <state name="OBJ_STATE_MOVING" id="15">
+      <animation bitmap="../designs/bomb/bomb.png" speed="1">
+        <sprite x="1" y="1" width="25" height="22"></sprite>
+        <sprite x="27" y="1" width="25" height="22"></sprite>
+        <sprite x="53" y="1" width="25" height="22"></sprite>
+        <sprite x="79" y="1" width="25" height="22"></sprite>
+        <sprite x="105" y="1" width="25" height="22"></sprite>
+      </animation>
+    </state>
+    <state name="OBJ_STATE_DYING" id="1">
+      <animation bitmap="../designs/bomb/bomb.png" speed="2">
+        <sprite x="1" y="24" width="25" height="22"></sprite>
+        <sprite x="27" y="24" width="25" height="22"></sprite>
+        <sprite x="53" y="24" width="25" height="22"></sprite>
+        <sprite x="79" y="24" width="25" height="22"></sprite>
+        <sprite x="105" y="24" width="25" height="22"></sprite>
+      </animation>
+    </state>
+  </states>
+</object>
