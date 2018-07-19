@@ -42,7 +42,7 @@ void Block::UpdateFSMState() {
     case OBJ_STATE_DYING:
       // wait until animation completes
       current_anim = this->GetCurrentAnimation();
-      if (current_anim->IsLastAnim()) {
+      if (current_anim->CompletedLastAnim()) {
         state = OBJ_STATE_DEAD;
       }      
       break;

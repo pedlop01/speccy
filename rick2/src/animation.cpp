@@ -2,6 +2,7 @@
 
 // class constructor
 Animation::Animation() {
+  prev_anim = 0;
   current_anim = 0;
   steps_in_anim = 0;
 }
@@ -9,6 +10,7 @@ Animation::Animation() {
 Animation::Animation(ALLEGRO_BITMAP* _source_bitmap, int _speed) {
   source_bitmap = _source_bitmap;
   speed = _speed;
+  prev_anim = 0;
   current_anim = 0;
   steps_in_anim = 0;
 }
@@ -32,12 +34,18 @@ void Animation::AddSprite(ALLEGRO_BITMAP* _sprite_bitmap, int _x, int _y, int _w
 void Animation::AnimStep() {
   steps_in_anim++;
   if (steps_in_anim > speed) {
+    prev_anim = current_anim;
     current_anim = (current_anim + 1) % sprites.size();
     steps_in_anim = 0;
   }
 }
 
+bool Animation::CompletedLastAnim() {
+  return ((steps_in_anim == speed) && (current_anim == (sprites.size() - 1)));
+}
+
 void Animation::ResetAnim() {
+  prev_anim = current_anim;
   current_anim = 0;
   steps_in_anim = 0;
 }

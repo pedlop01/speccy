@@ -11,10 +11,13 @@ using namespace std;
 typedef class Animation* animation_ptr;
 class Animation
 {
+  private:
+    int                prev_anim;
+
   public:
     ALLEGRO_BITMAP*    source_bitmap;
     vector<sprite_ptr> sprites;
-    int                speed;
+    int                speed;    
     int                current_anim;
     int                steps_in_anim;
 
@@ -32,7 +35,8 @@ class Animation
     int GetCurrentAnim() { return current_anim;  }
     int GetStepsInAnim() { return steps_in_anim; }
 
-    bool IsLastAnim() { return (current_anim == (sprites.size() - 1)); }
+    bool IsLastAnim()        { return (current_anim == (sprites.size() - 1)); }
+    bool CompletedLastAnim();
 };
 
 #endif // ANIMATION_H

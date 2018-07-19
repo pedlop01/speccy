@@ -68,7 +68,7 @@ void Laser::UpdateFSMState() {
     case OBJ_STATE_DYING:
       // wait until animation completes
       current_anim = this->GetCurrentAnimation();
-      if (current_anim->IsLastAnim()) {
+      if (current_anim->CompletedLastAnim()) {
         // REVISIT: implement dying actions here        
         state = OBJ_STATE_STOP;
         x = start_x;
