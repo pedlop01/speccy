@@ -13,31 +13,30 @@ int Keyboard::ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue) {
   bool keyDown  = false;
   ALLEGRO_EVENT ev;
  
-  if(al_is_event_queue_empty(event_queue)) {
-    return keys;
-  }
+  while(!al_is_event_queue_empty(event_queue)) {
 
-  al_wait_for_event(event_queue, &ev);
+    al_wait_for_event(event_queue, &ev);
 
-  if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
-    keyEvent = true;
-    keyDown  = true;
-  } else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
-    keyEvent = true;
-  }
+    if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+      keyEvent = true;
+      keyDown  = true;
+    } else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
+      keyEvent = true;
+    }
 
-  if (keyEvent) {
-    switch (ev.keyboard.keycode) {
-      case ALLEGRO_KEY_LEFT   : (keyDown ? keys |= KEY_LEFT  : keys &= ~KEY_LEFT);  break;
-      case ALLEGRO_KEY_RIGHT  : (keyDown ? keys |= KEY_RIGHT : keys &= ~KEY_RIGHT); break;
-      case ALLEGRO_KEY_UP     : (keyDown ? keys |= KEY_UP    : keys &= ~KEY_UP);    break;
-      case ALLEGRO_KEY_DOWN   : (keyDown ? keys |= KEY_DOWN  : keys &= ~KEY_DOWN);  break;
-      case ALLEGRO_KEY_SPACE  : (keyDown ? keys |= KEY_SPACE : keys &= ~KEY_SPACE); break;
-      case ALLEGRO_KEY_A      : (keyDown ? keys |= KEY_A     : keys &= ~KEY_A);     break;
-      case ALLEGRO_KEY_K      : (keyDown ? keys |= KEY_K     : keys &= ~KEY_K);     break;
-      case ALLEGRO_KEY_M      : (keyDown ? keys |= KEY_M     : keys &= ~KEY_M);     break;
-      case ALLEGRO_KEY_Z      : (keyDown ? keys |= KEY_Z     : keys &= ~KEY_Z);     break;
-      case ALLEGRO_KEY_ESCAPE : (keyDown ? keys |= KEY_ESC   : keys &= ~KEY_ESC);   break;
+    if (keyEvent) {
+      switch (ev.keyboard.keycode) {
+        case ALLEGRO_KEY_LEFT   : (keyDown ? keys |= KEY_LEFT  : keys &= ~KEY_LEFT);  break;
+        case ALLEGRO_KEY_RIGHT  : (keyDown ? keys |= KEY_RIGHT : keys &= ~KEY_RIGHT); break;
+        case ALLEGRO_KEY_UP     : (keyDown ? keys |= KEY_UP    : keys &= ~KEY_UP);    break;
+        case ALLEGRO_KEY_DOWN   : (keyDown ? keys |= KEY_DOWN  : keys &= ~KEY_DOWN);  break;
+        case ALLEGRO_KEY_SPACE  : (keyDown ? keys |= KEY_SPACE : keys &= ~KEY_SPACE); break;
+        case ALLEGRO_KEY_A      : (keyDown ? keys |= KEY_A     : keys &= ~KEY_A);     break;
+        case ALLEGRO_KEY_K      : (keyDown ? keys |= KEY_K     : keys &= ~KEY_K);     break;
+        case ALLEGRO_KEY_M      : (keyDown ? keys |= KEY_M     : keys &= ~KEY_M);     break;
+        case ALLEGRO_KEY_Z      : (keyDown ? keys |= KEY_Z     : keys &= ~KEY_Z);     break;
+        case ALLEGRO_KEY_ESCAPE : (keyDown ? keys |= KEY_ESC   : keys &= ~KEY_ESC);   break;
+      }
     }
   }
 
