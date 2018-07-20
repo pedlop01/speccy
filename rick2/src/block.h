@@ -15,7 +15,7 @@ class Block : public Object {
     bool trigger;
 
   private:
-    void UpdateFSMState();
+    void UpdateFSMState(World* map);
     void ComputeCollisions(World* map, Character* player);
     void ComputeNextPosition(World* map);
 

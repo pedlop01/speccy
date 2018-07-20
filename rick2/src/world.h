@@ -105,6 +105,8 @@ class World
 
         Tile* GetTile(int x, int y);
         int   GetTileValue(int x, int y);
+        bool  IsTileCollisionable(int x, int y);
+        bool  IsTileCollisionableDown(int x, int y);
 		
 		    ALLEGRO_BITMAP* GetWorldImage()  { return world_image;     }
 		

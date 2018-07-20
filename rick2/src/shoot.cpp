@@ -21,30 +21,38 @@ Shoot::~Shoot() {
 
 }
 
-void Shoot::UpdateFSMState() {
+void Shoot::UpdateFSMState(World* map) {
   bool inCol;
   bool rightCol;
   bool leftCol;
   bool upCol;
   bool downCol;
+  bool blockCollision;
   Animation* current_anim;
 
-  upCol    = ((extColExt.GetLeftUpCol() != 0) ||
-              (extColExt.GetRightUpCol() != 0));
+  upCol    = (extColExt.GetLeftUpCol() == TILE_COL) &&
+             (extColExt.GetRightUpCol() == TILE_COL);
 
-  downCol  = ((extColExt.GetLeftDownCol() != 0) ||
-              (extColExt.GetRightDownCol() != 0));
+  downCol  = (extColExt.GetLeftDownCol() == TILE_COL) &&
+             (extColExt.GetRightDownCol() == TILE_COL);
 
-  rightCol = ((extColExt.GetRightUpCol() != 0) ||
-              (extColExt.GetRightDownCol() != 0));
+  rightCol = (extColExt.GetRightUpCol() == TILE_COL) &&
+             (extColExt.GetRightDownCol() == TILE_COL);
 
-  leftCol  = ((extColExt.GetLeftUpCol() != 0) ||
-              (extColExt.GetLeftDownCol() != 0));
+  leftCol  = (extColExt.GetLeftUpCol() == TILE_COL) &&
+             (extColExt.GetLeftDownCol() == TILE_COL  );
 
   inCol = (direction & OBJ_DIR_RIGHT && rightCol) ||
           (direction & OBJ_DIR_LEFT  && leftCol)  ||
           (direction & OBJ_DIR_UP    && upCol)    ||
           (direction & OBJ_DIR_DOWN  && downCol);
+
+  ComputeCollisionBlocks(map);
+  ComputeCollisionObjects(map);
+  blockCollision = blockColDown ||
+                   blockColUp   ||
+                   blockColLeft ||
+                   blockColRight;
 
   switch(state) {
     case OBJ_STATE_STOP:
@@ -53,8 +61,12 @@ void Shoot::UpdateFSMState() {
       break;
 
     case OBJ_STATE_MOVING:
-      if (inCol) {
+
+      if (inCol || blockCollision || itemCol) {
         state = OBJ_STATE_DEAD;
+        if (itemCol) {
+          itemColPtr->SetKilled();
+        }
       }
 
       break;

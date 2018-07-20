@@ -9,12 +9,14 @@
 
 class Bomb : public Object {
   private:
-    void UpdateFSMState();
+    void UpdateFSMState(World* map);
 
   public:
     Bomb();
     Bomb(const char* file, int _x, int _y, int _width, int _height, int _direction);
     ~Bomb();
+
+    void ComputeNextPosition(World* map);
 };
 
 #endif // BOMB_H

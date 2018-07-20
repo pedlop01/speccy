@@ -17,7 +17,7 @@ class Laser : public Object {
     int laser_type;
 
   private:
-    void UpdateFSMState();
+    void UpdateFSMState(World* map);
 
   public:
     Laser();

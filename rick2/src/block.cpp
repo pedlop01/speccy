@@ -14,7 +14,7 @@ void Block::Init(const char* _file, int _x, int _y, int _width, int _height, boo
   Object::Init(_file, _x, _y, _width, _height, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 10.0, 10.0, 10.0, 0.0, 0.0, 0.0);
 }
 
-void Block::UpdateFSMState() {
+void Block::UpdateFSMState(World* map) {
   Animation* current_anim;
 
   switch(state) {

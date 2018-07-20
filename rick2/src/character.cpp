@@ -36,6 +36,8 @@ Character::Character() {
   initial_state = state;
 
   animation_scaling_factor = 1.0;
+
+  killed = false;
 }
 
 Character::Character(const char* file) {
@@ -64,6 +66,7 @@ Character::Character(const char* file) {
   initial_speed_y = speed_y;
   initial_state = state;
   animation_scaling_factor = 1.0;
+  killed = false;
 
   pugi::xml_parse_result result = character_file.load_file(file);
   if(!result) {
@@ -479,7 +482,8 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
 
   // No matter what is the state update, if rick is being killed, then
   // the kill takes precedence
-  if (keyboard.PressedK()) {
+  if (killed) {
+    killed = false;
     state = RICK_STATE_DYING;
     direction = RICK_DIR_UP;
     direction |= RICK_DIR_RIGHT;
@@ -799,8 +803,6 @@ void Character::ComputeNextPosition(World* map) {
 void Character::ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard) {
   // If no block coliision then return
   bool blockCollision = blockCollisionLeft || blockCollisionRight;
-
-  if (blockCollision && keyboard.PressedSpace()) blockCollisionPtr->SetTrigger(true);
 
   if (!blockCollision) return;
 

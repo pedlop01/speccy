@@ -13,5 +13,14 @@
         </sprite>
       </animation>
     </state>
+    <state name="OBJ_STATE_DYING" id="2">
+      <animation bitmap="../designs/items/items.png" speed="3">
+        <sprite x="1" y="58" width="20" height="18"></sprite>
+        <sprite x="22" y="58" width="20" height="18"></sprite>
+        <sprite x="43" y="58" width="20" height="18"></sprite>
+        <sprite x="64" y="58" width="20" height="18"></sprite>
+        <sprite x="85" y="58" width="20" height="18"></sprite>
+      </animation>
+    </state>
   </states>
 </object>

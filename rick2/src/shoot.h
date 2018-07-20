@@ -9,7 +9,7 @@
 
 class Shoot : public Object {
   private:
-    void UpdateFSMState();
+    void UpdateFSMState(World* map);
 
   public:
     Shoot();

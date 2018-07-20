@@ -90,7 +90,7 @@ World::World(const char *file, bool tileExtractedOption)
 
   // Read platforms
   // REVISIT: need to be read from file! refactor reading of map too!
-  Platform* platform1 = new Platform("../designs/platforms/platforms.xml", 804, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
+  Platform* platform1 = new Platform("../designs/platforms/platforms.xml", 800, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
   Platform* platform2 = new Platform("../designs/platforms/platforms.xml", 548, 1368, 24, 8, true, true, OBJ_DIR_DOWN,  14*8);
   Platform* platform3 = new Platform("../designs/platforms/platforms.xml", 450, 1696, 24, 8, true, true, OBJ_DIR_LEFT,  20*8);
   Platform* platform4 = new Platform("../designs/platforms/platforms.xml", 300, 1696, 24, 8, true, true, OBJ_DIR_RIGHT, 20*8);
@@ -321,6 +321,16 @@ Tile* World::GetTile(int x, int y) {
   return world_tiles[x][y];
 }
 
+bool World::IsTileCollisionable(int x, int y) {
+  return (world_tiles[x][y]->GetType() == TILE_COL);
+}
+
+bool World::IsTileCollisionableDown(int x, int y) {
+  return ((world_tiles[x][y]->GetType() == TILE_COL) ||
+          (world_tiles[x][y]->GetType() == TILE_COL_DOWN) ||
+          (world_tiles[x][y]->GetType() == TILE_STAIRS_TOP));
+}
+
 int World::GetTileValue(int x, int y) {
   return world_tiles[x][y]->GetValue();
 }
@@ -420,8 +430,11 @@ void World::CreateNewShoot(int x, int y, int direction) {
 
 void World::CreateNewBomb(int x, int y, int direction) {
   // Allow only one bomb to be created right now
-  if (!bomb_exists) {
+  if (!bomb_exists) {    
+    printf("CreateNewBomb x=%d, y=%d\n", x, y);
     Bomb* shoot = new Bomb("../designs/bomb/bomb.xml", x, y - 1, 25, 22, direction);
+    // REVISIT: not sure why height is 16. May it be 17?
+    shoot->SetBoundingBox(8, 10, 10, 13);
     objects.push_back(shoot);
     bomb_exists = true;
   }

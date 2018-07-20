@@ -13,7 +13,7 @@ class Item : public Object {
     int steps_dying;
 
   private:
-    void UpdateFSMState();
+    void UpdateFSMState(World* map);
 
   public:
     Item();    

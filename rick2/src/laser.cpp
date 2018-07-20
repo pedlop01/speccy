@@ -28,7 +28,7 @@ Laser::~Laser() {
 
 }
 
-void Laser::UpdateFSMState() {
+void Laser::UpdateFSMState(World* map) {
   bool inCol;
   bool rightCol;
   bool leftCol;

@@ -22,6 +22,7 @@ int Keyboard::ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue) {
       keyDown  = true;
     } else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
       keyEvent = true;
+      keyDown  = false;
     }
 
     if (keyEvent) {

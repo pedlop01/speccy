@@ -1,6 +1,8 @@
 #include "object.h"
 #include "world.h"
 #include "character.h"
+#include "block.h"
+#include "platform.h"
 
 int Object::id = 0;
 
@@ -11,6 +13,19 @@ Object::Object() {
   height  = 0;
   visible = false;
   active  = false;
+  using_bb  = false;
+  bb_x      = 0;
+  bb_y      = 0;
+  bb_width  = 0;
+  bb_height = 0;
+  playerCol = false;
+  blockColRight = false;
+  blockColLeft = false;
+  blockColUp = false;
+  blockColDown = false;    
+  inPlatform = false;
+  itemCol = false;
+  killed = false;
 
   steps_in_state = 0;
   steps_in_direction_x = 0;
@@ -36,6 +51,9 @@ Object::Object() {
   initial_speed_x = speed_x;
   initial_speed_y = speed_y;
   initial_state = state;
+
+  speed_x = 0.0;
+  speed_y = 0.0;
 }
 
 Object::Object(int _x, int _y, int _width, int _height, int _visible, int _active) {
@@ -45,6 +63,19 @@ Object::Object(int _x, int _y, int _width, int _height, int _visible, int _activ
   height  = _height;
   visible = _visible;
   active  = _active;
+  using_bb  = false;
+  bb_x      = 0;
+  bb_y      = 0;
+  bb_width  = 0;
+  bb_height = 0;
+  playerCol = false;
+  blockColRight = false;
+  blockColLeft = false;
+  blockColUp = false;
+  blockColDown = false;
+  inPlatform = false;
+  itemCol = false;
+  killed = false;
 
   steps_in_state = 0;
   steps_in_direction_x = 0;
@@ -70,6 +101,9 @@ Object::Object(int _x, int _y, int _width, int _height, int _visible, int _activ
   initial_speed_x = speed_x;
   initial_speed_y = speed_y;
   initial_state = state;
+
+  speed_x = 0.0;
+  speed_y = 0.0;
 }
 
 Object::~Object() {
@@ -179,140 +213,387 @@ void Object::Reset() {
   speed_x = initial_speed_x;
   speed_y = initial_speed_y;
   state = initial_state;
+  killed = false;
 }
 
 void Object::SetX(World* map, int _x) {
 
-  int tile_width = map->GetTilesetTileWidth();
+  int tile_width  = map->GetTilesetTileWidth();
   int tile_height = map->GetTilesetTileHeight();
-  int obj_width = this->width;
-  int obj_height = this->height;
+  int obj_width   = (using_bb ? this->bb_width : this->width) - 1;
+  int obj_height  = (using_bb ? this->bb_height : this->height) - 1;
+
+  //if (obj_type == OBJ_BOMB) printf("SetX old_x=%d, new_x=%d\n", x, _x);
 
   // Compute the displacement in x
   int desp_x = (_x > x) ? (_x - x) : (x - _x);
 
   // Compute x and y corrections to draw world
   int tile_col_x;
-  int tile_col_up_y   = y / tile_height;
-  int tile_col_down_y = (y + obj_height - 1) / tile_height;
+  int tile_col_up_y   = (y + bb_y) / tile_height;
+  int tile_col_down_y = (y + bb_y + obj_height) / tile_height;
   if ( _x > x) {
     // Collision moving right
-    tile_col_x = (x + desp_x + obj_width)  / tile_width;
-    if ((map->GetTile(tile_col_x, tile_col_up_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_x, tile_col_down_y)->GetType() != TILE_COL)) {
+    tile_col_x = (x + bb_x + desp_x + obj_width)  / tile_width;
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
+        (!map->IsTileCollisionable(tile_col_x, tile_col_down_y))) {
       // No collision
       x = x + desp_x;
-    } else {
+      //if(obj_type == OBJ_BOMB) printf("right no correction\n");
+    } else {      
       // Collision. Move to safe position
-      int correction = (x + desp_x + obj_width) % tile_width;
-      x = x + desp_x - correction;
+      int correction = (x + bb_x + desp_x + obj_width) % tile_width;
+      x = x + desp_x - correction - 1;
+      //if(obj_type == OBJ_BOMB) printf("right correction. TileX=%d, TileDownY=%d, TileUpY=%d\n", tile_col_x, tile_col_down_y, tile_col_up_y);
     }
   } else if ((_x > 0) && (_x < x)) {
     // Collision moving left
-    tile_col_x = (x - desp_x) / tile_width;
-    if ((map->GetTile(tile_col_x, tile_col_up_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_x, tile_col_down_y)->GetType() != TILE_COL)) {
+    tile_col_x = (x + bb_x - desp_x) / tile_width;
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
+        (!map->IsTileCollisionable(tile_col_x, tile_col_down_y))) {
       // No collision
       x = x - desp_x;
+      //if(obj_type == OBJ_BOMB) printf("left no correction\n");
     } else {
       // Collision. Move to safe position
-      int correction = tile_width - ((x - desp_x) % tile_width);
+      int correction = tile_width - ((x + bb_x - desp_x) % tile_width);
       x = x - desp_x + correction;
+      //if(obj_type == OBJ_BOMB) printf("left correction\n");
     }
-  }
+  } /*else {
+    if(obj_type == OBJ_BOMB) printf("no move on left\n");
+  }*/
 }
 
 void Object::SetY(World* map, int _y) {
-  int tile_width = map->GetTilesetTileWidth();
+  int tile_width  = map->GetTilesetTileWidth();
   int tile_height = map->GetTilesetTileHeight();
-  int obj_width = this->width;
-  int obj_height = this->height;
+  int obj_width   = (using_bb ? this->bb_width : this->width) - 1;
+  int obj_height  = (using_bb ? this->bb_height : this->height) - 1;
+
+  //if (obj_type == OBJ_BOMB) printf("SetY old_y=%d, new_y=%d\n", y, _y);
 
   // Compute the displacement in x
   int desp_y = (_y > y) ? (_y - y) : (y - _y);
 
   // Compute x and y corrections to draw world
   int tile_col_y;
-  int tile_col_up_x   = x / tile_width;
-  int tile_col_down_x = (x + obj_width - 1) / tile_width;
+  int tile_col_left_x  = (x + bb_x) / tile_width;
+  int tile_col_right_x = (x + bb_x + obj_width) / tile_width;
   if (_y > y) {
     // Collision moving down
-    tile_col_y = (y + desp_y + obj_height)  / tile_height;
-    if ((map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) {
+    tile_col_y = (y + bb_y + desp_y + obj_height)  / tile_height;
+    if ((!map->IsTileCollisionableDown(tile_col_left_x, tile_col_y)) &&
+        (!map->IsTileCollisionableDown(tile_col_right_x, tile_col_y))) {
       // No collision
+      //if (obj_type == OBJ_BOMB) printf("Down no correction. y=%d desp_y=%d\n", y, desp_y);
       y = y + desp_y;
     } else {
       // Collision. Move to safe position
-      int correction = (y + desp_y + obj_height) % tile_height;
-      y = y + desp_y - correction;
+      int correction = ((y + bb_y + desp_y + obj_height) % tile_height);
+      if (obj_type == OBJ_BOMB) printf("Down correction. y=%d desp_y=%d correction=%d\n", y, desp_y, correction);
+      y = y + desp_y - correction - 1;
     }
   } else if ((_y > 0) && (_y < y)) {
     // Collision moving up
-    tile_col_y = (y - desp_y) / tile_height;
-    if ((map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) {
+    tile_col_y = (y + bb_y - desp_y) / tile_height;
+    if ((!map->IsTileCollisionable(tile_col_left_x, tile_col_y)) &&
+        (!map->IsTileCollisionable(tile_col_right_x, tile_col_y))) {
       // No collision
-      y = y - desp_y;
+      //if (obj_type == OBJ_BOMB) printf("Up no correction. y=%d desp_y=%d\n", y, desp_y);
+      y = y - desp_y;      
     } else {
-      // Collision. Move to safe position
+      // Collision. Move to safe position      
       int correction = tile_height - ((y - desp_y) % tile_height);
-      y = y - desp_y + correction;
+      //if (obj_type == OBJ_BOMB) printf("Up correction. y=%d desp_y=%d correction=%d\n", y, desp_y, correction);
+      y = y + desp_y + correction;      
+    }
+  } /*else {
+    if (obj_type == OBJ_BOMB) printf("No move on y\n");    
+  }*/
+}
+
+void Object::GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int right_down_x, int right_down_y) {
+  mask_col.SetLeftUpCol(map->GetTileByCoord(left_up_x, left_up_y)->GetType());
+  mask_col.SetRightUpCol(map->GetTileByCoord(right_down_x, left_up_y)->GetType());
+  mask_col.SetRightDownCol(map->GetTileByCoord(right_down_x, right_down_y)->GetType());
+  mask_col.SetLeftDownCol(map->GetTileByCoord(left_up_x, right_down_y)->GetType());
+}
+
+void Object::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
+  if (using_bb) {
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x + bb_x - 1,
+                                y + bb_y - 1,
+                                x + bb_x + bb_width,
+                                y + bb_y + bb_height);
+  } else {
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x - 1,
+                                y - 1,
+                                x + width,
+                                y + height);
+  }
+}
+
+void Object::GetCollisionsWidthBoxExt(World* map, Colbox &mask_col) {
+  if (using_bb) {
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x + bb_x - 1,
+                                y + bb_y,
+                                x + bb_x + bb_width,
+                                y + bb_y + bb_height - 1);
+  } else {
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x - 1,
+                                y,
+                                x + width,
+                                y + height - 1);
+  }
+}
+
+void Object::GetCollisionsHeightBoxExt(World* map, Colbox &mask_col) {
+  if (using_bb) {    
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x + bb_x,
+                                y + bb_y - 1,
+                                x + bb_x + bb_width - 1,
+                                y + bb_y + bb_height);    
+  } else {
+    this->GetCollisionsByCoords(map,
+                                mask_col,
+                                x,
+                                y - 1,
+                                x + width - 1,
+                                y + height);
+  }
+}
+
+void Object::SetBoundingBox(int _bb_x, int _bb_y, int _bb_width, int _bb_height) {
+  bb_x      = _bb_x - 1;  // Relative to 0
+  bb_y      = _bb_y - 1;  // Relative to 0
+  bb_width  = _bb_width;
+  bb_height = _bb_height;
+  using_bb  = true;
+}
+
+void Object::UnsetBoundingBox() {
+  using_bb  = true;
+  bb_x      = 0;
+  bb_y      = 0;
+  bb_width  = 0;
+  bb_height = 0;
+}
+
+bool Object::IsUsingBoundingBox() {
+  return using_bb;
+}
+
+void Object::ComputeCollisionPlatforms(World* map) {
+  int down_left_x;
+  int down_right_x;
+  int down_y;
+  int col_width = (using_bb ? bb_width : width);
+  int col_height = (using_bb ? bb_height : height);
+
+  inPlatform = false;
+
+  vector<Platform*> *platforms = map->GetPlatforms();
+  for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
+    down_left_x = x + bb_x;
+    down_right_x = x + col_width;
+    down_y = y + bb_y + col_height + 1;
+
+    Platform* platform = *it;
+    if ((down_y >= platform->GetY()) && (down_y <= (platform->GetY() + platform->GetHeight())) &&
+      (((down_left_x >= platform->GetX()) && (down_left_x <= (platform->GetX() + platform->GetWidth()))) ||
+       ((down_right_x >= platform->GetX()) && (down_right_x <= (platform->GetX() + platform->GetWidth()))))) {
+      inPlatform = true;
+      inPlatformPtr = platform;
+      // Take first platform with collision
+      break;
+    } else {
+      inPlatform = false;
+      inPlatformPtr = 0;
     }
   }
 }
 
-void Object::GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height) {
-  mask_col.SetLeftUpCol(map->GetTileByCoord(left_up_x, left_up_y)->GetType());
-  mask_col.SetRightUpCol(map->GetTileByCoord(left_up_x + width, left_up_y)->GetType());
-  mask_col.SetRightDownCol(map->GetTileByCoord(left_up_x + width, left_up_y + height)->GetType());
-  mask_col.SetLeftDownCol(map->GetTileByCoord(left_up_x, left_up_y + height)->GetType());
+void Object::ComputeCollisionBlocks(World* map) {
+  int col_width  = (using_bb ? bb_width  : width);
+  int col_height = (using_bb ? bb_height : height);
+
+  blockColRight = false;
+  blockColLeft  = false;
+  blockColUp    = false;
+  blockColDown  = false;
+  blockColPtr   = 0;
+
+  list<Block*> *blocks = map->GetBlocks();
+  for (list<Block*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
+    Block* block = *it;
+
+    if ((block->GetState() == OBJ_STATE_DYING) || (block->GetState() == OBJ_STATE_DEAD)) {
+      break;
+    }
+
+    if (block->CoordsWithinObject(x + bb_x + col_width, y + bb_y) ||        
+        block->CoordsWithinObject(x + bb_x + col_width, y + bb_y + bb_height)) {
+      blockColRight = true;
+      blockColPtr = block;
+      // Take first block with collision
+      break;
+    } else if (block->CoordsWithinObject(x + bb_x, y + bb_y) ||
+               block->CoordsWithinObject(x + bb_x, y + bb_y + bb_height)) {
+      blockColLeft = true;
+      blockColPtr = block;
+      // Take first block with collision
+      break;
+    } else if (block->CoordsWithinObject(x + bb_x, y + bb_y) ||
+               block->CoordsWithinObject(x + bb_x + bb_width, y + bb_y)) {
+      blockColUp = true;
+      blockColPtr = block;
+      // Take first block with collision
+      break;
+    } else if (block->CoordsWithinObject(x + bb_x, y + bb_y + bb_height) ||
+               block->CoordsWithinObject(x + bb_x + bb_width, y + bb_y + bb_height)) {
+      blockColDown = true;
+      blockColPtr = block;
+      // Take first block with collision
+      break;
+    }
+  } 
 }
 
-void Object::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
-  this->GetCollisionsByCoords(map,
-                              mask_col,
-                              x - 1,
-                              y - 1,
-                              width + 1,
-                              height + 1);
+void Object::ComputeCollisionObjects(World* map) {
+  int col_width  = (using_bb ? bb_width  : width);
+  int col_height = (using_bb ? bb_height : height);
+
+  itemCol = false;
+
+  list<Object*> *blocks = map->GetObjects();
+  for (list<Object*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
+    Object* object = *it;    
+
+    if ((object->GetType() != OBJ_ITEM)         ||
+        (object->GetState() == OBJ_STATE_DYING) ||
+        (object->GetState() == OBJ_STATE_DEAD)) {
+      break;
+    }
+
+    if (object->CoordsWithinObject(x + bb_x + col_width, y + bb_y) ||        
+        object->CoordsWithinObject(x + bb_x + col_width, y + bb_y + bb_height)) {
+      itemCol = true;
+      itemColPtr = object;
+      // Take first object with collision
+      break;
+    } else if (object->CoordsWithinObject(x + bb_x, y + bb_y) ||
+               object->CoordsWithinObject(x + bb_x, y + bb_y + bb_height)) {
+      itemCol = true;
+      itemColPtr = object;
+      // Take first object with collision
+      break;
+    } else if (object->CoordsWithinObject(x + bb_x, y + bb_y) ||
+               object->CoordsWithinObject(x + bb_x + bb_width, y + bb_y)) {
+      itemCol = true;
+      itemColPtr = object;
+      // Take first object with collision
+      break;
+    } else if (object->CoordsWithinObject(x + bb_x, y + bb_y + bb_height) ||
+               object->CoordsWithinObject(x + bb_x + bb_width, y + bb_y + bb_height)) {
+      itemCol = true;
+      itemColPtr = object;
+      // Take first object with collision
+      break;
+    }
+  }
+}
+
+bool Object::BoxWithinBox(int a_x, int a_y, int a_width, int a_height, int b_x, int b_y, int b_width, int b_height) {
+  bool inside = ((a_x >= b_x) &&
+                 (a_x <= (b_x + b_width)) &&
+                 (a_y >= b_y) &&
+                 (a_y <= (b_y + b_width))) ||
+
+                (((a_x + a_width) >= b_x) &&
+                 ((a_x + a_width) <= (b_x + b_width)) &&
+                 (a_y >= b_y) &&
+                 (a_y <= (b_y + b_width))) ||
+
+                ((a_x >= b_x) &&
+                 (a_x <= (b_x + b_width)) &&
+                 ((a_y + a_height) >= b_y) &&
+                 ((a_y + a_height) <= (b_y + b_width))) ||
+
+                (((a_x + a_width) >= b_x) &&
+                 ((a_x + a_width) <= (b_x + b_width)) &&
+                 ((a_y + a_height) >= b_y) &&
+                 ((a_y + a_height) <= (b_y + b_width)));
+
+  return inside;
 }
 
 void Object::ComputeCollisions(World* map, Character* player) {
+  int col_x;
+  int col_y;
+  int col_width;
+  int col_height;
+
+  if (using_bb) {
+    col_x      = x + bb_x;
+    col_y      = y + bb_y;
+    col_width  = bb_width;
+    col_height = bb_height;
+  } else {
+    col_x      = x;
+    col_y      = y;
+    col_width  = width;
+    col_height = height;
+  }
+
   // Check collisions with world
   this->GetCollisionsExternalBoxExt(map, extColExt);
+  this->GetCollisionsWidthBoxExt(map, widthColExt);
+  this->GetCollisionsHeightBoxExt(map, heightColExt);
 
   // Check collisions with player. Player does not collision
   // when DYING or DEAD
   playerCol = ((player->GetState() != RICK_STATE_DYING) &&
                (player->GetState() != RICK_STATE_DEAD)) &&
 
-              (((player->GetPosX() >= x) &&
-                (player->GetPosX() <= (x + width)) &&
-                (player->GetPosY() >= y) &&
-                (player->GetPosY() <= (y + height))) ||
+              // Player within object
+              (BoxWithinBox(player->GetPosX(),
+                            player->GetPosY(),
+                            player->GetWidth(),
+                            player->GetHeight(),
+                            col_x,
+                            col_y,
+                            col_width,
+                            col_height) ||
 
-               (((player->GetPosX() + player->GetWidth()) >= x) &&
-                ((player->GetPosX() + player->GetWidth()) <= x + width) &&
-                (player->GetPosY() >= y) &&
-                (player->GetPosY() <= y + height)) ||
+               // Object within player
+               BoxWithinBox(col_x,
+                            col_y,
+                            col_width,
+                            col_height,
+                            player->GetPosX(),
+                            player->GetPosY(),
+                            player->GetWidth(),
+                            player->GetHeight()));
 
-               ((player->GetPosX() >= x) &&
-                (player->GetPosX() <= (x + width)) &&
-                ((player->GetPosY() + player->GetHeight()) >= y) &&
-                ((player->GetPosY() + player->GetHeight()) <= (y + height))) ||
-
-               (((player->GetPosX() + player->GetWidth()) >= x) &&
-                ((player->GetPosX() + player->GetWidth()) <= (x + width)) &&
-                ((player->GetPosY() + player->GetHeight()) >= y) &&
-                ((player->GetPosY() + player->GetHeight()) <= (y + height))));
-
-//  if (playerCol)
-//    printf("Player colliding with obj = %d\n", obj_id);
+  if (playerCol) {
+    //printf("Player colliding with obj = %d\n", obj_id);
+    playerPtr = player; // There is only one player at the moment.
+  }
 
 }
 
-void Object::UpdateFSMState() {
+void Object::UpdateFSMState(World* map) {
   bool inAir;
 
   inAir = ((extColExt.GetLeftDownCol() == 0) &&
@@ -337,7 +618,7 @@ void Object::UpdateFSMState() {
   }
 }
 
-void Object::ComputeNextState() {
+void Object::ComputeNextState(World* map) {
   //printf("[OBJ] ComputeNextState: state = %d direction  = %d\n", state, direction);
 
   // Save current state before computing next state
@@ -347,7 +628,7 @@ void Object::ComputeNextState() {
 
   // Object implements simple states based on world collisions
   // Derivate classes should re-implement this function for more complex behaviour
-  this->UpdateFSMState();
+  this->UpdateFSMState(map);
 
   // Increment steps in state if no change in state
   if (prev_state == state)
@@ -384,8 +665,7 @@ void Object::ComputeNextPosition(World* map) {
     case OBJ_STATE_STOP:
       break;
 
-    case OBJ_STATE_MOVING:
-
+    case OBJ_STATE_MOVING:      
       if (direction & OBJ_DIR_UP)
         SetY(map, GetY() - speed_y);
       else if (direction & OBJ_DIR_DOWN)
@@ -441,10 +721,11 @@ void Object::ComputeNextSpeed() {
 }
 
 void Object::ObjectStep(World* map, Character* player) {
+
 //  printf("[Object] ComputeCollisions\n");
   this->ComputeCollisions(map, player);
 //  printf("[Object] ComputeNextState\n");
-  this->ComputeNextState();
+  this->ComputeNextState(map);
 //  printf("[Object] ComputeNextPosition\n");
   this->ComputeNextPosition(map);
 //  printf("[Object] ComputeNextSpeed\n");
@@ -455,7 +736,7 @@ void Object::ObjectStep(World* map, Character* player) {
   // wait until the animation completes to transition to the next state.
 //  printf("[Object] ComputeAnimationStep\n");
   if (state != OBJ_STATE_DEAD) {
-    if ((prev_direction != direction) && (direction == OBJ_DIR_STOP))
+    if ((prev_direction != direction) && (direction == OBJ_DIR_STOP) && (obj_type != OBJ_BOMB))  // BOMBs are an exception!
       animations[state]->ResetAnim();
     else
       animations[state]->AnimStep();
@@ -479,6 +760,11 @@ int Object::GetCurrentAnimationBitmapAttributes() {
 }
 
 bool Object::CoordsWithinObject(int _x, int _y) {
-  return ((_x >= x) && (_x <= x + width) &&
-          (_y >= y) && (_y <= y + height));
+  if (using_bb) {
+    return ((_x >= (x + bb_x)) && (_x <= (x + bb_x + bb_width)) &&
+            (_y >= (y + bb_y)) && (_y <= (y + bb_y + bb_height)));
+  } else {
+    return ((_x >= x) && (_x <= x + width) &&
+            (_y >= y) && (_y <= y + height));
+  }
 }

@@ -68,6 +68,8 @@ class Character {
     int stepsInDirectionX;
     int stepsInDirectionY;
 
+    bool killed;
+
     // Collisions
     // - bounding boxes
     Colbox extColInt;
@@ -166,6 +168,9 @@ class Character {
     float GetCurrentAnimationScalingFactor();
 
     void RegisterCamera(Camera* _camera) { camera = _camera; }
+
+    void SetKilled()   { killed = true;  }
+    void UnsetKilled() { killed = false; }
 
   private:
     void FixHorizontalDirection(Keyboard& keyboard);

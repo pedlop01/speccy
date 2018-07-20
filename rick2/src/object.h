@@ -48,6 +48,16 @@ class Object {
     int width;
     int height;
 
+    // Bounding box
+    // Not all object will implement bounding boxes. They are only
+    // relevant for objects where the collision limits are not
+    // the same as the sprite size
+    bool using_bb;
+    int  bb_x;
+    int  bb_y;
+    int  bb_width;
+    int  bb_height;
+
     int obj_id;
 
     bool visible;
@@ -75,6 +85,8 @@ class Object {
 
     int obj_type;
 
+    bool killed;
+
     // Initial values for main variables
     int  initial_x;
     int  initial_y;
@@ -86,8 +98,20 @@ class Object {
     int  initial_state;
 
     // Collisions
-    Colbox extColExt;  // Collision with world
-    bool playerCol;
+    Colbox     extColExt;     // Collision with world
+    Colbox     widthColExt;   // Collision with world
+    Colbox     heightColExt;  // Collision with world
+    bool       playerCol;
+    bool       blockColRight;
+    bool       blockColLeft;
+    bool       blockColUp;
+    bool       blockColDown;    
+    bool       inPlatform;
+    bool       itemCol;
+    Character* playerPtr;
+    Object*    blockColPtr;
+    Object*    inPlatformPtr;
+    Object*    itemColPtr;
 
     vector<Animation*> animations;
 
@@ -131,13 +155,17 @@ class Object {
     void SetX(World* map, int _x);
     void SetY(World* map, int _y);
 
-    int GetId()       { return obj_id;      }
-    int GetX()        { return x;       };
-    int GetY()        { return y;       };
-    int GetWidth()    { return width;   };
-    int GetHeight()   { return height;  };
-    bool GetVisible() { return visible; };
-    bool GetActive()  { return active;  };
+    int GetId()       { return obj_id;                          };
+    int GetX()        { return x;                               };
+    int GetY()        { return y;                               };
+    int GetWidth()    { return width;                           };
+    int GetHeight()   { return height;                          };
+    int GetBBX()      { return (using_bb ? bb_x + 1  : 0);      };    // Only for use in graphical functions. This is why it requires to be +1
+    int GetBBY()      { return (using_bb ? bb_y + 1  : 0);      };    // Only for use in graphical functions. This is why it requires to be +1
+    int GetBBWidth()  { return (using_bb ? bb_width  : width);  };
+    int GetBBHeight() { return (using_bb ? bb_height : height); };
+    bool GetVisible() { return visible;                         };
+    bool GetActive()  { return active;                          };
 
     void SetSpeedX(float _speed_x)          { speed_x = _speed_x;           };
     void SetSpeedXMax(float _speed_x_max)   { speed_x_max = _speed_x_max;   };
@@ -159,8 +187,16 @@ class Object {
                                               speed_y_min = _speed_y_min;
                                               speed_y_step = _speed_y_step; };
 
+    void SetBoundingBox(int _bb_x, int _bb_y, int _bb_width, int _bb_height);
+    void UnsetBoundingBox();
+    bool IsUsingBoundingBox();
+
+    void ComputeCollisionBlocks(World* map);
+    void ComputeCollisionPlatforms(World* map);
+    void ComputeCollisionObjects(World* map);
+
     virtual void ComputeCollisions(World* map, Character* player);
-    void ComputeNextState();
+    void ComputeNextState(World* map);
     virtual void ComputeNextPosition(World* map);
     void ComputeNextSpeed();
 
@@ -172,12 +208,19 @@ class Object {
 
     bool CoordsWithinObject(int _x, int _y);
 
+    void SetKilled()   { killed = true;  }
+    void UnsetKilled() { killed = false; }
+
   protected:
-    virtual void UpdateFSMState();
+    virtual void UpdateFSMState(World* map);
+
+    bool BoxWithinBox(int a_x, int a_y, int a_width, int a_height, int b_x, int b_y, int b_width, int b_height);
 
   private:
-    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
+    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int right_down_x, int right_down_y);
     void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsWidthBoxExt(World* map, Colbox &mask_col);
+    void GetCollisionsHeightBoxExt(World* map, Colbox &mask_col);    
 };
 
 #endif // OBJECT_H

@@ -9,8 +9,9 @@ Item::~Item() {
   printf("Calling destructor!\n");
 }
 
-void Item::UpdateFSMState() {
-  bool inAir;  
+void Item::UpdateFSMState(World* map) {
+  bool inAir;
+  Animation* current_anim;
 
   inAir = ((extColExt.GetLeftDownCol() == 0) &&
            (extColExt.GetRightDownCol() == 0));
@@ -25,6 +26,13 @@ void Item::UpdateFSMState() {
         } else {
           state = OBJ_STATE_DYING;
         }
+      } else if (killed) {
+        if(strcmp(name, "bonus") != 0) {
+          state = OBJ_STATE_DYING;
+          direction = OBJ_DIR_STOP;
+        } else {
+          state = OBJ_STATE_DEAD;
+        }
       } else if (inAir) {
         state = OBJ_STATE_MOVING;
         direction = OBJ_DIR_DOWN;
@@ -37,9 +45,17 @@ void Item::UpdateFSMState() {
 
     case OBJ_STATE_DYING:
       steps_dying++;
-      if (steps_dying >= 30) {   // REVISIT: hard-coded. I do not really know if it is good to have this as a parameter
-        state = OBJ_STATE_DEAD;
-      }      
+      if(strcmp(name, "bonus") == 0) {
+        if (steps_dying >= 30) {   // REVISIT: hard-coded. I do not really know if it is good to have this as a parameter
+          state = OBJ_STATE_DEAD;
+        }
+      } else {
+        // wait until animation completes
+        current_anim = this->GetCurrentAnimation();
+        if (current_anim->CompletedLastAnim()) {
+          state = OBJ_STATE_DEAD;
+        }
+      }
       break;
     default:
       break;
@@ -54,6 +70,7 @@ void Item::ComputeNextPosition(World* map) {
       break;
 
     case OBJ_STATE_MOVING:
+
       if (direction & OBJ_DIR_UP)
         SetY(map, GetY() - speed_y);
       else if (direction & OBJ_DIR_DOWN)
@@ -67,7 +84,9 @@ void Item::ComputeNextPosition(World* map) {
       break;
     
     case OBJ_STATE_DYING:
-      y -= speed_y;
+      if(strcmp(name, "bonus") == 0) {
+        y -= speed_y;
+      }
 
       break;
 
