@@ -66,6 +66,7 @@ void Bomb::UpdateFSMState(World* map) {
       break;
 
     case OBJ_STATE_DYING:
+      direction = OBJ_DIR_STOP;
       if (blockCollision) {
         ((Block*)blockColPtr)->SetTrigger(true);
       }
@@ -89,7 +90,7 @@ void Bomb::UpdateFSMState(World* map) {
 
 void Bomb::ComputeNextPosition(World* map) {
 
-  if (inPlatform) {
+  if (inPlatform && (state != OBJ_STATE_DYING)) {
     // Correct y to be on top of platform
     SetY(map, GetY() - (GetY() + GetHeight() - inPlatformPtr->GetY()));
     if (((Platform*)inPlatformPtr)->GetDirection() == OBJ_DIR_RIGHT) {
