@@ -171,8 +171,8 @@ void Character::SetPosX(World* map, int x) {
   if ( x > pos_x) {
     // Collision moving right
     tile_col_x = (pos_x + desp_x + character_width)  / tile_width;
-    if ((map->GetTile(tile_col_x, tile_col_up_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_x, tile_col_down_y)->GetType() != TILE_COL)) {
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
+        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
       // No collision
       pos_x = pos_x + desp_x;      
     } else {
@@ -183,8 +183,8 @@ void Character::SetPosX(World* map, int x) {
   } else if ((x > 0) && (x < pos_x)) {
     // Collision moving left    
     tile_col_x = (pos_x - desp_x) / tile_width;
-    if ((map->GetTile(tile_col_x, tile_col_up_y)->GetType() != TILE_COL) &&
-        (map->GetTile(tile_col_x, tile_col_down_y)->GetType() != TILE_COL)) {
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
+        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
       // No collision
       pos_x = pos_x - desp_x;
     } else {
@@ -214,10 +214,10 @@ void Character::SetPosY(World* map, int y, bool all) {
     // Collision moving down
     tile_col_y = (pos_y + desp_y + character_height)  / tile_height;
     // REVISIT: improve coding for "all"
-    if (((!all & (map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL)) ||
-         (all && !(map->GetTile(tile_col_up_x, tile_col_y)->IsCollisionable()))) &&
-        ((!all && (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) ||
-         (all && !(map->GetTile(tile_col_down_x, tile_col_y)->IsCollisionable())))) {
+    if (((!all && (!map->IsTileCollisionable(tile_col_up_x, tile_col_y))) ||
+         ( all && (!map->IsTileCollisionableDown(tile_col_up_x, tile_col_y)))) &&
+        ((!all && (!map->IsTileCollisionable(tile_col_down_x, tile_col_y))) ||
+         ( all && !(map->IsTileCollisionableDown(tile_col_down_x, tile_col_y))))) {
       // No collision
       pos_y = pos_y + desp_y;
     } else {
@@ -229,10 +229,10 @@ void Character::SetPosY(World* map, int y, bool all) {
     // Collision moving up    
     tile_col_y = (pos_y - desp_y) / tile_height;
     // REVISIT: improve coding for "all"
-    if (((!all && (map->GetTile(tile_col_up_x, tile_col_y)->GetType() != TILE_COL)) ||
-         (all && !(map->GetTile(tile_col_up_x, tile_col_y)->IsCollisionable()))) &&
-        ((!all && (map->GetTile(tile_col_down_x, tile_col_y)->GetType() != TILE_COL)) ||
-         (all && !(map->GetTile(tile_col_down_x, tile_col_y)->IsCollisionable())))) {
+    if (((!all && (!map->IsTileCollisionable(tile_col_up_x, tile_col_y))) ||
+         ( all && (!map->IsTileCollisionableDown(tile_col_up_x, tile_col_y)))) &&
+        ((!all && (!map->IsTileCollisionable(tile_col_down_x, tile_col_y))) ||
+         ( all && (!map->IsTileCollisionableDown(tile_col_down_x, tile_col_y))))) {
       // No collision
       pos_y = pos_y - desp_y;
     } else {

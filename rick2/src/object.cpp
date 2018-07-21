@@ -235,7 +235,7 @@ void Object::SetX(World* map, int _x) {
     // Collision moving right
     tile_col_x = (x + bb_x + desp_x + obj_width)  / tile_width;
     if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
-        (!map->IsTileCollisionable(tile_col_x, tile_col_down_y))) {
+        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
       // No collision
       x = x + desp_x;
       //if(obj_type == OBJ_BOMB) printf("right no correction\n");
@@ -249,7 +249,7 @@ void Object::SetX(World* map, int _x) {
     // Collision moving left
     tile_col_x = (x + bb_x - desp_x) / tile_width;
     if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
-        (!map->IsTileCollisionable(tile_col_x, tile_col_down_y))) {
+        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
       // No collision
       x = x - desp_x;
       //if(obj_type == OBJ_BOMB) printf("left no correction\n");
