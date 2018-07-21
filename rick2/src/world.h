@@ -55,8 +55,6 @@ class Tile
         int  GetType()                 { return type;          }
         void SetType(int _type)        { type = _type;         }
 
-        bool IsCollisionable()         { return ((type == TILE_COL) ||
-                                                 (type == TILE_STAIRS_TOP)); }
 };
 
 class World
