@@ -111,7 +111,6 @@ Object::~Object() {
     delete *it;
   }
   animations.clear();
-  free(name);
   printf("Object destructor\n");
 }
 
