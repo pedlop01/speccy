@@ -224,7 +224,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                        object->GetCurrentAnimationBitmapAttributes());
       }
       char buffer[30];
-      itoa(object->GetTypeId(), buffer, 10);
+      sprintf(buffer, "%d", object->GetTypeId());
       al_draw_text(font,
                    al_map_rgb(255, 255, 0),
                    object->GetX() + object->GetBBX() - GetPosX(),
@@ -284,7 +284,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                    platform->GetY() - GetPosY(),
                    platform->GetCurrentAnimationBitmapAttributes());
     char buffer[30];
-    itoa(platform->GetTypeId(), buffer, 10);
+    sprintf(buffer, "%d", platform->GetTypeId());
     al_draw_text(font,
                  al_map_rgb(255, 255, 0),
                  platform->GetX() - GetPosX(),
