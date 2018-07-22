@@ -42,8 +42,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 260;  // REVISIT: should be 0
+  pos_y = 1660; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
   width  = 16;  // REVISIT: should be 0
   height_orig = height;
@@ -166,13 +166,13 @@ void Character::SetPosX(World* map, int x) {
 
   // Compute x and y corrections to draw world
   int tile_col_x;
-  int tile_col_up_y   = pos_y / tile_height;
-  int tile_col_down_y = (pos_y + character_height - 1) / tile_height;
+  int tile_col_left_y  = pos_y / tile_height;
+  int tile_col_right_y = (pos_y + character_height - 1) / tile_height;
   if ( x > pos_x) {
     // Collision moving right
     tile_col_x = (pos_x + desp_x + character_width)  / tile_width;
-    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
-        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_left_y)) &&
+        (!map->IsTileCollisionable(tile_col_x, tile_col_right_y))) {
       // No collision
       pos_x = pos_x + desp_x;      
     } else {
@@ -183,8 +183,8 @@ void Character::SetPosX(World* map, int x) {
   } else if ((x > 0) && (x < pos_x)) {
     // Collision moving left    
     tile_col_x = (pos_x - desp_x) / tile_width;
-    if ((!map->IsTileCollisionable(tile_col_x, tile_col_up_y)) &&
-        (!map->IsTileCollisionableDown(tile_col_x, tile_col_down_y))) {
+    if ((!map->IsTileCollisionable(tile_col_x, tile_col_left_y)) &&
+        (!map->IsTileCollisionable(tile_col_x, tile_col_right_y))) {
       // No collision
       pos_x = pos_x - desp_x;
     } else {
@@ -740,16 +740,20 @@ void Character::ComputeNextPosition(World* map) {
         SetPosX(map, GetPosX() - speed_x);
       }
       break;
-    case RICK_STATE_JUMPING:      
-      if (direction & RICK_DIR_UP)
-        SetPosY(map, GetPosY() - speed_y, false);
-      else if (direction & RICK_DIR_DOWN)
-        SetPosY(map, GetPosY() + speed_y, true);
+    case RICK_STATE_JUMPING:
 
+      // Correct first the horizontal movement because
+      // it may affect where the vertical movement is placed
+      // at the end.
       if (direction & RICK_DIR_RIGHT)
         SetPosX(map, GetPosX() + speed_x);
       else if (direction & RICK_DIR_LEFT)
         SetPosX(map, GetPosX() - speed_x);
+
+      if (direction & RICK_DIR_UP)
+        SetPosY(map, GetPosY() - speed_y, false);
+      else if (direction & RICK_DIR_DOWN)
+        SetPosY(map, GetPosY() + speed_y, true);
 
       break;
     case RICK_STATE_CLIMBING:

@@ -125,7 +125,7 @@ class Character {
     void Reset();
 
     void SetPosX(World* map, int x);
-    void SetPosY(World* map, int y, bool all);
+    void SetPosY(World* map, int y, bool all);    
 
     int  GetPosX()       { return pos_x;     }
     int  GetPosY()       { return pos_y;     }
