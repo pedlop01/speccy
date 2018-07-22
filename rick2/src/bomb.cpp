@@ -58,7 +58,6 @@ void Bomb::UpdateFSMState(World* map) {
       if (blockCollision) {
         direction = OBJ_DIR_STOP;
       } else if (inAir) {
-        printf("inAir!\n");
         direction |= OBJ_DIR_DOWN;
       } else {
         direction &= ~OBJ_DIR_DOWN;

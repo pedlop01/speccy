@@ -6,10 +6,19 @@ Character::Character() {
   pos_x = 264;  // REVISIT: should be 0
   pos_y = 2000; // REVISIT: should be 0
 
+  using_bb = true;
   height = 21;  // REVISIT: should be 0
-  width  = 16;  // REVISIT: should be 0
+  width  = 23;  // REVISIT: should be 0
   height_orig = height;
   width_orig = width;
+
+  // REVISIT: think on how to pass this information automatically
+  bb_x = 5;
+  bb_y = 0;
+  bb_width = 13;
+  bb_width_orig = bb_width;
+  bb_height = 21;
+  bb_height_orig = bb_height;
 
   height_internal = 3;
   width_internal = 3;
@@ -38,14 +47,25 @@ Character::Character() {
   animation_scaling_factor = 1.0;
 
   killed = false;
+
+  stop_move_block_col = false;
 }
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
   pos_x = 260;  // REVISIT: should be 0
-  pos_y = 1660; // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
-  width  = 16;  // REVISIT: should be 0
+  width  = 23;  // REVISIT: should be 0
+  // REVISIT: think on how to pass this information automatically
+  using_bb = true;
+  bb_x = 5;
+  bb_y = 0;
+  bb_width = 13;
+  bb_width_orig = bb_width;
+  bb_height = 21;
+  bb_height_orig = bb_height;
+  // END REVISIT
   height_orig = height;
   width_orig = width;
   height_internal = 3;
@@ -67,6 +87,7 @@ Character::Character(const char* file) {
   initial_state = state;
   animation_scaling_factor = 1.0;
   killed = false;
+  stop_move_block_col = false;
 
   pugi::xml_parse_result result = character_file.load_file(file);
   if(!result) {
@@ -158,39 +179,39 @@ void Character::SetPosX(World* map, int x) {
   // when the character will be based on a generic player.
   int tile_width = map->GetTilesetTileWidth();
   int tile_height = map->GetTilesetTileHeight();
-  int character_width = this->width;
-  int character_height = this->height;
+  int character_width = (using_bb ? this->bb_width : this->width) - 1;
+  int character_height = (using_bb ? this->bb_height : this->height) - 1;
 
   // Compute the displacement in x
   int desp_x = (x > pos_x) ? (x - pos_x) : (pos_x - x);
 
   // Compute x and y corrections to draw world
   int tile_col_x;
-  int tile_col_left_y  = pos_y / tile_height;
-  int tile_col_right_y = (pos_y + character_height - 1) / tile_height;
+  int tile_col_left_y  = (pos_y + bb_y) / tile_height;
+  int tile_col_right_y = (pos_y + bb_y + character_height) / tile_height;
   if ( x > pos_x) {
     // Collision moving right
-    tile_col_x = (pos_x + desp_x + character_width)  / tile_width;
+    tile_col_x = (pos_x + bb_x + desp_x + character_width)  / tile_width;
     if ((!map->IsTileCollisionable(tile_col_x, tile_col_left_y)) &&
         (!map->IsTileCollisionable(tile_col_x, tile_col_right_y))) {
       // No collision
-      pos_x = pos_x + desp_x;      
+      pos_x = pos_x + desp_x;
     } else {
       // Collision. Move to safe position
-      int correction = (pos_x + desp_x + character_width) % tile_width;
-      pos_x = pos_x + desp_x - correction;
+      int correction = (pos_x + bb_x + desp_x + character_width) % tile_width;
+      pos_x = pos_x + desp_x - correction - 1;
     }
   } else if ((x > 0) && (x < pos_x)) {
     // Collision moving left    
-    tile_col_x = (pos_x - desp_x) / tile_width;
+    tile_col_x = (pos_x + bb_x - desp_x) / tile_width;
     if ((!map->IsTileCollisionable(tile_col_x, tile_col_left_y)) &&
         (!map->IsTileCollisionable(tile_col_x, tile_col_right_y))) {
       // No collision
       pos_x = pos_x - desp_x;
     } else {
       // Collision. Move to safe position
-      int correction = tile_width - ((pos_x - desp_x) % tile_width);
-      pos_x = pos_x - desp_x + correction;      
+      int correction = tile_width - ((pos_x + bb_x - desp_x) % tile_width);
+      pos_x = pos_x - desp_x + correction;
     }
   }
 }
@@ -198,21 +219,21 @@ void Character::SetPosX(World* map, int x) {
 void Character::SetPosY(World* map, int y, bool all) {
   // REVISIT: character is currently a single box, this function requires to be updated
   // when the character will be based on a generic player.
-  int tile_width = map->GetTilesetTileWidth();
-  int tile_height = map->GetTilesetTileHeight();
-  int character_width = this->width;
-  int character_height = this->height;
+  int tile_width       = map->GetTilesetTileWidth();
+  int tile_height      = map->GetTilesetTileHeight();
+  int character_width  = (using_bb ? this->bb_width : this->width) - 1;
+  int character_height = (using_bb ? this->bb_height : this->height) - 1;
 
   // Compute the displacement in x
   int desp_y = (y > pos_y) ? (y - pos_y) : (pos_y - y);
 
   // Compute x and y corrections to draw world
   int tile_col_y;
-  int tile_col_up_x   = pos_x / tile_width;
-  int tile_col_down_x = (pos_x + character_width - 1) / tile_width;
+  int tile_col_up_x   = (pos_x + bb_x) / tile_width;
+  int tile_col_down_x = (pos_x + bb_x +character_width) / tile_width;
   if (y > pos_y) {
     // Collision moving down
-    tile_col_y = (pos_y + desp_y + character_height)  / tile_height;
+    tile_col_y = (pos_y + bb_y + desp_y + character_height)  / tile_height;
     // REVISIT: improve coding for "all"
     if (((!all && (!map->IsTileCollisionable(tile_col_up_x, tile_col_y))) ||
          ( all && (!map->IsTileCollisionableDown(tile_col_up_x, tile_col_y)))) &&
@@ -220,14 +241,14 @@ void Character::SetPosY(World* map, int y, bool all) {
          ( all && !(map->IsTileCollisionableDown(tile_col_down_x, tile_col_y))))) {
       // No collision
       pos_y = pos_y + desp_y;
-    } else {
+    } else {      
       // Collision. Move to safe position
-      int correction = (pos_y + desp_y + character_height) % tile_height;
-      pos_y = pos_y + desp_y - correction;
+      int correction = (pos_y + bb_y + desp_y + character_height) % tile_height;
+      pos_y = pos_y + desp_y - correction - 1;
     }
   } else if ((y > 0) && (y < pos_y)) {
     // Collision moving up    
-    tile_col_y = (pos_y - desp_y) / tile_height;
+    tile_col_y = (pos_y + bb_y - desp_y) / tile_height;
     // REVISIT: improve coding for "all"
     if (((!all && (!map->IsTileCollisionable(tile_col_up_x, tile_col_y))) ||
          ( all && (!map->IsTileCollisionableDown(tile_col_up_x, tile_col_y)))) &&
@@ -237,7 +258,7 @@ void Character::SetPosY(World* map, int y, bool all) {
       pos_y = pos_y - desp_y;
     } else {
       // Collision. Move to safe position
-      int correction = tile_height - ((pos_y - desp_y) % tile_height);
+      int correction = tile_height - ((pos_y + bb_y - desp_y) % tile_height);
       pos_y = pos_y - desp_y + correction;
     }
   }
@@ -252,14 +273,14 @@ bool Character::ComputeCollisionBlocks(World* map) {
   for (list<Block*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
     Block* block = *it;
 
-    if (block->CoordsWithinObject(GetPosX() + GetWidth(), GetPosY()) ||        
-        block->CoordsWithinObject(GetPosX() + GetWidth(), GetPosY() + GetHeight())) {
+    if (block->CoordsWithinObject(pos_x + bb_x + 1 + bb_width, pos_y + bb_y) ||        
+        block->CoordsWithinObject(pos_x + bb_x + 1 + bb_width, pos_y + bb_y + bb_height - 1)) {
       blockCollisionRight = true;
       blockCollisionPtr = block;
       // Take first block with collision
       break;
-    } else if (block->CoordsWithinObject(GetPosX(), GetPosY()) ||
-               block->CoordsWithinObject(GetPosX(), GetPosY() + GetHeight())) {
+    } else if (block->CoordsWithinObject(pos_x + bb_x, pos_y + bb_y) ||
+               block->CoordsWithinObject(pos_x + bb_x, pos_y + bb_y + bb_height - 1)) {
       blockCollisionLeft = true;
       blockCollisionPtr = block;
       // Take first block with collision
@@ -268,11 +289,11 @@ bool Character::ComputeCollisionBlocks(World* map) {
   } 
 }
 
-void Character::GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height) {
+void Character::GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int right_down_x, int right_down_y) {
   mask_col.SetLeftUpCol(map->GetTileByCoord(left_up_x, left_up_y)->GetType());
-  mask_col.SetRightUpCol(map->GetTileByCoord(left_up_x + width, left_up_y)->GetType());
-  mask_col.SetRightDownCol(map->GetTileByCoord(left_up_x + width, left_up_y + height)->GetType());
-  mask_col.SetLeftDownCol(map->GetTileByCoord(left_up_x, left_up_y + height)->GetType());
+  mask_col.SetRightUpCol(map->GetTileByCoord(right_down_x, left_up_y)->GetType());
+  mask_col.SetRightDownCol(map->GetTileByCoord(right_down_x, right_down_y)->GetType());
+  mask_col.SetLeftDownCol(map->GetTileByCoord(left_up_x, right_down_y)->GetType());
 }
 
 void Character::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
@@ -280,17 +301,8 @@ void Character::GetCollisionsExternalBoxExt(World* map, Colbox &mask_col) {
                               mask_col,
                               pos_x - 1,
                               pos_y - 1,
-                              width + 1,
-                              height + 1);
-}
-
-void Character::GetCollisionsExternalWidthBoxExt(World* map, Colbox &mask_col) {
-  this->GetCollisionsByCoords(map,
-                              mask_col,
-                              pos_x - 1,
-                              pos_y,
-                              width + 1,
-                              height - 1);
+                              pos_x + width,
+                              pos_y + height);
 }
 
 void Character::GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col) {
@@ -298,63 +310,36 @@ void Character::GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col) 
                               mask_col,
                               pos_x,
                               pos_y - 1,
-                              width - 1,
-                              height + 1);
+                              pos_x + width - 1,
+                              pos_y + height);
 }
 
-
-void Character::GetCollisionsExternalHeightBoxExtOrig(World* map, Colbox &mask_col) {
+// REVISIT: use Bounding Box instead
+void Character::GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col) {  
   this->GetCollisionsByCoords(map,
                               mask_col,
-                              this->GetCorrectedPosX(),
-                              this->GetCorrectedPosY() - 1,
-                              width_orig - 1,
-                              height_orig + 1);
+                              pos_x + bb_x,
+                              pos_y + bb_y - 1,
+                              pos_x + bb_x + bb_width - 1,
+                              pos_y + bb_y + bb_height);
 }
 
-void Character::GetCollisionsExternalBoxInt(World* map, Colbox &mask_col) {
+void Character::GetCollisionsInternalHeightBoxExtOrig(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
-                              pos_x,
-                              pos_y,
-                              width - 1,
-                              height - 1);
-}
-
-void Character::GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col) {
-  this->GetCollisionsByCoords(map,
-                              mask_col,
-                              pos_x - 1,
-                              pos_y + height_internal,
-                              width + 2 - 1,
-                              height - 2*height_internal - 1);
-}
-
-void Character::GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col) {
-  this->GetCollisionsByCoords(map,
-                              mask_col,
-                              pos_x,
-                              pos_y + height_internal,
-                              width - 1,
-                              height - 2*height_internal - 1);
-}
-
-void Character::GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col) {
-  this->GetCollisionsByCoords(map,
-                              mask_col,
-                              pos_x + width_internal,
-                              pos_y - 1,
-                              width - 2*width_internal - 1,
-                              height + 1);
+                              this->GetCorrectedPosX() + bb_x,
+                              this->GetCorrectedPosY() + bb_y - 1,
+                              this->GetCorrectedPosX() + bb_x + bb_width_orig - 1,
+                              this->GetCorrectedPosY() + bb_y + bb_height_orig);
 }
 
 void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) {
   this->GetCollisionsByCoords(map,
                               mask_col,
-                              pos_x + width_internal,
-                              pos_y,
-                              width - 2*width_internal - 1,
-                              height - 1);
+                              pos_x + bb_x,
+                              pos_y + bb_y,
+                              pos_x + bb_x + bb_width - 1,
+                              pos_y + bb_y + bb_height - 1);
 }
 
 void Character::ComputeCollisions(World* map) {
@@ -366,32 +351,12 @@ void Character::ComputeCollisions(World* map) {
 
   // Do not check collisions when DYING
   if ((state == RICK_STATE_DYING) || (state == RICK_STATE_DEAD)) return;
-
-  this->GetCollisionsExternalBoxInt(map, extColInt);
+  
   this->GetCollisionsExternalBoxExt(map, extColExt);
-  this->GetCollisionsExternalWidthBoxExt(map, extWidthColExt);
   this->GetCollisionsExternalHeightBoxExt(map, extHeightColExt);
-  this->GetCollisionsExternalHeightBoxExtOrig(map, extHeightColExtOrig);
-  this->GetCollisionsInternalWidthBoxInt(map, widthColInt);
-  this->GetCollisionsInternalWidthBoxExt(map, widthColExt);
-  this->GetCollisionsInternalHeightBoxInt(map, heightColInt);
-  this->GetCollisionsInternalHeightBoxExt(map, heightColExt);
-
-/*    printf("[Collisions ext] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
-      extColExt.GetLeftUpCol(),
-      extColExt.GetRightUpCol(),
-      extColExt.GetRightDownCol(),
-      extColExt.GetLeftDownCol());
-    printf("[Collisions int width] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
-      widthColInt.GetLeftUpCol(),
-      widthColInt.GetRightUpCol(),
-      widthColInt.GetRightDownCol(),
-      widthColInt.GetLeftDownCol());
-    printf("[Collisions int height] lup=%d, rup=%d, rdw=%d, ldw=%d\n",
-      heightColInt.GetLeftUpCol(),
-      heightColInt.GetRightUpCol(),
-      heightColInt.GetRightDownCol(),
-      heightColInt.GetLeftDownCol());*/
+  this->GetCollisionsInternalHeightBoxExtOrig(map, heightColExtOrig);
+  this->GetCollisionsInternalHeightBoxInt(map, heightColInt);  
+  this->GetCollisionsInternalHeightBoxExt(map, heightColExt);  
 
   // First check if there is collision with an object over the tiles
   //printf("[ComputeCollisions] Checking collisions with platforms\n");
@@ -424,35 +389,35 @@ void Character::ComputeCollisions(World* map) {
               (heightColInt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
               (heightColInt.GetRightDownCol() == TILE_STAIRS_TOP));
 
-  overStairs = (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) ||
+  overStairs = (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
                (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
 
   inFloor = inPlatform ||
-            (extHeightColExt.GetLeftDownCol() == TILE_COL) ||
-            (extHeightColExt.GetRightDownCol() == TILE_COL);
+            (heightColExt.GetLeftDownCol() == TILE_COL) ||
+            (heightColExt.GetRightDownCol() == TILE_COL);
 
   inAir = !inPlatform &&
-          ((extHeightColExt.GetLeftDownCol() == 0) ||             // No tile is air
-           (extHeightColExt.GetLeftDownCol() == TILE_STAIRS)) &&  // Stairs is also air
-          ((extHeightColExt.GetRightDownCol() == 0) ||
-           (extHeightColExt.GetRightDownCol() == TILE_STAIRS));
+          ((heightColExt.GetLeftDownCol() == 0) ||             // No tile is air
+           (heightColExt.GetLeftDownCol() == TILE_STAIRS)) &&  // Stairs is also air
+          ((heightColExt.GetRightDownCol() == 0) ||
+           (heightColExt.GetRightDownCol() == TILE_STAIRS));
 
   inAirInt = ((heightColInt.GetLeftDownCol() == 0) &&
               (heightColInt.GetRightDownCol() == 0));
 
   // - Collision with head on collisionable tile
-  collisionHead = (extHeightColExt.GetLeftUpCol() == TILE_COL) ||
-                  (extHeightColExt.GetRightUpCol() == TILE_COL);
+  collisionHead = (heightColExt.GetLeftUpCol() == TILE_COL) ||
+                  (heightColExt.GetRightUpCol() == TILE_COL);
 
-  collisionHeadOrig = (extHeightColExtOrig.GetLeftUpCol() == TILE_COL) ||
-                      (extHeightColExtOrig.GetRightUpCol() == TILE_COL);
+  collisionHeadOrig = (heightColExtOrig.GetLeftUpCol() == TILE_COL) ||
+                      (heightColExtOrig.GetRightUpCol() == TILE_COL);
 
   overStairsRight = (extColExt.GetLeftDownCol() == TILE_COL) &&
-                    (extColExt.GetRightDownCol() == TILE_STAIRS_TOP) &&
-                    (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP);
+                    (heightColExt.GetLeftDownCol() == TILE_COL) &&
+                    (heightColExt.GetRightDownCol() == TILE_STAIRS_TOP);                    
 
   overStairsLeft = (extColExt.GetRightDownCol() == TILE_COL) &&
-                   (extColExt.GetLeftDownCol() == TILE_STAIRS_TOP) &&
+                   (heightColExt.GetRightDownCol() == TILE_COL) &&
                    (heightColExt.GetLeftDownCol() == TILE_STAIRS_TOP);
 }
 
@@ -527,13 +492,18 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
             }
           }
         } else if (keyboard.PressedDown()) {
-            if ((overStairsRight && (face & RICK_DIR_RIGHT)) || 
-                (overStairsLeft  && (face & RICK_DIR_LEFT))  ||
-                (!overStairsRight && !overStairsLeft && overStairs)) {
+            if (overStairs) {
               state = RICK_STATE_CLIMBING;
               direction = RICK_DIR_DOWN;
+            } else if (overStairsRight && (face == RICK_DIR_RIGHT)) {
+              state = RICK_STATE_RUNNING;
+              direction = RICK_DIR_RIGHT;
+            } else if (overStairsLeft && (face == RICK_DIR_LEFT)) {              
+              state = RICK_STATE_RUNNING;
+              direction = RICK_DIR_LEFT;
             } else {
-              height = 15;                             // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
+              height = 15;                             // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)              
+              bb_height = height;                      // REVISIT: think on how to adapt this
               pos_y = pos_y + (height_orig - height);
               state = RICK_STATE_CROUCHING;
               direction = RICK_DIR_STOP;
@@ -584,6 +554,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
         if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {
           pos_y = pos_y - (height_orig - height);
           height = 21;                            // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
+          bb_height = height;                     // REVISIT: think on how to adapt this
           state = RICK_STATE_STOP;
         }
   
@@ -713,7 +684,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
 }
 
 void Character::ComputeNextPosition(World* map) {
-
+  int direction_old;
   //printf("PRE: pos_x = %d pos_y %d\n", pos_x, pos_y);
   //printf("pos_x = %d, pos_y = %d, speed_x = %f, speed_y = %f\n", pos_x, pos_y, speed_x, speed_y);
 
@@ -727,6 +698,14 @@ void Character::ComputeNextPosition(World* map) {
     } else if (inPlatformPtr->GetDirection() == OBJ_DIR_LEFT) {
       SetPosX(map, GetPosX() - 1);
     }
+  }
+
+  // If player is collisioning with a block, then
+  // we need to avoid the player to move.  
+  if (stop_move_block_col) {
+    direction_old = direction;
+    direction &= ~RICK_DIR_RIGHT;
+    direction &= ~RICK_DIR_LEFT;
   }
 
   switch(state) {
@@ -760,25 +739,17 @@ void Character::ComputeNextPosition(World* map) {
       if (direction & RICK_DIR_UP) {
         // First, correct x to facilitate moving up
         if ((extColExt.GetLeftUpCol() == TILE_COL) &&
-            (extColExt.GetRightUpCol() != TILE_COL) &&
-            (heightColExt.GetRightUpCol() != TILE_COL)) {
+            (heightColExt.GetLeftUpCol() == TILE_COL) &&
+            (heightColExt.GetRightUpCol() == TILE_STAIRS)) {
           SetPosX(map, GetPosX() + HOR_SPEED_MAX);
-        } else if ((heightColExt.GetLeftUpCol() != TILE_COL) &&
-                   (extColExt.GetLeftUpCol() != TILE_COL) &&
-                   (extColExt.GetRightUpCol() == TILE_COL)) {
+        } else if ((extColExt.GetRightUpCol() == TILE_COL) &&
+                   (heightColExt.GetRightUpCol() == TILE_COL) &&
+                   (heightColExt.GetLeftUpCol() == TILE_STAIRS)) {
           SetPosX(map, GetPosX() - HOR_SPEED_MAX);
         }
 
         SetPosY(map, GetPosY() - speed_y, false);
       } else if (direction & RICK_DIR_DOWN) {
-
-        // First, correct x to facilitate moving down
-        if (overStairsRight) {
-          SetPosX(map, GetPosX() + HOR_SPEED_MAX);
-        } else if (overStairsLeft) {
-          SetPosX(map, GetPosX() - HOR_SPEED_MAX);
-        }
-
         SetPosY(map, GetPosY() + speed_y, false);
       }
       if (direction & RICK_DIR_RIGHT) {
@@ -801,6 +772,9 @@ void Character::ComputeNextPosition(World* map) {
       break;
   }
 
+  if (stop_move_block_col) {
+    direction = direction_old;
+  }
   //printf("POST: pos_x = %d pos_y %d\n", pos_x, pos_y);
 }
 
@@ -808,12 +782,18 @@ void Character::ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard)
   // If no block coliision then return
   bool blockCollision = blockCollisionLeft || blockCollisionRight;
 
+  stop_move_block_col = false;
+
   if (!blockCollision) return;
 
   if (blockCollisionRight && (direction & RICK_DIR_RIGHT)) {
-    SetPosX(map, GetPosX() - abs(pos_x + width - blockCollisionPtr->GetX()));
+    SetPosX(map, GetPosX() - (pos_x + bb_x + bb_width - blockCollisionPtr->GetX()));
+    // Stop movement in this direction
+    stop_move_block_col = true;
   } else if (blockCollisionLeft && (direction & RICK_DIR_LEFT)) {
-    SetPosX(map, GetPosX() + abs(blockCollisionPtr->GetX() + blockCollisionPtr->GetWidth() - pos_x));
+    SetPosX(map, GetPosX() + (blockCollisionPtr->GetX() + blockCollisionPtr->GetWidth() - (pos_x + bb_x)));
+    // Stop movement in this direction
+    stop_move_block_col = true;
   }
 }
 
@@ -885,16 +865,14 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Collisions with world and platforms
 //  printf("[CharacterStep] ComputeCollisions\n");
   this->ComputeCollisions(map);
+  this->ComputeCollisionBlocks(map);
   // Compute next state
 //  printf("[CharacterStep] ComputeNextState\n");
   this->ComputeNextState(map, keyboard);
-  // Compute next position
+  // Compute next position 
 //  printf("[CharacterStep] ComputeNextPosition\n");
-  this->ComputeNextPosition(map);
-  // Check now collisions about static blocks and recalculate position
-  // if necessary
-  this->ComputeCollisionBlocks(map);
   this->ComputeNextPositionBasedOnBlocks(map, keyboard);
+  this->ComputeNextPosition(map);  
   // Re-calulate speed
 //  printf("[CharacterStep] ComputeNextSpeed\n");
   this->ComputeNextSpeed();

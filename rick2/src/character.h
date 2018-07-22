@@ -48,10 +48,18 @@ class Character {
     int pos_x_chk;
     int pos_y_chk;
 
+    bool using_bb;
+    int  bb_x;
+    int  bb_y;
+    int  bb_width;
+    int  bb_width_orig;
+    int  bb_height;
+    int  bb_height_orig;
+
     int height_orig;
     int height;
     int width_orig;
-    int width;
+    int width;    
 
     int height_internal;
     int width_internal;
@@ -71,16 +79,13 @@ class Character {
     bool killed;
 
     // Collisions
-    // - bounding boxes
-    Colbox extColInt;
-    Colbox extColExt;    
-    Colbox extHeightColExt;
-    Colbox extHeightColExtOrig;
-    Colbox extWidthColExt;
+    // - bounding boxes    
+    Colbox extColExt;
+    Colbox extHeightColExt;   
     Colbox heightColInt;
     Colbox heightColExt;
-    Colbox widthColInt;
-    Colbox widthColExt;
+    Colbox heightColExtOrig;
+
     // - status
     bool inAir;
     bool inAirInt;
@@ -101,6 +106,8 @@ class Character {
     int  initial_speed_x;
     int  initial_speed_y;
     int  initial_state;
+
+    bool stop_move_block_col;
 
     float animation_scaling_factor;
 
@@ -128,11 +135,16 @@ class Character {
     void SetPosY(World* map, int y, bool all);    
 
     int  GetPosX()       { return pos_x;     }
-    int  GetPosY()       { return pos_y;     }
+    int  GetPosY()       { return pos_y;     }    
     int  GetHeight()     { return height;    }
     int  GetWidth()      { return width;     }
     int  GetState()      { return state;     }
     int  GetDirection()  { return direction; }
+
+    int  GetBBX()        { return bb_x;      }
+    int  GetBBY()        { return bb_y;      }
+    int  GetBBWidth()    { return bb_width;  }
+    int  GetBBHeight()   { return bb_height; }
 
     int  GetOrigHeight() { return height_orig; }
     int  GetOrigWidth()  { return width_orig;  }
@@ -140,16 +152,12 @@ class Character {
     int  GetCorrectedPosX();
     int  GetCorrectedPosY();
 
-    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int width, int height);
+    void GetCollisionsByCoords(World* map, Colbox &mask_col, int left_up_x, int left_up_y, int right_down_x, int right_down_y);
     void GetCollisionsExternalBoxExt(World* map, Colbox &mask_col);
-    void GetCollisionsExternalWidthBoxExt(World* map, Colbox &mask_col);
-    void GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col);
-    void GetCollisionsExternalHeightBoxExtOrig(World* map, Colbox &mask_col);
-    void GetCollisionsExternalBoxInt(World* map, Colbox &mask_col);
-    void GetCollisionsInternalWidthBoxExt(World* map, Colbox &mask_col);
-    void GetCollisionsInternalWidthBoxInt(World* map, Colbox &mask_col);
+    void GetCollisionsExternalHeightBoxExt(World* map, Colbox &mask_col);    
     void GetCollisionsInternalHeightBoxExt(World* map, Colbox &mask_col);
-    void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);
+    void GetCollisionsInternalHeightBoxExtOrig(World* map, Colbox &mask_col);    
+    void GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col);    
 
     bool ComputeCollisionBlocks(World* map);
 

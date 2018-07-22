@@ -147,29 +147,23 @@ void Camera::DrawScreen(World* world, Character* player) {
   }  
 
   // Draw the player in front of back tiles
-/*  al_draw_rectangle(player->GetPosX() - GetPosX(),
-                    player->GetPosY() - GetPosY(),
-                    player->GetPosX() + player->GetWidth() - GetPosX() - 1,
-                    player->GetPosY() + player->GetHeight() - GetPosY() - 1,
+  al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
+                    player->GetPosY() - GetPosY() + 1,
+                    player->GetPosX() + player->GetWidth() - 1 - GetPosX() + 1,
+                    player->GetPosY() + player->GetHeight() - 1 - GetPosY() + 1,
                     al_map_rgb(0xAD, 0x21, 0x56), 1.0);
   // - External
-  al_draw_rectangle(player->GetPosX() - 1 - GetPosX(),
-                    player->GetPosY() - 1 - GetPosY(),
-                    player->GetPosX() + player->GetWidth() + 1 - GetPosX() - 1,
-                    player->GetPosY() + player->GetHeight() + 1 - GetPosY() - 1,
+  al_draw_rectangle(player->GetPosX() - 1 - GetPosX() + 1,
+                    player->GetPosY() - 1 - GetPosY() + 1,
+                    player->GetPosX() + player->GetWidth() - GetPosX() + 1,
+                    player->GetPosY() + player->GetHeight() - GetPosY() + 1,
                     al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
-  // - Horitzontal internal
-  al_draw_rectangle(player->GetPosX() - GetPosX(),
-                    player->GetPosY() + 3 - GetPosY(),
-                    player->GetPosX() + player->GetWidth() - GetPosX() - 1,
-                    player->GetPosY() + player->GetHeight() - 3 - GetPosY() - 1,
+  // - Bounding box
+  al_draw_rectangle(player->GetPosX() + player->GetBBX() - GetPosX() + 1,
+                    player->GetPosY() + player->GetBBY() - GetPosY() + 1,
+                    player->GetPosX() + player->GetBBX() + player->GetBBWidth() - 1 - GetPosX() + 1,
+                    player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-  // - Vertical internal
-  al_draw_rectangle(player->GetPosX() + 3 - GetPosX(),
-                    player->GetPosY() - GetPosY(),
-                    player->GetPosX() + player->GetWidth() - 3 - GetPosX() - 1,
-                    player->GetPosY() + player->GetHeight() - GetPosY() - 1,
-                    al_map_rgb(0x1F, 0x1F, 0x1F), 1.0);*/
 
   // Player bitmap
   // DYING animation requires an special function to scale the sprite
@@ -211,19 +205,19 @@ void Camera::DrawScreen(World* world, Character* player) {
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
       }
-      //if(object->GetType() == OBJ_BOMB) {
+      if(object->GetType() == OBJ_BOMB) {
       //  printf("[Camera] Bomb coord x=%d, y=%d\n", object->GetX(), object->GetY());
-      //  al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX(),
-      //                    object->GetY() + object->GetBBY() - GetPosY(),
-      //                    object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX(),
-      //                    object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY(),
-      //                    al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
-      //  al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX(),
-      //                    object->GetY() + object->GetBBY() - 1 - GetPosY(),
-      //                    object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX(),
-      //                    object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY(),
-      //                    al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-      //}
+        al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX(),
+                          object->GetY() + object->GetBBY() - GetPosY(),
+                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX(),
+                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY(),
+                          al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
+        al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX(),
+                          object->GetY() + object->GetBBY() - 1 - GetPosY(),
+                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX(),
+                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY(),
+                          al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
+      }
     }
   }
 
