@@ -89,27 +89,7 @@ World::World(const char *file, bool tileExtractedOption)
   }
 
   // Read platforms
-  // REVISIT: need to be read from file! refactor reading of map too!
-  Platform* platform1 = new Platform("../designs/platforms/platforms.xml", 800, 1720, 24, 8, true, true, OBJ_DIR_UP,    10*8);
-  Platform* platform2 = new Platform("../designs/platforms/platforms.xml", 548, 1368, 24, 8, true, true, OBJ_DIR_DOWN,  14*8);
-  Platform* platform3 = new Platform("../designs/platforms/platforms.xml", 450, 1696, 24, 8, true, true, OBJ_DIR_LEFT,  20*8);
-  Platform* platform4 = new Platform("../designs/platforms/platforms.xml", 300, 1696, 24, 8, true, true, OBJ_DIR_RIGHT, 20*8);
-  Platform* platform5 = new Platform("../designs/platforms/platforms.xml", 972,  992, 24, 8, true, true, OBJ_DIR_LEFT,   6*8);
-  Platform* platform6 = new Platform("../designs/platforms/platforms.xml", 708, 1200, 24, 8, true, true, OBJ_DIR_UP,    12*8);
-  Platform* platform7 = new Platform("../designs/platforms/platforms.xml", 288, 1640, 24, 8, true, true, OBJ_DIR_UP,    10*8);
-  Platform* platform8 = new Platform("../designs/platforms/platforms.xml", 452, 1568, 24, 8, true, true, OBJ_DIR_UP,    13*8);
-  Platform* platform9 = new Platform("../designs/platforms/platforms.xml", 484, 1320, 24, 8, true, true, OBJ_DIR_UP,    13*8);
-  Platform* platform10 = new Platform("../designs/platforms/platforms.xml", 388, 1048, 24, 8, true, true, OBJ_DIR_UP,   12*8);
-  platforms.push_back(platform1);
-  platforms.push_back(platform2);
-  platforms.push_back(platform3);
-  platforms.push_back(platform4);
-  platforms.push_back(platform5);
-  platforms.push_back(platform6);
-  platforms.push_back(platform7);
-  platforms.push_back(platform8);
-  platforms.push_back(platform9);
-  platforms.push_back(platform10);
+  this->InitializePlatforms("../designs/platforms/platforms_level1.xml");
 
   // REVISIT: adding objects manually
   Item* object1 = new Item();
@@ -285,6 +265,113 @@ World::~World()
   }
 }
 
+void World::InitializePlatforms(const char* file) {
+  int platform_id;
+  int plat_ini_x;
+  int plat_ini_y;
+  int plat_width;
+  int plat_height;
+  int plat_visible;
+  int plat_recursive;
+  int plat_one_use;
+  int plat_ini_state;
+  int action_direction;
+  int action_desp;
+  int action_wait;
+  float action_speed;
+  int num_actions;
+  pugi::xml_document plat_file;
+
+  printf("---------------------------\n");
+  printf("| Initializing platforms  |\n");
+  printf("---------------------------\n");
+
+  pugi::xml_parse_result result = plat_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world platform data\n");
+  }
+  
+  for (pugi::xml_node plat = plat_file.child("platforms").first_child();
+       plat;
+       plat = plat.next_sibling()) {
+    // First read attributes
+    platform_id = plat.attribute("id").as_int();
+    printf("Platform id = %d\n", platform_id);
+
+    pugi::xml_node plat_attrs = plat.child("attributes");
+    plat_ini_x = plat_attrs.attribute("ini_x").as_int();
+    plat_ini_y = plat_attrs.attribute("ini_y").as_int();
+    plat_width = plat_attrs.attribute("width").as_int();
+    plat_height = plat_attrs.attribute("height").as_int();
+    plat_visible = plat_attrs.attribute("visible").as_int();
+    plat_recursive = plat_attrs.attribute("recursive").as_int();
+    plat_one_use = plat_attrs.attribute("one_use").as_int();
+    plat_ini_state = strcmp(plat_attrs.attribute("ini_state").as_string(), "stop") == 0 ?
+                       OBJ_STATE_STOP :
+                       OBJ_STATE_MOVING;
+    printf(" - File = %s\n", plat_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n", plat_ini_x);
+    printf(" - ini_y = %d\n", plat_ini_y);
+    printf(" - width = %d\n", plat_width);
+    printf(" - height = %d\n", plat_height);
+    printf(" - visible = %d\n", plat_visible);
+    printf(" - recursive = %d\n", plat_recursive);
+    printf(" - one_use = %d\n", plat_one_use);
+    printf(" - ini_state = %s\n", plat_attrs.attribute("ini_state").as_string());
+
+    // Create platform
+    Platform* world_platform = new Platform(plat_attrs.attribute("file").as_string(),
+                                            platform_id,
+                                            plat_ini_state,
+                                            plat_ini_x,
+                                            plat_ini_y,
+                                            plat_width,
+                                            plat_height,
+                                            plat_visible,
+                                            plat_recursive,
+                                            plat_one_use);
+
+    printf(" - actions:\n");
+    num_actions = 0;
+    // Second, get actions
+    pugi::xml_node actions = plat.child("actions");
+    for (pugi::xml_node action = actions.first_child();
+         action;
+         action = action.next_sibling()) {
+      printf("\t - action %d:\n", num_actions);
+      if (strcmp(action.attribute("direction").as_string(), "stop") == 0) {
+        action_direction = OBJ_DIR_STOP;
+      } else if (strcmp(action.attribute("direction").as_string(), "right") == 0) {
+        action_direction = OBJ_DIR_RIGHT;
+      } else if (strcmp(action.attribute("direction").as_string(), "left") == 0) {
+        action_direction = OBJ_DIR_LEFT;
+      } else if (strcmp(action.attribute("direction").as_string(), "up") == 0) {
+        action_direction = OBJ_DIR_UP;
+      } else if (strcmp(action.attribute("direction").as_string(), "down") == 0) {
+        action_direction = OBJ_DIR_DOWN;
+      }
+      action_desp = action.attribute("desp").as_int();
+      action_wait = action.attribute("wait").as_int();
+      action_speed = action.attribute("speed").as_float();      
+      printf("\t\t - direction=%s\n", action.attribute("direction").as_string());
+      printf("\t\t - desp=%d\n", action_desp);
+      printf("\t\t - wait=%d\n", action_wait);
+      printf("\t\t - speed=%f\n", action_speed);
+
+      world_platform->AddAction(action_direction,
+                                action_desp,
+                                action_wait,
+                                action_speed);
+      num_actions++;
+    }
+    platforms.push_back(world_platform);
+
+  }  
+
+  printf("---------------------------\n");
+}
+
 int World::GetMapWidth() {
    return map_width;
 }
@@ -355,6 +442,10 @@ void World::WorldStep(Character* player) {
   // Perform an step of all elements belonging to the world level
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
       (*it)->PlatformStep();
+      // REVISIT: remove this code
+      if (player->GetState() == RICK_STATE_SHOOTING) {
+        (*it)->SetTrigger();
+      }
   }
 
   // Blocks
