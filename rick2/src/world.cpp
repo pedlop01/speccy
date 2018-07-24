@@ -94,111 +94,14 @@ World::World(const char *file, bool tileExtractedOption)
   // Read items
   this->InitializeItems("../designs/items/items_level1.xml");
 
+  // Read dynamic background objects
+  this->InitializeDynamicBackObjects("../designs/backgrounds/anim_tiles_level1.xml");
+
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
   objects.push_back(laser1);
 
-  // REVISIT: adding static objects manually
-  StaticObject* static_obj1 = new StaticObject();
-  static_obj1->Init("../designs/backgrounds/level1_biglight.xml", 608, 1752, 8, 8, 0);
-  objects.push_back(static_obj1);
-  StaticObject* static_obj2 = new StaticObject();
-  static_obj2->Init("../designs/backgrounds/level1_biglight.xml", 912, 1760, 8, 8, 0);
-  objects.push_back(static_obj2);
-  StaticObject* static_obj3 = new StaticObject();
-  static_obj3->Init("../designs/backgrounds/level1_biglight.xml", 960, 1496, 8, 8, 0);
-  objects.push_back(static_obj3);
-  StaticObject* static_obj4 = new StaticObject();
-  static_obj4->Init("../designs/backgrounds/level1_biglight.xml", 1152, 1368, 8, 8, 0);
-  objects.push_back(static_obj4);
-  StaticObject* static_obj5 = new StaticObject();
-  static_obj5->Init("../designs/backgrounds/level1_biglight.xml", 944, 1280, 8, 8, 0);
-  objects.push_back(static_obj5);
-  StaticObject* static_obj6 = new StaticObject();
-  static_obj6->Init("../designs/backgrounds/level1_biglight.xml", 464, 1408, 8, 8, 0);
-  objects.push_back(static_obj6);
 
-  StaticObject* static_obj7 = new StaticObject();
-  static_obj7->Init("../designs/backgrounds/level1_smalllight.xml", 904, 1776, 8, 8, 0);
-  objects.push_back(static_obj7);
-  StaticObject* static_obj8 = new StaticObject();
-  static_obj8->Init("../designs/backgrounds/level1_smalllight.xml", 912, 1752, 8, 8, 2);
-  objects.push_back(static_obj8);
-  StaticObject* static_obj9 = new StaticObject();
-  static_obj9->Init("../designs/backgrounds/level1_smalllight.xml", 1176, 1384, 8, 8, 0);
-  objects.push_back(static_obj9);
-  StaticObject* static_obj10 = new StaticObject();
-  static_obj10->Init("../designs/backgrounds/level1_smalllight.xml", 936, 1296, 8, 8, 2);
-  objects.push_back(static_obj10);
-  StaticObject* static_obj11 = new StaticObject();
-  static_obj11->Init("../designs/backgrounds/level1_smalllight.xml", 944, 1272, 8, 8, 0);
-  objects.push_back(static_obj11);
-  StaticObject* static_obj12 = new StaticObject();
-  static_obj12->Init("../designs/backgrounds/level1_smalllight.xml", 464, 1400, 8, 8, 0);
-  objects.push_back(static_obj12);
-  StaticObject* static_obj13 = new StaticObject();
-  static_obj13->Init("../designs/backgrounds/level1_smalllight.xml", 456, 1424, 8, 8, 0);
-  objects.push_back(static_obj13);
-  StaticObject* static_obj14 = new StaticObject();
-  static_obj14->Init("../designs/backgrounds/level1_smalllight.xml", 632, 1768, 8, 8, 0);
-  objects.push_back(static_obj14);
-
-  StaticObject* static_obj15 = new StaticObject();
-  static_obj15->Init("../designs/backgrounds/level1_liquid.xml", 836, 1216, 16, 16, 0);
-  objects.push_back(static_obj15);
-  StaticObject* static_obj16 = new StaticObject();
-  static_obj16->Init("../designs/backgrounds/level1_liquid.xml", 836, 1224, 16, 16, 2);
-  objects.push_back(static_obj16);
-  StaticObject* static_obj17 = new StaticObject();
-  static_obj17->Init("../designs/backgrounds/level1_liquid.xml", 930, 1216, 16, 16, 1);
-  objects.push_back(static_obj17);
-  StaticObject* static_obj18 = new StaticObject();
-  static_obj18->Init("../designs/backgrounds/level1_liquid.xml", 930, 1224, 16, 16, 3);
-  objects.push_back(static_obj18);
-  StaticObject* static_obj19 = new StaticObject();
-  static_obj19->Init("../designs/backgrounds/level1_liquid.xml", 354, 1440, 16, 16, 0);
-  objects.push_back(static_obj19);
-  StaticObject* static_obj20 = new StaticObject();
-  static_obj20->Init("../designs/backgrounds/level1_liquid.xml", 354, 1448, 16, 16, 2);
-  objects.push_back(static_obj20);
-
-  StaticObject* static_obj21 = new StaticObject();
-  static_obj21->Init("../designs/backgrounds/level1_water.xml", 616, 64, 16, 24, 0);
-  objects.push_back(static_obj21);
-  StaticObject* static_obj22 = new StaticObject();
-  static_obj22->Init("../designs/backgrounds/level1_water.xml", 616, 88, 16, 24, 2);
-  objects.push_back(static_obj22);
-  StaticObject* static_obj23 = new StaticObject();
-  static_obj23->Init("../designs/backgrounds/level1_water.xml", 648, 64, 16, 24, 0);
-  objects.push_back(static_obj23);
-  StaticObject* static_obj24 = new StaticObject();
-  static_obj24->Init("../designs/backgrounds/level1_water.xml", 648, 88, 16, 24, 2);
-  objects.push_back(static_obj24);
-
-  StaticObject* static_obj25 = new StaticObject();
-  static_obj25->Init("../designs/backgrounds/level1_lighttiles.xml", 616, 952, 16, 16, 0);
-  objects.push_back(static_obj25);
-  StaticObject* static_obj26 = new StaticObject();
-  static_obj26->Init("../designs/backgrounds/level1_lighttiles.xml", 616, 968, 16, 16, 1);
-  objects.push_back(static_obj26);
-  StaticObject* static_obj27 = new StaticObject();
-  static_obj27->Init("../designs/backgrounds/level1_lighttiles.xml", 648, 952, 16, 16, 2);
-  objects.push_back(static_obj27);
-  StaticObject* static_obj28 = new StaticObject();
-  static_obj28->Init("../designs/backgrounds/level1_lighttiles.xml", 648, 968, 16, 16, 3);
-  objects.push_back(static_obj28);
-  StaticObject* static_obj29 = new StaticObject();
-  static_obj29->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 824, 16, 16, 0);
-  objects.push_back(static_obj29);
-  StaticObject* static_obj30 = new StaticObject();
-  static_obj30->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 840, 16, 16, 0);
-  objects.push_back(static_obj30);
-  StaticObject* static_obj31 = new StaticObject();
-  static_obj31->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 856, 16, 16, 0);
-  objects.push_back(static_obj31);
-  StaticObject* static_obj32 = new StaticObject();
-  static_obj32->Init("../designs/backgrounds/level1_lighttiles.xml", 392, 872, 16, 16, 0);
-  objects.push_back(static_obj32);
 
   // REVISIT: adding blocks manually
   Block* block1 = new Block();
@@ -411,6 +314,59 @@ void World::InitializeItems(const char* file) {
                      0.1, 3.0, 1.0);
 
     objects.push_back(world_item);
+  }  
+
+  printf("---------------------------\n");
+}
+
+void World::InitializeDynamicBackObjects(const char* file) {
+  int dyn_obj_id;
+  int dyn_obj_ini_x;
+  int dyn_obj_ini_y;
+  int dyn_obj_width;
+  int dyn_obj_height;
+  int dyn_obj_skip_num_anims;
+  pugi::xml_document dyn_obj_file;
+
+  printf("------------------------------------------\n");
+  printf("| Initializing dynamic backgound objects |\n");
+  printf("------------------------------------------\n");
+
+  pugi::xml_parse_result result = dyn_obj_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world dynamic background objects data\n");
+  }
+ 
+  for (pugi::xml_node dyn_obj = dyn_obj_file.child("anim_objects").first_child();
+       dyn_obj;
+       dyn_obj = dyn_obj.next_sibling()) {
+    // First read attributes
+    dyn_obj_id = dyn_obj.attribute("id").as_int();
+    printf("Dynamic object id = %d\n", dyn_obj_id);
+
+    pugi::xml_node dyn_obj_attrs = dyn_obj.child("attributes");
+    dyn_obj_ini_x                = dyn_obj_attrs.attribute("ini_x").as_int();
+    dyn_obj_ini_y                = dyn_obj_attrs.attribute("ini_y").as_int();
+    dyn_obj_width                = dyn_obj_attrs.attribute("width").as_int();
+    dyn_obj_height               = dyn_obj_attrs.attribute("height").as_int();
+    dyn_obj_skip_num_anims       = dyn_obj_attrs.attribute("skip_num_anims").as_int();
+
+    printf(" - File = %s\n", dyn_obj_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n", dyn_obj_ini_x);
+    printf(" - ini_y = %d\n", dyn_obj_ini_y);
+    printf(" - width = %d\n", dyn_obj_width);
+    printf(" - height = %d\n", dyn_obj_height);
+    printf(" - skip_anims = %d\n", dyn_obj_skip_num_anims);
+
+    // Create dyn_obj
+    StaticObject* world_dyn_obj = new StaticObject();
+    world_dyn_obj->Init(dyn_obj_attrs.attribute("file").as_string(),
+                        dyn_obj_ini_x, dyn_obj_ini_y,
+                        dyn_obj_width, dyn_obj_height,
+                        dyn_obj_skip_num_anims);
+
+    objects.push_back(world_dyn_obj);
   }  
 
   printf("---------------------------\n");

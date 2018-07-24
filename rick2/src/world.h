@@ -119,6 +119,7 @@ class World
 
         void  InitializePlatforms(const char* file);
         void  InitializeItems(const char* file);
+        void  InitializeDynamicBackObjects(const char* file);        
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 
