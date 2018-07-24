@@ -72,6 +72,7 @@ class World
         int     tileset_tile_height; // Tile height in pixels
 
         Tile    ***world_tiles;
+        Tile    ***world_tiles_front;
 
         // Platforms belonging to this level
         vector<Platform*> platforms;
@@ -102,6 +103,7 @@ class World
         int   GetTilesetTileHeight();
 
         Tile* GetTile(int x, int y);
+        Tile* GetTileFront(int x, int y);
         int   GetTileValue(int x, int y);
         bool  IsTileCollisionable(int x, int y);
         bool  IsTileCollisionableDown(int x, int y);

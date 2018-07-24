@@ -105,46 +105,46 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   int correct_y = pos_y % tile_height;
 
   // Draw everything on internal bitmap before resizing it
-  // into the screen bitmap
+  // into the screen bitmap  
   al_set_target_bitmap(camera_bitmap);
+  // REVISIT: Drawing background as black. This helps with transparent tiles drawing  
+  al_clear_to_color(al_map_rgb(0, 0, 0));
     
   // Check if it is needed to add an extra tile
   int tiles_width_corrected = (pos_x % tile_width) ? tiles_width + 1 : tiles_width;
   int tiles_height_corrected = (pos_y % tile_height) ? tiles_height + 1 : tiles_height;
 
-  // Traverse map and draw intro screen
+  // Set transparent color for tileset
+  al_convert_mask_to_alpha(tileset_bitmap, al_map_rgb(255,0,255));  
+
+  // Traverse map and draw background tiles in the screen
   int tile_y = pos_y / tile_height;
   for (int y = 0; y < tiles_height_corrected; y++) {
     int tile_x = pos_x / tile_width;    
-    for (int x = 0; x < tiles_width_corrected; x++) {
+    for (int x = 0; x < tiles_width_corrected; x++) {      
       tile = map->GetTile(tile_x, tile_y);
-      left_up_x = tile->GetLeftUpX();
-      left_up_y = tile->GetLeftUpY();
-
-      int dest_x = x*tile_width - correct_x;
-      int dest_y = y*tile_height - correct_y;
-
-      if ((dest_x < world_width) && (dest_y < world_height)) {        
-        al_draw_bitmap_region(tileset_bitmap,
-                              left_up_x,
-                              left_up_y,
-                              tile_width,
-                              tile_height,
-                              dest_x,
-                              dest_y,
-                              0);        
-        /*if (tile->GetType() != 0) {
-          al_draw_filled_rectangle(dest_x,
-                                   dest_y,
-                                   dest_x + tile_width,
-                                   dest_y + tile_height,
-                                  al_map_rgb(tile->GetType()*0x0F, tile->GetType()*0x0F, tile->GetType()*0x0F));
-        }*/
+      if (tile->GetValue() != 0) {
+        left_up_x = tile->GetLeftUpX();
+        left_up_y = tile->GetLeftUpY();
+  
+        int dest_x = x*tile_width - correct_x;
+        int dest_y = y*tile_height - correct_y;
+    
+        if ((dest_x < world_width) && (dest_y < world_height)) {        
+          al_draw_bitmap_region(tileset_bitmap,
+                                left_up_x,
+                                left_up_y,
+                                tile_width,
+                                tile_height,
+                                dest_x,
+                                dest_y,
+                                0);
+        }
       }
       tile_x++;
     }
     tile_y++;
-  }  
+  }
 
   // Draw the player in front of back tiles
   al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
@@ -225,6 +225,35 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                         al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
       
     }
+  }
+
+  // Traverse front map and draw front tiles in the screen
+  tile_y = pos_y / tile_height;
+  for (int y = 0; y < tiles_height_corrected; y++) {
+    int tile_x = pos_x / tile_width;    
+    for (int x = 0; x < tiles_width_corrected; x++) {
+      tile = map->GetTileFront(tile_x, tile_y);
+      if (tile->GetValue() != 0) {
+        left_up_x = tile->GetLeftUpX();
+        left_up_y = tile->GetLeftUpY();
+  
+        int dest_x = x*tile_width - correct_x;
+        int dest_y = y*tile_height - correct_y;
+  
+        if ((dest_x < world_width) && (dest_y < world_height)) {        
+          al_draw_bitmap_region(tileset_bitmap,
+                                left_up_x,
+                                left_up_y,
+                                tile_width,
+                                tile_height,
+                                dest_x,
+                                dest_y,
+                                0);
+        }
+      }
+      tile_x++;
+    }
+    tile_y++;
   }
 
   // Draw platforms

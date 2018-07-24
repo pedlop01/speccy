@@ -48,29 +48,36 @@ World::World(const char *file, bool tileExtractedOption)
   
   // Initialize world    
   world_tiles = new Tile**[map_width];
+  world_tiles_front = new Tile**[map_width];
   
   for (int x = 0 ; x < map_width ; x++ ) {
       world_tiles[x] = new Tile*[map_height];
+      world_tiles_front[x] = new Tile*[map_height];
       for (int y = 0 ; y < map_height ; y++ ) {
-          world_tiles[x][y] = new Tile();
+        world_tiles[x][y] = new Tile();
+        world_tiles_front[x][y] = new Tile();
       }
   }
 
   // First initialize tiles
   // Tile properties is a layer of same size as tiles, so we can reuse the for stament
   // for both of them. REVISIT: add check to verify they have same size?
-  pugi::xml_node xml_tile = world_file.child("map").find_child_by_attribute("layer", "name", "Tiles").child("data");
-  pugi::xml_node xml_tile_prop = world_file.child("map").find_child_by_attribute("layer", "name", "Collisions").child("data");
+  pugi::xml_node xml_tile       = world_file.child("map").find_child_by_attribute("layer", "name", "Tiles").child("data");
+  pugi::xml_node xml_tile_front = world_file.child("map").find_child_by_attribute("layer", "name", "FrontTiles").child("data");
+  pugi::xml_node xml_tile_prop  = world_file.child("map").find_child_by_attribute("layer", "name", "Collisions").child("data");
 
   int x = 0;
   int y = 0;
-  pugi::xml_node prop = xml_tile_prop.first_child();
+  pugi::xml_node prop       = xml_tile_prop.first_child();
+  pugi::xml_node tile_front = xml_tile_front.first_child();
   for (pugi::xml_node tile = xml_tile.first_child(); tile; tile = tile.next_sibling()) {
-    pugi::xml_attribute tile_attr = tile.first_attribute();
-    pugi::xml_attribute prop_attr = prop.first_attribute();
+    pugi::xml_attribute tile_attr       = tile.first_attribute();
+    pugi::xml_attribute tile_front_attr = tile_front.first_attribute();
+    pugi::xml_attribute prop_attr       = prop.first_attribute();
 
-    int tile_id = ((tile_attr.as_int() != 0) ? tile_attr.as_int() - 1: tile_attr.as_int());
-    int tile_prop = ((prop_attr.as_int() != 0) ? prop_attr.as_int() - 1: prop_attr.as_int());
+    int tile_id       = ((tile_attr.as_int() != 0) ? tile_attr.as_int() - 1: tile_attr.as_int());
+    int tile_front_id = ((tile_front_attr.as_int() != 0) ? tile_front_attr.as_int() - 1: tile_front_attr.as_int());
+    int tile_prop     = ((prop_attr.as_int() != 0) ? prop_attr.as_int() - 1: prop_attr.as_int());
     // Save the id of the tile aswell as the coordinates in the tileset bitmap
     world_tiles[x][y]->SetValue(tile_id);
     world_tiles[x][y]->SetType(tile_prop);
@@ -78,14 +85,22 @@ World::World(const char *file, bool tileExtractedOption)
     world_tiles[x][y]->SetLeftUpY(ceil(tile_id/tileset_columns)*tileset_height);
     world_tiles[x][y]->SetRightDownX((tile_id % tileset_columns) * tileset_width + tileset_width);
     world_tiles[x][y]->SetRightDownY(ceil((tile_id/tileset_columns))*tileset_height + tileset_height);
+    // Same for tiles in front
+    world_tiles_front[x][y]->SetValue(tile_front_id);
+    world_tiles_front[x][y]->SetType(tile_prop);
+    world_tiles_front[x][y]->SetLeftUpX((tile_front_id % tileset_columns) * tileset_width);
+    world_tiles_front[x][y]->SetLeftUpY(ceil(tile_front_id/tileset_columns)*tileset_height);
+    world_tiles_front[x][y]->SetRightDownX((tile_front_id % tileset_columns) * tileset_width + tileset_width);
+    world_tiles_front[x][y]->SetRightDownY(ceil((tile_front_id/tileset_columns))*tileset_height + tileset_height);
     if (x == (map_width - 1)) {
       y++;
       x = 0;
     } else {
       x++;
     }
-    // Move prop pointer
-    prop = prop.next_sibling();
+    // Move prop and front pointer
+    prop       = prop.next_sibling();
+    tile_front = tile_front.next_sibling();
   }
 
   // Read platforms
@@ -431,6 +446,10 @@ int World::GetTilesetTileHeight() {
 
 Tile* World::GetTile(int x, int y) {
   return world_tiles[x][y];
+}
+
+Tile* World::GetTileFront(int x, int y) {
+  return world_tiles_front[x][y];
 }
 
 bool World::IsTileCollisionable(int x, int y) {
