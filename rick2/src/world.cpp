@@ -94,36 +94,12 @@ World::World(const char *file, bool tileExtractedOption)
   this->InitializeItems("../designs/items/items_level1.xml");
   // Read dynamic background objects
   this->InitializeDynamicBackObjects("../designs/backgrounds/anim_tiles_level1.xml");
+  // Read blocks
+  this->InitializeBlocks("../designs/blocks/blocks_level1.xml");
 
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
   objects.push_back(laser1);
-
-  // REVISIT: adding blocks manually
-  Block* block1 = new Block();
-  block1->Init("../designs/blocks/level1_bigblock.xml", 736, 2011, 24, 21, true);
-  blocks.push_back(block1);
-  Block* block2 = new Block();
-  block2->Init("../designs/blocks/level1_smallblock.xml", 896, 1411, 24, 21, true);
-  blocks.push_back(block2);
-  Block* block3 = new Block();
-  block3->Init("../designs/blocks/level1_smallblock.xml", 944, 1411, 24, 21, true);
-  blocks.push_back(block3);
-  Block* block4 = new Block();
-  block4->Init("../designs/blocks/level1_bigblock.xml", 512, 1699, 24, 21, true);
-  blocks.push_back(block4);
-  Block* block5 = new Block();
-  block5->Init("../designs/blocks/level1_bigblock.xml", 256, 1667, 24, 21, true);
-  blocks.push_back(block5);
-  Block* block6 = new Block();
-  block6->Init("../designs/blocks/level1_smallblock.xml", 320, 1315, 24, 21, true);
-  blocks.push_back(block6);
-  Block* block7 = new Block();
-  block7->Init("../designs/blocks/level1_smallblock.xml", 416, 1315, 24, 21, false);
-  blocks.push_back(block7);
-  Block* block8 = new Block();
-  block8->Init("../designs/blocks/level1_smallblock.xml", 640, 707, 24, 21, true);
-  blocks.push_back(block8);
 
   shoot_exists = false;
   bomb_exists = false;
@@ -368,6 +344,59 @@ void World::InitializeDynamicBackObjects(const char* file) {
   printf("---------------------------\n");
 }
 
+void World::InitializeBlocks(const char* file) {
+  int  block_id;
+  int  block_ini_x;
+  int  block_ini_y;
+  int  block_width;
+  int  block_height;
+  bool block_exploits;
+  pugi::xml_document block_file;
+
+  printf("------------------------------\n");
+  printf("| Initializing block objects |\n");
+  printf("-----------------------------\n");
+
+  pugi::xml_parse_result result = block_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world block objects data\n");
+  }
+ 
+  for (pugi::xml_node block = block_file.child("blocks").first_child();
+       block;
+       block = block.next_sibling()) {
+    // First read attributes
+    block_id = block.attribute("id").as_int();
+    printf("Block object id = %d\n", block_id);
+
+    pugi::xml_node block_attrs = block.child("attributes");
+    block_ini_x                = block_attrs.attribute("ini_x").as_int();
+    block_ini_y                = block_attrs.attribute("ini_y").as_int();
+    block_width                = block_attrs.attribute("width").as_int();
+    block_height               = block_attrs.attribute("height").as_int();
+    block_exploits             = block_attrs.attribute("exploits").as_bool();
+
+    printf(" - File = %s\n", block_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n", block_ini_x);
+    printf(" - ini_y = %d\n", block_ini_y);
+    printf(" - width = %d\n", block_width);
+    printf(" - height = %d\n", block_height);
+    printf(" - exploits = %d\n", (int)block_exploits);
+
+    // Create block
+    Block* world_block = new Block(block_id);
+    world_block->Init(block_attrs.attribute("file").as_string(),
+                      block_ini_x, block_ini_y,
+                      block_width, block_height,
+                      block_exploits);
+
+    blocks.push_back(world_block);
+  }  
+
+  printf("---------------------------\n");
+}
+
 int World::GetMapWidth() {
    return map_width;
 }
@@ -439,7 +468,7 @@ void World::WorldStep(Character* player) {
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
       (*it)->PlatformStep();
       // REVISIT: remove this code
-      if (player->GetState() == RICK_STATE_SHOOTING) {
+      if (player->GetState() == RICK_STATE_HITTING) {
         (*it)->SetTrigger();
       }
   }

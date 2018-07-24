@@ -10,6 +10,7 @@
 
 class Block : public Object {
   private:
+    int  type_id;
     int  start_x;
     bool exploits;
     bool trigger;
@@ -20,14 +21,15 @@ class Block : public Object {
     void ComputeNextPosition(World* map);
 
   public:
-    Block();    
+    Block();
+    Block(int _type_id);
     ~Block();
 
     void SetTrigger(bool _trigger) { trigger = _trigger; };
 
     void Init(const char* _file, int _x, int _y, int _width, int _height, bool _exploits);
 
-    int GetTypeId() { return obj_id; };
+    int GetTypeId() { return type_id; };
 };
 
 #endif // BLOCK_H

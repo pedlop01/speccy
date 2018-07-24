@@ -6,6 +6,13 @@ Block::Block() {
   obj_type = OBJ_BLOCK;
 }
 
+Block::Block(int _type_id) {
+  type_id = _type_id;
+  exploits = false;
+  trigger = false;
+  obj_type = OBJ_BLOCK;
+}
+
 Block::~Block() {  
 }
 
