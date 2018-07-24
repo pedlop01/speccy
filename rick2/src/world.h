@@ -118,6 +118,7 @@ class World
         void  WorldStep(Character* player);
 
         void  InitializePlatforms(const char* file);
+        void  InitializeItems(const char* file);
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 

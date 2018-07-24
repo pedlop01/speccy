@@ -53,8 +53,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 968;  // REVISIT: should be 0
-  pos_y = 992; // REVISIT: should be 0
+  pos_x = 264;  // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
   width  = 23;  // REVISIT: should be 0
   // REVISIT: think on how to pass this information automatically

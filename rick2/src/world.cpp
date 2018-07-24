@@ -91,17 +91,8 @@ World::World(const char *file, bool tileExtractedOption)
   // Read platforms
   this->InitializePlatforms("../designs/platforms/platforms_level1.xml");
 
-  // REVISIT: adding objects manually
-  Item* object1 = new Item();
-  object1->Init("../designs/items/shoots.xml", 350, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.1, 3.0, 1.0);
-  objects.push_back(object1);
-  Item* object2 = new Item();
-  object2->Init("../designs/items/shoots.xml", 380, 1920, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 5.0, 1.0);    
-  objects.push_back(object2);
-
-  Item* object3 = new Item();
-  object3->Init("../designs/items/bonus.xml", 832, 2008, 20, 18, true, true, OBJ_STATE_STOP, OBJ_DIR_STOP, 0.1, 3.0, 1.0, 0.2, 1.0, 1.0);    
-  objects.push_back(object3);
+  // Read items
+  this->InitializeItems("../designs/items/items_level1.xml");
 
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
@@ -367,6 +358,59 @@ void World::InitializePlatforms(const char* file) {
     }
     platforms.push_back(world_platform);
 
+  }  
+
+  printf("---------------------------\n");
+}
+
+void World::InitializeItems(const char* file) {
+  int item_id;
+  int item_ini_x;
+  int item_ini_y;
+  int item_width;
+  int item_height;  
+  pugi::xml_document item_file;
+
+  printf("---------------------------\n");
+  printf("| Initializing items      |\n");
+  printf("---------------------------\n");
+
+  pugi::xml_parse_result result = item_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world items data\n");
+  }
+ 
+  for (pugi::xml_node item = item_file.child("items").first_child();
+       item;
+       item = item.next_sibling()) {
+    // First read attributes
+    item_id = item.attribute("id").as_int();
+    printf("Item id = %d\n", item_id);
+
+    pugi::xml_node item_attrs = item.child("attributes");
+    item_ini_x  = item_attrs.attribute("ini_x").as_int();
+    item_ini_y  = item_attrs.attribute("ini_y").as_int();
+    item_width  = item_attrs.attribute("width").as_int();
+    item_height = item_attrs.attribute("height").as_int();
+
+    printf(" - File = %s\n", item_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n", item_ini_x);
+    printf(" - ini_y = %d\n", item_ini_y);
+    printf(" - width = %d\n", item_width);
+    printf(" - height = %d\n", item_height);
+
+    // Create item
+    Item* world_item = new Item();
+    world_item->Init(item_attrs.attribute("file").as_string(),
+                     item_ini_x, item_ini_y,
+                     item_width, item_height,
+                     true, true,
+                     OBJ_STATE_STOP, OBJ_DIR_STOP,
+                     0.1, 3.0, 1.0,
+                     0.1, 3.0, 1.0);
+
+    objects.push_back(world_item);
   }  
 
   printf("---------------------------\n");
