@@ -17,6 +17,8 @@ class Bomb : public Object {
     ~Bomb();
 
     void ComputeNextPosition(World* map);
+
+    int GetTypeId() { return obj_id; };
 };
 
 #endif // BOMB_H

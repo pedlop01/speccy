@@ -23,6 +23,8 @@ class Laser : public Object {
     Laser();
     Laser(const char* file, int _x, int _y, int _width, int _height, int _type, int _speed, int _direction);
     ~Laser();
+
+    int GetTypeId() { return obj_id; };
 };
 
 #endif // LASER_H

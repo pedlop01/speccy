@@ -37,7 +37,6 @@ int main(int argc, char *argv[]) {
   Keyboard               keyboard;
   Camera                 camera;
   Timer                  timer;
-  bool                   edit_mode   = false;
 
   // Check arguments
   if(argc != 1) {
@@ -88,7 +87,7 @@ int main(int argc, char *argv[]) {
   al_init_font_addon();       // initialize the font addon
   al_init_ttf_addon();        // initialize the ttf (True Type Font) addon
 
-  ALLEGRO_FONT *font = al_load_ttf_font("../fonts/verdana.ttf",12,0 );
+  ALLEGRO_FONT *font = al_load_ttf_font("../fonts/verdana.ttf", 8,0 );
 
   if (!font) {
     printf("Error: Could not load 'pirulen.ttf'\n");
@@ -129,9 +128,6 @@ int main(int argc, char *argv[]) {
     //printf("Mouse coord x = %d, y = %d\n", camera.GetPosX() + mouse_state.x/2, camera.GetPosY() + mouse_state.y/2);
 
     if(keyboard.PressedESC())   { return 0; }
-    if(keyboard.PressedM()) {      
-      edit_mode = !edit_mode;
-    }
 
     // Perform an step of all elements belonging to the world level
 //    printf("[Main] World step\n");
@@ -144,7 +140,7 @@ int main(int argc, char *argv[]) {
 //    printf("[Main] Camera position\n");
     camera.PositionBasedOnPlayer(player);
 //    printf("[Main] Camera draw screen\n");
-    camera.DrawScreen(map_level1, player);
+    camera.DrawScreen(map_level1, player, font);
 
     // Check counter value for adding waiting time
     double delay = timer.GetCounter();
@@ -154,12 +150,6 @@ int main(int argc, char *argv[]) {
 #else
       sleep(0.00002 - delay);
 #endif
-
-    // REVISIT: temporary. Print visual text
-    if (!edit_mode)
-      al_draw_text(font, al_map_rgb(0, 255, 255), 10, 10, ALLEGRO_ALIGN_LEFT, "Game mode ON");
-    else
-      al_draw_text(font, al_map_rgb(0, 255, 255), 10, 10, ALLEGRO_ALIGN_LEFT, "Game mode OFF");
 
     // Move bitmap into display
     al_set_target_bitmap(al_get_backbuffer(display));

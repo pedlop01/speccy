@@ -62,7 +62,7 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="7">
+  <platform id="8">
     <attributes file="../designs/platforms/platforms.xml" ini_x="452" ini_y="1480" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="64" wait="0" speed="2"></action>
@@ -71,13 +71,13 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="8">
+  <platform id="9">
     <attributes file="../designs/platforms/platforms.xml" ini_x="388" ini_y="1304" width="24" height="8" visible="1" recursive="0" one_use="1" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="728" wait="0" speed="6"></action>
     </actions>
   </platform>
-  <platform id="9">
+  <platform id="10">
     <attributes file="../designs/platforms/platforms.xml" ini_x="480" ini_y="1336" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="up" desp="96" wait="0" speed="2"></action>
@@ -86,7 +86,7 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="10">
+  <platform id="11">
     <attributes file="../designs/platforms/platforms.xml" ini_x="388" ini_y="952" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="96" wait="0" speed="2"></action>
@@ -95,13 +95,13 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="11">
-    <attributes file="../designs/platforms/platforms.xml" ini_x="352" ini_y="888" width="24" height="8" visible="1" recursive="1" one_use="1" ini_state="stop"></attributes>
+  <platform id="12">
+    <attributes file="../designs/platforms/platforms.xml" ini_x="352" ini_y="888" width="24" height="8" visible="1" recursive="0" one_use="1" ini_state="stop"></attributes>
     <actions>
       <action direction="up" desp="40" wait="0" speed="2"></action>
     </actions>
   </platform>
-  <platform id="12">
+  <platform id="13">
     <attributes file="../designs/platforms/platforms.xml" ini_x="576" ini_y="952" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="up" desp="64" wait="0" speed="2"></action>
@@ -109,7 +109,7 @@
       <action direction="down" desp="64" wait="0" speed="2"></action>
     </actions>
   </platform>
-  <platform id="13">
+  <platform id="14">
     <attributes file="../designs/platforms/platforms.xml" ini_x="544" ini_y="664" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="moving"></attributes>
     <actions>
       <action direction="down" desp="64" wait="0" speed="2"></action>
@@ -118,7 +118,7 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="14">
+  <platform id="15">
     <attributes file="../designs/platforms/platforms.xml" ini_x="580" ini_y="344" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="right" desp="64" wait="0" speed="1"></action>
@@ -127,7 +127,7 @@
       <action direction="stop" desp="0" wait="40" speed="0"></action>
     </actions>
   </platform>
-  <platform id="15">
+  <platform id="16">
     <attributes file="../designs/platforms/platforms.xml" ini_x="548" ini_y="280" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="up" desp="32" wait="0" speed="2"></action>

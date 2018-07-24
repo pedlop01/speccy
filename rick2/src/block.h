@@ -26,6 +26,8 @@ class Block : public Object {
     void SetTrigger(bool _trigger) { trigger = _trigger; };
 
     void Init(const char* _file, int _x, int _y, int _width, int _height, bool _exploits);
+
+    int GetTypeId() { return obj_id; };
 };
 
 #endif // BLOCK_H

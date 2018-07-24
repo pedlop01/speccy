@@ -64,6 +64,7 @@ class Platform : public Object {
     // Set the onehot trigger
     void SetTrigger() { trigger = true; }
     int  GetID()      { return platform_id; }
+    int  GetTypeId()  { return obj_id; };
 
     // Get currection direction of the platform based on current action
     int   GetDirection();

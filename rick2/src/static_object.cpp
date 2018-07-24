@@ -4,6 +4,11 @@ StaticObject::StaticObject() {
   obj_type = OBJ_STATIC;
 }
 
+StaticObject::StaticObject(int _type_id) {
+  type_id = _type_id;
+  obj_type = OBJ_STATIC;
+}
+
 StaticObject::~StaticObject() {  
 }
 

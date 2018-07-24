@@ -5,6 +5,12 @@ Item::Item() {
   obj_type = OBJ_ITEM;
 }
 
+Item::Item(int _type_id) {
+  type_id = _type_id;
+  steps_dying = 0;
+  obj_type = OBJ_ITEM;  
+}
+
 Item::~Item() {
   printf("Calling destructor!\n");
 }

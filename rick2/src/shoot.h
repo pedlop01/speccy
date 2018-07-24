@@ -15,6 +15,8 @@ class Shoot : public Object {
     Shoot();
     Shoot(const char* file, int _x, int _y, int _width, int _height, int _direction);
     ~Shoot();
+
+    int GetTypeId() { return obj_id; };
 };
 
 #endif // SHOOT_H

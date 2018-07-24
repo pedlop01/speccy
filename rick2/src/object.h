@@ -160,12 +160,14 @@ class Object {
     int GetY()        { return y;                               };
     int GetWidth()    { return width;                           };
     int GetHeight()   { return height;                          };
-    int GetBBX()      { return (using_bb ? bb_x + 1  : 0);      };    // Only for use in graphical functions. This is why it requires to be +1
-    int GetBBY()      { return (using_bb ? bb_y + 1  : 0);      };    // Only for use in graphical functions. This is why it requires to be +1
+    int GetBBX()      { return (using_bb ? bb_x      : 0);      };
+    int GetBBY()      { return (using_bb ? bb_y      : 0);      };
     int GetBBWidth()  { return (using_bb ? bb_width  : width);  };
     int GetBBHeight() { return (using_bb ? bb_height : height); };
     bool GetVisible() { return visible;                         };
     bool GetActive()  { return active;                          };
+
+    virtual int GetTypeId() {;};
 
     void SetSpeedX(float _speed_x)          { speed_x = _speed_x;           };
     void SetSpeedXMax(float _speed_x_max)   { speed_x_max = _speed_x_max;   };

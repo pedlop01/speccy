@@ -10,14 +10,18 @@
 
 class Item : public Object {
   private:
+    int type_id;
     int steps_dying;
 
   private:
     void UpdateFSMState(World* map);
 
   public:
-    Item();    
+    Item();
+    Item(int _type_id);
     ~Item();
+
+    int GetTypeId() { return type_id; }
 
     // Re-write computeation of next position
     void ComputeNextPosition(World* map);

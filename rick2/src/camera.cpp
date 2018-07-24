@@ -91,7 +91,7 @@ void Camera::SetTilesHeight(int _tiles_height) {
   tiles_height = _tiles_height;
 }
 
-void Camera::DrawScreen(World* world, Character* player) {
+void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   Tile* tile;
   int left_up_x;
   int left_up_y;
@@ -205,16 +205,23 @@ void Camera::DrawScreen(World* world, Character* player) {
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
       }
-      
-      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX(),
-                        object->GetY() + object->GetBBY() - GetPosY(),
-                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX(),
-                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY(),
+      char buffer[30];
+      itoa(object->GetTypeId(), buffer, 10);
+      al_draw_text(font,
+                   al_map_rgb(255, 255, 0),
+                   object->GetX() + object->GetBBX() - GetPosX(),
+                   object->GetY() + object->GetBBY() - GetPosY(),
+                   ALLEGRO_ALIGN_LEFT,
+                   buffer);
+      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
+                        object->GetY() + object->GetBBY() - GetPosY() + 1,
+                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX() + 1,
+                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY() + 1,
                         al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
-      al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX(),
-                        object->GetY() + object->GetBBY() - 1 - GetPosY(),
-                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX(),
-                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY(),
+      al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX() + 1,
+                        object->GetY() + object->GetBBY() - 1 - GetPosY() + 1,
+                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
+                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
                         al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
       
     }
@@ -229,6 +236,14 @@ void Camera::DrawScreen(World* world, Character* player) {
                    platform->GetX() - GetPosX(),
                    platform->GetY() - GetPosY(),
                    platform->GetCurrentAnimationBitmapAttributes());
+    char buffer[30];
+    itoa(platform->GetTypeId(), buffer, 10);
+    al_draw_text(font,
+                 al_map_rgb(255, 255, 0),
+                 platform->GetX() - GetPosX(),
+                 platform->GetY() - GetPosY(),
+                 ALLEGRO_ALIGN_LEFT,
+                 buffer);
 
   }
 

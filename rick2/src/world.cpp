@@ -90,18 +90,14 @@ World::World(const char *file, bool tileExtractedOption)
 
   // Read platforms
   this->InitializePlatforms("../designs/platforms/platforms_level1.xml");
-
   // Read items
   this->InitializeItems("../designs/items/items_level1.xml");
-
   // Read dynamic background objects
   this->InitializeDynamicBackObjects("../designs/backgrounds/anim_tiles_level1.xml");
 
   // REVISIT: adding lasers manually
   Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
   objects.push_back(laser1);
-
-
 
   // REVISIT: adding blocks manually
   Block* block1 = new Block();
@@ -304,7 +300,7 @@ void World::InitializeItems(const char* file) {
     printf(" - height = %d\n", item_height);
 
     // Create item
-    Item* world_item = new Item();
+    Item* world_item = new Item(item_id);
     world_item->Init(item_attrs.attribute("file").as_string(),
                      item_ini_x, item_ini_y,
                      item_width, item_height,
@@ -360,7 +356,7 @@ void World::InitializeDynamicBackObjects(const char* file) {
     printf(" - skip_anims = %d\n", dyn_obj_skip_num_anims);
 
     // Create dyn_obj
-    StaticObject* world_dyn_obj = new StaticObject();
+    StaticObject* world_dyn_obj = new StaticObject(dyn_obj_id);
     world_dyn_obj->Init(dyn_obj_attrs.attribute("file").as_string(),
                         dyn_obj_ini_x, dyn_obj_ini_y,
                         dyn_obj_width, dyn_obj_height,

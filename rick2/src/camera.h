@@ -5,6 +5,8 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 
 #include <stdio.h>
 #include <list>
@@ -62,7 +64,7 @@ class Camera
 
     void SetMap(World* _map) { map = _map; }
 
-    void DrawScreen(World* world, Character *player);
+    void DrawScreen(World* world, Character *player, ALLEGRO_FONT *font);
 
   private:
     bool CoordsWithinCamera(int x, int y);
