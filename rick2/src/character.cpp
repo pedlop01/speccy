@@ -53,8 +53,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 968;  // REVISIT: should be 0
+  pos_y = 992; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
   width  = 23;  // REVISIT: should be 0
   // REVISIT: think on how to pass this information automatically
@@ -694,9 +694,9 @@ void Character::ComputeNextPosition(World* map) {
     // Correct y to be on top of platform
     SetPosY(map, GetPosY() - (GetPosY() + GetHeight() - inPlatformPtr->GetY()), false);
     if (inPlatformPtr->GetDirection() == OBJ_DIR_RIGHT) {
-      SetPosX(map, GetPosX() + 1);
+      SetPosX(map, GetPosX() + inPlatformPtr->GetSpeed());
     } else if (inPlatformPtr->GetDirection() == OBJ_DIR_LEFT) {
-      SetPosX(map, GetPosX() - 1);
+      SetPosX(map, GetPosX() - inPlatformPtr->GetSpeed());
     }
   }
 

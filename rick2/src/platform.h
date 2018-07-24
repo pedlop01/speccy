@@ -66,7 +66,8 @@ class Platform : public Object {
     int  GetID()      { return platform_id; }
 
     // Get currection direction of the platform based on current action
-    int  GetDirection() { return direction; }
+    int   GetDirection();
+    float GetSpeed();
 
     void PlatformStep();
 };

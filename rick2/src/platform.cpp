@@ -72,6 +72,26 @@ void Platform::AddAction(int direction, int desp, int wait, float speed) {
   }
 }
 
+int Platform::GetDirection() {
+  if ((actions.size() == 0) ||
+      (current_action == actions.end()) ||
+      (state == OBJ_STATE_STOP)) {
+    return OBJ_DIR_STOP;
+  }
+
+  return (*current_action)->GetDirection();
+}
+
+float Platform::GetSpeed() {
+  if ((actions.size() == 0) ||
+      (current_action == actions.end()) ||
+      (state == OBJ_STATE_STOP)) {
+    return 0.0;
+  }
+
+  return (*current_action)->GetSpeed();
+}
+
 // No use of ObjectStep
 void Platform::PlatformStep() {
   bool advance_action = false;
