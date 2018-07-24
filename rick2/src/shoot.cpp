@@ -23,29 +23,13 @@ Shoot::~Shoot() {
 
 void Shoot::UpdateFSMState(World* map) {
   bool inCol;
-  bool rightCol;
-  bool leftCol;
-  bool upCol;
-  bool downCol;
   bool blockCollision;
   Animation* current_anim;
 
-  upCol    = (extColExt.GetLeftUpCol() == TILE_COL) &&
-             (extColExt.GetRightUpCol() == TILE_COL);
-
-  downCol  = (extColExt.GetLeftDownCol() == TILE_COL) &&
-             (extColExt.GetRightDownCol() == TILE_COL);
-
-  rightCol = (extColExt.GetRightUpCol() == TILE_COL) &&
-             (extColExt.GetRightDownCol() == TILE_COL);
-
-  leftCol  = (extColExt.GetLeftUpCol() == TILE_COL) &&
-             (extColExt.GetLeftDownCol() == TILE_COL  );
-
-  inCol = (direction & OBJ_DIR_RIGHT && rightCol) ||
-          (direction & OBJ_DIR_LEFT  && leftCol)  ||
-          (direction & OBJ_DIR_UP    && upCol)    ||
-          (direction & OBJ_DIR_DOWN  && downCol);
+  inCol = (extColExt.GetLeftUpCol() == TILE_COL)   ||
+          (extColExt.GetRightUpCol() == TILE_COL)  ||
+          (extColExt.GetLeftDownCol() == TILE_COL) ||
+          (extColExt.GetRightDownCol() == TILE_COL);
 
   ComputeCollisionBlocks(map);
   ComputeCollisionObjects(map);

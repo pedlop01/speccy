@@ -125,8 +125,8 @@ int main(int argc, char *argv[]) {
     keyboard.ReadKeyboard(event_queue);
     
     // REVISIT: added mouse to combine creation with main game
-//    al_get_mouse_state(&mouse_state);
-//    printf("Mouse coord x = %d, y = %d\n", camera.GetPosX() + mouse_state.x/2, camera.GetPosY() + mouse_state.y/2);
+    //al_get_mouse_state(&mouse_state);
+    //printf("Mouse coord x = %d, y = %d\n", camera.GetPosX() + mouse_state.x/2, camera.GetPosY() + mouse_state.y/2);
 
     if(keyboard.PressedESC())   { return 0; }
     if(keyboard.PressedM()) {      

@@ -598,7 +598,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
         if (face == RICK_DIR_RIGHT) {
           map->CreateNewShoot(pos_x + 23, pos_y + 8, OBJ_DIR_RIGHT);
         } else {
-          map->CreateNewShoot(pos_x, pos_y + 8, OBJ_DIR_LEFT);
+          map->CreateNewShoot(pos_x - 10, pos_y + 8, OBJ_DIR_LEFT);
         }
         if (!(keyboard.PressedSpace() && keyboard.PressedUp())) {
           state = RICK_STATE_STOP;

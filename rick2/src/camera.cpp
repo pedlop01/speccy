@@ -205,19 +205,18 @@ void Camera::DrawScreen(World* world, Character* player) {
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
       }
-      if(object->GetType() == OBJ_BOMB) {
-      //  printf("[Camera] Bomb coord x=%d, y=%d\n", object->GetX(), object->GetY());
-        al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX(),
-                          object->GetY() + object->GetBBY() - GetPosY(),
-                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX(),
-                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY(),
-                          al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
-        al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX(),
-                          object->GetY() + object->GetBBY() - 1 - GetPosY(),
-                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX(),
-                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY(),
-                          al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-      }
+      
+      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX(),
+                        object->GetY() + object->GetBBY() - GetPosY(),
+                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX(),
+                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY(),
+                        al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
+      al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX(),
+                        object->GetY() + object->GetBBY() - 1 - GetPosY(),
+                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX(),
+                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY(),
+                        al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
+      
     }
   }
 
