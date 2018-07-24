@@ -353,7 +353,7 @@ void World::InitializeDynamicBackObjects(const char* file) {
                         dyn_obj_width, dyn_obj_height,
                         dyn_obj_skip_num_anims);
 
-    objects.push_back(world_dyn_obj);
+    back_objects.push_back(world_dyn_obj);
   }  
 
   printf("---------------------------\n");
@@ -492,6 +492,20 @@ void World::WorldStep(Character* player) {
       }
   }
 
+  // Back objects (no deleteable)
+  for (list<Object*>::iterator it = back_objects.begin() ; it != back_objects.end(); ++it) {
+    Object* object = *it;
+    if (object->GetActive()) {      
+      switch (object->GetType()) {
+        case OBJ_STATIC:
+          ((StaticObject*)object)->StaticObjectStep();
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   // Blocks
   for (list<Block*>::iterator it = blocks.begin() ; it != blocks.end(); ++it) {
     Block* block = *it;
@@ -502,6 +516,7 @@ void World::WorldStep(Character* player) {
       block->ObjectStep(this, player);
     }
   }
+
   // Global objects
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
     Object* object = *it;

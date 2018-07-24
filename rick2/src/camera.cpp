@@ -146,6 +146,24 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
     tile_y++;
   }
 
+  list<Object*>* back_objects = world->GetBackObjects();
+  for (list<Object*>::iterator it = back_objects->begin() ; it != back_objects->end(); ++it) {
+    Object* object = *it;    
+    if (object->GetState() != OBJ_STATE_DEAD) {
+      // Only draw object in camera
+      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
+          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
+        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+        al_draw_bitmap(object_sprite,
+                       object->GetX() - GetPosX(),
+                       object->GetY() - GetPosY(),
+                       object->GetCurrentAnimationBitmapAttributes());
+      }
+    }
+  }
+/*
   // Draw the player in front of back tiles
   al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
                     player->GetPosY() - GetPosY() + 1,
@@ -164,7 +182,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                     player->GetPosX() + player->GetBBX() + player->GetBBWidth() - 1 - GetPosX() + 1,
                     player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-
+*/
   // Player bitmap
   // DYING animation requires an special function to scale the sprite
   if (player->GetState() != RICK_STATE_DEAD) {
@@ -213,7 +231,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                    object->GetY() + object->GetBBY() - GetPosY(),
                    ALLEGRO_ALIGN_LEFT,
                    buffer);
-      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
+/*      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
                         object->GetY() + object->GetBBY() - GetPosY() + 1,
                         object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX() + 1,
                         object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY() + 1,
@@ -223,7 +241,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                         object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
                         object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
                         al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-      
+*/      
     }
   }
 

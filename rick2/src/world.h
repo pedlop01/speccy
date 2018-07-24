@@ -77,7 +77,8 @@ class World
         // Platforms belonging to this level
         vector<Platform*> platforms;
         // General objects belonging to this level
-        list<Object*> objects;
+        list<Object*> back_objects;  // Objects printed in the back (normally used only for static objects)
+        list<Object*> objects;       // Objects printed in the front
         // Block belonging to this level
         list<Block*> blocks;
 
@@ -113,9 +114,10 @@ class World
 		    int   GetTileValueByCoord(int x, int y);
         Tile* GetTileByCoord(int x, int y);
 
-        vector<Platform*>* GetPlatforms() { return &platforms; }
-        list<Object*>*     GetObjects()   { return &objects;   }
-        list<Block*>*      GetBlocks()    { return &blocks;    }
+        vector<Platform*>* GetPlatforms()   { return &platforms;    }
+        list<Object*>*     GetObjects()     { return &objects;      }
+        list<Object*>*     GetBackObjects() { return &back_objects; }
+        list<Block*>*      GetBlocks()      { return &blocks;       }
 
         void  WorldStep(Character* player);
 
