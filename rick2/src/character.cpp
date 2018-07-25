@@ -12,6 +12,8 @@ Character::Character() {
   height_orig = height;
   width_orig = width;
 
+  t = 0;
+
   // REVISIT: think on how to pass this information automatically
   bb_x = 5;
   bb_y = 0;
@@ -57,6 +59,9 @@ Character::Character(const char* file) {
   pos_y = 2000; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
   width  = 23;  // REVISIT: should be 0
+
+  t = 0;
+
   // REVISIT: think on how to pass this information automatically
   using_bb = true;
   bb_x = 5;
@@ -814,11 +819,21 @@ void Character::ComputeNextSpeed() {
           else
             speed_y = VERT_SPEED_MIN;
         } else if ((direction & RICK_DIR_UP) && (stepsInDirectionY > 0)) {
-          if (speed_y > VERT_SPEED_MIN)
+          t = t + 0.16;
+          if (speed_y > 0) {
+            speed_y = speed_y - 0.0835*t*t;
+            printf("speed_y = %f\n", speed_y);
+          } else {
+            speed_y = VERT_SPEED_MIN;
+          }
+            
+      /*    if (speed_y > VERT_SPEED_MIN)
             speed_y = speed_y - VERT_SPEED_STEP;
           else
             speed_y = VERT_SPEED_MIN;
+            t = 0; */
         } else if ((direction & RICK_DIR_DOWN) && (stepsInDirectionY > 0)) {
+          t = 0;
           if (speed_y < VERT_SPEED_MAX)
             speed_y = speed_y + VERT_SPEED_STEP;
           else

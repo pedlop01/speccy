@@ -36,12 +36,13 @@
 #define HOR_SPEED_MIN   1.0
 #define HOR_SPEED_STEP  0.1
 #define VERT_SPEED_MAX  3.0
-#define VERT_SPEED_MIN  1.0
+#define VERT_SPEED_MIN  0
 #define VERT_SPEED_STEP 0.1
 
 class Camera;
 class Character {
   private:
+    float t;
     int pos_x;
     int pos_y;
 
