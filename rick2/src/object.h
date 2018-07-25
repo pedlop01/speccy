@@ -37,6 +37,34 @@
 class World;
 class Character;
 
+// Some objects use Actions.
+// REVISIT: should we define this in a different file?
+class Action {
+  private:
+   int direction;
+   int desp;
+   int wait;
+   float speed;
+   bool enabled;
+
+  public:
+    Action();
+    ~Action();
+
+    Action(int _direction, int _desp, int _wait, float _speed);
+
+    int   GetDirection() { return direction; }
+    int   GetDesp()      { return desp;      }
+    int   GetWait()      { return wait;      }
+    float GetSpeed()     { return speed;     }
+
+    // It is possible to make an object inactive through an action,
+    // however, actions by default set enbaled to true
+    void SetEnabled(bool _enabled) { enabled = _enabled; }
+    bool GetEnabled()              { return enabled;    }
+};
+
+
 class Object {
   protected:
     static int id;

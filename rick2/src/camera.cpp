@@ -211,7 +211,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   list<Object*>* objects = world->GetObjects();
   for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
     Object* object = *it;    
-    if (object->GetState() != OBJ_STATE_DEAD) {
+    if (object->GetVisible() && (object->GetState() != OBJ_STATE_DEAD)) {
       // Only draw object in camera
       if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
           CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
@@ -223,7 +223,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
       }
-      char buffer[30];
+/*      char buffer[30];
       sprintf(buffer, "%d", object->GetTypeId());
       al_draw_text(font,
                    al_map_rgb(255, 255, 0),
@@ -231,7 +231,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                    object->GetY() + object->GetBBY() - GetPosY(),
                    ALLEGRO_ALIGN_LEFT,
                    buffer);
-/*      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
+      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
                         object->GetY() + object->GetBBY() - GetPosY() + 1,
                         object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX() + 1,
                         object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY() + 1,

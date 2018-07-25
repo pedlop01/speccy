@@ -17,6 +17,7 @@
 #include "object.h"
 #include "item.h"
 #include "platform.h"
+#include "hazard.h"
 #include "laser.h"
 #include "static_object.h"
 #include "block.h"
@@ -125,6 +126,7 @@ class World
         void  InitializeItems(const char* file);
         void  InitializeDynamicBackObjects(const char* file);
         void  InitializeBlocks(const char* file);
+        void  InitializeHazards(const char* file);
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 

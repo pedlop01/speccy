@@ -6,13 +6,29 @@
 
 int Object::id = 0;
 
+Action::Action() {
+
+}
+
+Action::~Action() {
+
+}
+
+Action::Action(int _direction, int _desp, int _wait, float _speed) {
+  direction = _direction;
+  desp = _desp;
+  wait = _wait;
+  speed = _speed;
+  enabled = true;
+}
+
 Object::Object() {
   x       = 0;
   y       = 0;
   width   = 0;
   height  = 0;
   visible = false;
-  active  = false;
+  active  = true;
   using_bb  = false;
   bb_x      = 0;
   bb_y      = 0;
@@ -497,26 +513,28 @@ void Object::ComputeCollisionObjects(World* map) {
   }
 }
 
-bool Object::BoxWithinBox(int a_x, int a_y, int a_width, int a_height, int b_x, int b_y, int b_width, int b_height) {
+bool Object::BoxWithinBox(int a_x, int a_y, int a_width, int a_height,
+                          int b_x, int b_y, int b_width, int b_height) {
+
   bool inside = ((a_x >= b_x) &&
                  (a_x <= (b_x + b_width)) &&
                  (a_y >= b_y) &&
-                 (a_y <= (b_y + b_width))) ||
+                 (a_y <= (b_y + b_height))) ||
 
                 (((a_x + a_width) >= b_x) &&
                  ((a_x + a_width) <= (b_x + b_width)) &&
                  (a_y >= b_y) &&
-                 (a_y <= (b_y + b_width))) ||
+                 (a_y <= (b_y + b_height))) ||
 
                 ((a_x >= b_x) &&
                  (a_x <= (b_x + b_width)) &&
                  ((a_y + a_height) >= b_y) &&
-                 ((a_y + a_height) <= (b_y + b_width))) ||
+                 ((a_y + a_height) <= (b_y + b_height))) ||
 
                 (((a_x + a_width) >= b_x) &&
                  ((a_x + a_width) <= (b_x + b_width)) &&
                  ((a_y + a_height) >= b_y) &&
-                 ((a_y + a_height) <= (b_y + b_width)));
+                 ((a_y + a_height) <= (b_y + b_height)));
 
   return inside;
 }

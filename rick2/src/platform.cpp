@@ -1,20 +1,5 @@
 #include "platform.h"
 
-Action::Action() {
-
-}
-
-Action::~Action() {
-
-}
-
-Action::Action(int _direction, int _desp, int _wait, float _speed) {
-  direction = _direction;
-  desp = _desp;
-  wait = _wait;
-  speed = _speed;
-}
-
 Platform::Platform() {
   obj_type = OBJ_PLATFORM;
   actions.clear();
@@ -137,7 +122,7 @@ void Platform::PlatformStep() {
     case OBJ_DIR_STOP:
       // only wait time can be used here
       if (current_wait_time >= current_action_ptr->GetWait()) {
-        current_action++;
+        advance_action = true;
       }
       break;
     case OBJ_DIR_RIGHT:

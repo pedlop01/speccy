@@ -111,10 +111,12 @@ World::World(const char *file, bool tileExtractedOption)
   this->InitializeDynamicBackObjects("../designs/backgrounds/anim_tiles_level1.xml");
   // Read blocks
   this->InitializeBlocks("../designs/blocks/blocks_level1.xml");
+  // Read hazards
+  this->InitializeHazards("../designs/hazards/hazards_level1.xml");
 
   // REVISIT: adding lasers manually
-  Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
-  objects.push_back(laser1);
+//  Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
+//  objects.push_back(laser1);
 
   shoot_exists = false;
   bomb_exists = false;
@@ -247,6 +249,106 @@ void World::InitializePlatforms(const char* file) {
       num_actions++;
     }
     platforms.push_back(world_platform);
+
+  }  
+
+  printf("---------------------------\n");
+}
+
+void World::InitializeHazards(const char* file) {
+  int   hazard_id;
+  int   hazard_ini_x;
+  int   hazard_ini_y;
+  int   hazard_width;
+  int   hazard_height;
+  bool  hazard_trigger;
+  int   action_direction;
+  int   action_desp;
+  int   action_wait;
+  float action_speed;
+  bool  action_deactivate;
+  int   num_actions;  
+  pugi::xml_document hazard_file;
+
+  printf("---------------------------\n");
+  printf("| Initializing hazards    |\n");
+  printf("---------------------------\n");
+
+  pugi::xml_parse_result result = hazard_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world hazard data\n");
+  }
+  
+  for (pugi::xml_node hazard = hazard_file.child("hazards").first_child();
+       hazard;
+       hazard = hazard.next_sibling()) {
+    // First read attributes
+    hazard_id = hazard.attribute("id").as_int();
+    printf("Hazard id = %d\n", hazard_id);
+
+    pugi::xml_node hazard_attrs = hazard.child("attributes");
+    hazard_ini_x                = hazard_attrs.attribute("ini_x").as_int();
+    hazard_ini_y                = hazard_attrs.attribute("ini_y").as_int();
+    hazard_width                = hazard_attrs.attribute("width").as_int();
+    hazard_height               = hazard_attrs.attribute("height").as_int();
+    hazard_trigger              = hazard_attrs.attribute("trigger").as_bool();
+
+    printf(" - File = %s\n",   hazard_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n",  hazard_ini_x);
+    printf(" - ini_y = %d\n",  hazard_ini_y);
+    printf(" - width = %d\n",  hazard_width);
+    printf(" - height = %d\n", hazard_height);
+
+    // Create hazard
+    Hazard* world_hazard = new Hazard(hazard_attrs.attribute("file").as_string(),
+                                      hazard_id,
+                                      hazard_ini_x,
+                                      hazard_ini_y,
+                                      hazard_width,
+                                      hazard_height,
+                                      hazard_trigger);
+
+    printf(" - actions:\n");
+    num_actions = 0;
+    // Second, get actions
+    pugi::xml_node actions = hazard.child("actions");
+    for (pugi::xml_node action = actions.first_child();
+         action;
+         action = action.next_sibling()) {
+      printf("\t - action %d:\n", num_actions);
+      action_deactivate = false;
+      if (strcmp(action.attribute("direction").as_string(), "stop") == 0) {
+        action_direction = OBJ_DIR_STOP;
+      } else if (strcmp(action.attribute("direction").as_string(), "right") == 0) {
+        action_direction = OBJ_DIR_RIGHT;
+      } else if (strcmp(action.attribute("direction").as_string(), "left") == 0) {
+        action_direction = OBJ_DIR_LEFT;
+      } else if (strcmp(action.attribute("direction").as_string(), "up") == 0) {
+        action_direction = OBJ_DIR_UP;
+      } else if (strcmp(action.attribute("direction").as_string(), "down") == 0) {
+        action_direction = OBJ_DIR_DOWN;
+      } else if (strcmp(action.attribute("direction").as_string(), "deactivate") == 0) {
+        action_direction = OBJ_DIR_STOP;
+        action_deactivate = true;
+      }
+      action_desp = action.attribute("desp").as_int();
+      action_wait = action.attribute("wait").as_int();
+      action_speed = action.attribute("speed").as_float();      
+      printf("\t\t - direction=%s\n", action.attribute("direction").as_string());
+      printf("\t\t - deactivate=%d\n", (int)action_deactivate);
+      printf("\t\t - desp=%d\n", action_desp);
+      printf("\t\t - wait=%d\n", action_wait);
+      printf("\t\t - speed=%f\n", action_speed);
+
+      world_hazard->AddAction(action_direction,
+                              action_desp,
+                              action_wait,
+                              action_speed,
+                              !action_deactivate);      
+      num_actions++;
+    }
+    objects.push_back(world_hazard);
 
   }  
 
@@ -520,6 +622,13 @@ void World::WorldStep(Character* player) {
   // Global objects
   for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
     Object* object = *it;
+
+    // REVISIT: to trigger some events. Remove this code
+    if (player->GetState() == RICK_STATE_HITTING) {
+      if (object->GetType() == OBJ_HAZARD)
+        ((Hazard*)object)->SetTrigger();
+    }
+
     if (object->GetState() == OBJ_STATE_DEAD) {
       //printf("[WorldStep] Object dead %d\n", object->GetId());
       // REVISIT: need to add STATIC OBJECT here? Same for other objects that may persists (LASER)
@@ -549,6 +658,9 @@ void World::WorldStep(Character* player) {
           break;
         case OBJ_STATIC:
           ((StaticObject*)object)->StaticObjectStep();
+          break;
+        case OBJ_HAZARD:
+          ((Hazard*)object)->HazardStep(player);
           break;
         case OBJ_LASER:
           ((Laser*)object)->ObjectStep(this, player);

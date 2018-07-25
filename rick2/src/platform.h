@@ -8,25 +8,6 @@
 #include "rick_params.h"
 #include "object.h"
 
-class Action {
-  private:
-   int direction;
-   int desp;
-   int wait;
-   float speed;
-
-  public:
-    Action();
-    ~Action();
-
-    Action(int _direction, int _desp, int _wait, float _speed);
-
-    int   GetDirection() { return direction; }
-    int   GetDesp()      { return desp;      }
-    int   GetWait()      { return wait;      }
-    float GetSpeed()     { return speed;     }
-};
-
 class Platform : public Object {
   private:
     int  platform_id;
@@ -63,8 +44,10 @@ class Platform : public Object {
 
     // Set the onehot trigger
     void SetTrigger() { trigger = true; }
-    int  GetID()      { return platform_id; }
-    int  GetTypeId()  { return obj_id; };
+
+    // IDs
+    int  GetID()      { return obj_id;      }
+    int  GetTypeId()  { return platform_id; };
 
     // Get currection direction of the platform based on current action
     int   GetDirection();
