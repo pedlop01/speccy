@@ -104,15 +104,15 @@ World::World(const char *file, bool tileExtractedOption)
   }
 
   // Read platforms
-  this->InitializePlatforms("../designs/platforms/platforms_level1.xml");
+  this->InitializePlatforms("../levels/level1/platforms.xml");
   // Read items
-  this->InitializeItems("../designs/items/items_level1.xml");
+  this->InitializeItems("../levels/level1/items.xml");
   // Read dynamic background objects
-  this->InitializeDynamicBackObjects("../designs/backgrounds/anim_tiles_level1.xml");
+  this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
   // Read blocks
-  this->InitializeBlocks("../designs/blocks/blocks_level1.xml");
+  this->InitializeBlocks("../levels/level1/blocks.xml");
   // Read hazards
-  this->InitializeHazards("../designs/hazards/hazards_level1.xml");
+  this->InitializeHazards("../levels/level1/hazards.xml");
   // Read checkpoints
   this->InitializeCheckpoints("../levels/level1/checkpoints.xml");
 
