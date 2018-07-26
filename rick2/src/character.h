@@ -61,9 +61,6 @@ class Character {
     int width_orig;
     int width;    
 
-    int height_internal;
-    int width_internal;
-
     int prevState;
     int state;
     int direction;

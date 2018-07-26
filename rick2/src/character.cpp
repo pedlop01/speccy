@@ -20,9 +20,6 @@ Character::Character() {
   bb_height = 21;
   bb_height_orig = bb_height;
 
-  height_internal = 3;
-  width_internal = 3;
-
   state = RICK_STATE_STOP;
   direction = RICK_DIR_STOP;
 
@@ -68,8 +65,6 @@ Character::Character(const char* file) {
   // END REVISIT
   height_orig = height;
   width_orig = width;
-  height_internal = 3;
-  width_internal = 3;
   state = RICK_STATE_STOP;
   direction = RICK_DIR_STOP;
   speed_x = HOR_SPEED_MAX;
@@ -149,11 +144,22 @@ Character::~Character() {
 void Character::Reset() {
   pos_x = initial_x;
   pos_y = initial_y;
+  state = RICK_STATE_STOP;
   direction = initial_direction;
   speed_x = initial_speed_x;
   speed_y = initial_speed_y;
   state = initial_state;
   face = RICK_DIR_RIGHT;
+  height = 21;
+  width = 23;
+  height_orig = height;
+  width_orig = width;
+  bb_width = 13;
+  bb_width_orig = bb_width;
+  bb_height = 21;
+  bb_height_orig = bb_height;
+
+  killed = false;
 }
 
 int Character::GetCorrectedPosX() {
