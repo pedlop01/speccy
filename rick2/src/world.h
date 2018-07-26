@@ -4,6 +4,7 @@
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_image.h>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <list>
@@ -14,6 +15,7 @@
 #include "pugixml.hpp"
 #include "rick_params.h"
 #include "character.h"
+#include "checkpoint.h"
 #include "object.h"
 #include "item.h"
 #include "platform.h"
@@ -83,6 +85,11 @@ class World
         // Block belonging to this level
         list<Block*> blocks;
 
+        // Checkpoints
+        Checkpoint*          current_checkpoint;
+        list<Checkpoint*>    checkpoints;
+        vector<Checkpoint*>* target_checkpoints;
+
         bool shoot_exists;
         bool bomb_exists;
 
@@ -119,6 +126,9 @@ class World
         list<Object*>*     GetObjects()     { return &objects;      }
         list<Object*>*     GetBackObjects() { return &back_objects; }
         list<Block*>*      GetBlocks()      { return &blocks;       }
+        list<Checkpoint*>* GetCheckpoints() { return &checkpoints;  }
+
+        Checkpoint* GetCurrentCheckpoint()  { return current_checkpoint; }
 
         void  WorldStep(Character* player);
 
@@ -127,6 +137,7 @@ class World
         void  InitializeDynamicBackObjects(const char* file);
         void  InitializeBlocks(const char* file);
         void  InitializeHazards(const char* file);
+        void  InitializeCheckpoints(const char* file);
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 

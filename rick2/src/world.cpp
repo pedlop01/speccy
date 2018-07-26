@@ -113,6 +113,8 @@ World::World(const char *file, bool tileExtractedOption)
   this->InitializeBlocks("../designs/blocks/blocks_level1.xml");
   // Read hazards
   this->InitializeHazards("../designs/hazards/hazards_level1.xml");
+  // Read checkpoints
+  this->InitializeCheckpoints("../levels/level1/checkpoints.xml");
 
   // REVISIT: adding lasers manually
 //  Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
@@ -144,6 +146,9 @@ World::~World()
       delete *it;
   }
   for (list<Block*>::iterator it = blocks.begin() ; it != blocks.end(); ++it) {
+      delete *it;
+  }
+  for (list<Checkpoint*>::iterator it = checkpoints.begin() ; it != checkpoints.end(); ++it) {
       delete *it;
   }
 }
@@ -514,6 +519,109 @@ void World::InitializeBlocks(const char* file) {
   printf("---------------------------\n");
 }
 
+void World::InitializeCheckpoints(const char* file) {
+  int chk_id;
+  int chk_x;
+  int chk_y;
+  int chk_width;
+  int chk_height;
+  int pl_x;
+  int pl_y;
+  int pl_face;
+  pugi::xml_document chk_file;
+  vector<vector<int>> nxt_chks;
+
+  printf("------------------------------------\n");
+  printf("| Initializing checkpoints objects |\n");
+  printf("------------------------------------\n");
+
+  pugi::xml_parse_result result = chk_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world checkpoints data\n");
+  }
+ 
+  for (pugi::xml_node chk = chk_file.child("checkpoints").first_child();
+       chk;
+       chk = chk.next_sibling()) {
+    // First read attributes
+    chk_id = chk.attribute("id").as_int();
+    printf("Checkpoint id = %d\n", chk_id);
+    
+    chk_x      = chk.attribute("chk_x").as_int();
+    chk_y      = chk.attribute("chk_y").as_int();
+    chk_width  = chk.attribute("chk_width").as_int();
+    chk_height = chk.attribute("chk_height").as_int();
+    pl_x       = chk.attribute("pl_x").as_int();
+    pl_y       = chk.attribute("pl_y").as_int();
+    if (strcmp(chk.attribute("pl_face").as_string(), "right") == 0) {
+      pl_face = RICK_DIR_RIGHT;
+    } else if (strcmp(chk.attribute("pl_face").as_string(), "left") == 0) {
+      pl_face = RICK_DIR_LEFT;
+    } else {
+      printf("Error: incorrect player direction for checkpoint\n");
+      exit(-1);
+    }
+
+    string nxt_chks_str(chk.attribute("nxt_chks").as_string());
+    vector<int> nxt_chks_int;
+
+    stringstream ss(nxt_chks_str);
+    string item;    
+    while (getline(ss, item, ',')) {
+       nxt_chks_int.push_back(stoi(item));
+    }
+    nxt_chks.push_back(nxt_chks_int);
+
+    printf(" - chk_x = %d\n", chk_x);
+    printf(" - chk_y = %d\n", chk_y);
+    printf(" - chk_width = %d\n", chk_width);
+    printf(" - chk_height = %d\n", chk_height);
+    printf(" - pl_x = %d\n", pl_x);
+    printf(" - pl_y = %d\n", pl_y);
+    printf(" - pl_face = %d\n", pl_face);
+    printf(" - nxt_chks=");
+    for(vector<int>::iterator it = nxt_chks_int.begin(); it != nxt_chks_int.end(); it++) {
+      printf("%d ", *it);
+    }
+    printf("\n");
+
+    // Create checkpoint
+    Checkpoint* world_chk = new Checkpoint(chk_id, chk_x, chk_y, chk_width, chk_height, pl_x, pl_y, pl_face);
+    checkpoints.push_back(world_chk);
+  }  
+
+  int num_chk = 0;  
+  // Once all checkpoints are read, the proceed to link them based on nxt_chks
+  for (list<Checkpoint*>::iterator it1 = checkpoints.begin(); it1 != checkpoints.end(); it1++) {
+    Checkpoint* chk_orig = *it1;
+    // Search for all the checkpoints to be linked
+    for (vector<int>::iterator it2 = nxt_chks[num_chk].begin(); it2 != nxt_chks[num_chk].end(); it2++) {
+      int num_chk_to_link = *it2;
+      // Search this id in the checkpoints list and get the pointer
+      bool found = false;
+      for (list<Checkpoint*>:: iterator it3 = checkpoints.begin(); it3 != checkpoints.end(); it3++) {
+         Checkpoint* chk_to_link = *it3;
+         if (chk_to_link->GetChkId() == num_chk_to_link) {
+           chk_orig->AddNextCheckpoint(chk_to_link);
+           found = true;
+         }
+      }
+      // If not found then return an error
+      if (!found) {
+        printf("Error: link checkpoint broken for chk_id=%d\n", num_chk);
+        exit(-1);
+      }
+    }
+    num_chk++;
+  }
+
+  current_checkpoint = *(checkpoints.begin());
+  target_checkpoints = current_checkpoint->GetNextCheckpoints();
+
+  printf("---------------------------\n");
+}
+
 int World::GetMapWidth() {
    return map_width;
 }
@@ -660,7 +768,7 @@ void World::WorldStep(Character* player) {
           ((StaticObject*)object)->StaticObjectStep();
           break;
         case OBJ_HAZARD:
-          ((Hazard*)object)->HazardStep(player);
+          ((Hazard*)object)->HazardStep(this, player);
           break;
         case OBJ_LASER:
           ((Laser*)object)->ObjectStep(this, player);
@@ -678,7 +786,19 @@ void World::WorldStep(Character* player) {
       printf("Object inactive %d\n", object->GetId());
     }
   }
-  //printf("[WorldStep] End function\n");
+
+  // Handle checkpoints
+  for (vector<Checkpoint*>::iterator it = target_checkpoints->begin(); it != target_checkpoints->end(); it++) {
+    Checkpoint* checkpoint = *it;
+    if (checkpoint->InCheckpoint(player->GetPosX(), player->GetPosY(),
+                                 player->GetWidth(), player->GetHeight())) {
+      // player is in a target checkpoint. Move the current_checkpoint.
+      current_checkpoint = checkpoint;
+      // re-compute target_checkpoints
+      target_checkpoints = current_checkpoint->GetNextCheckpoints();
+      break;
+    }
+  }
 }
 
 void World::CreateNewShoot(int x, int y, int direction) {

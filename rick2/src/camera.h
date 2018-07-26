@@ -12,6 +12,7 @@
 #include <list>
 
 #include "world.h"
+#include "checkpoint.h"
 #include "character.h"
 #include "platform.h"
 #include "block.h"

@@ -149,7 +149,7 @@ void Character::Reset() {
   speed_x = initial_speed_x;
   speed_y = initial_speed_y;
   state = initial_state;
-  face = RICK_DIR_RIGHT;
+  face = initial_direction;
   height = 21;
   width = 23;
   height_orig = height;
@@ -160,6 +160,13 @@ void Character::Reset() {
   bb_height_orig = bb_height;
 
   killed = false;
+}
+
+void Character::SetKilled(World* map) {
+  initial_x         = map->GetCurrentCheckpoint()->GetPlayerX();
+  initial_y         = map->GetCurrentCheckpoint()->GetPlayerY();
+  initial_direction = map->GetCurrentCheckpoint()->GetPlayerFace();
+  this->Reset();
 }
 
 int Character::GetCorrectedPosX() {

@@ -183,6 +183,7 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                     player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
 */
+
   // Player bitmap
   // DYING animation requires an special function to scale the sprite
   if (player->GetState() != RICK_STATE_DEAD) {
@@ -307,6 +308,24 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
     }
   }
 
+  // Draw checkpoints (only for debug)
+/*  
+  list<Checkpoint*>* checkpoints = world->GetCheckpoints();
+  for (list<Checkpoint*>::iterator it = checkpoints->begin(); it != checkpoints->end(); it++) {
+    Checkpoint* checkpoint = *it;
+    al_draw_rectangle(checkpoint->GetChkX() - GetPosX() + 1,
+                      checkpoint->GetChkY() - GetPosY() + 1,
+                      checkpoint->GetChkX() + checkpoint->GetChkWidth() - GetPosX() + 1,
+                      checkpoint->GetChkY() + checkpoint->GetChkHeight() - GetPosY() + 1,
+                      al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
+  }
+  // Now draw the current checkpoint
+  al_draw_rectangle(world->GetCurrentCheckpoint()->GetChkX() - GetPosX() + 1,
+                    world->GetCurrentCheckpoint()->GetChkY() - GetPosY() + 1,
+                    world->GetCurrentCheckpoint()->GetChkX() + world->GetCurrentCheckpoint()->GetChkWidth() - GetPosX() + 1,
+                    world->GetCurrentCheckpoint()->GetChkY() + world->GetCurrentCheckpoint()->GetChkHeight() - GetPosY() + 1,
+                    al_map_rgb(0x0, 0xFF, 0xFF), 1.0);
+*/
   // Move camera to screen
   al_set_target_bitmap(screen);
   al_draw_scaled_bitmap(camera_bitmap,

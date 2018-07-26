@@ -45,8 +45,8 @@ class Hazard : public Object {
     int  GetID()      { return obj_id;    }
     int  GetTypeId()  { return hazard_id; };
 
-    void ComputeCollisionsPlayer(Character* player);
-    void HazardStep(Character* player);
+    void ComputeCollisionsPlayer(World* map, Character* player);
+    void HazardStep(World* map, Character* player);
 };
 
 #endif // HAZARD_H

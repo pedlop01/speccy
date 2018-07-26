@@ -174,8 +174,7 @@ class Character {
 
     void RegisterCamera(Camera* _camera) { camera = _camera; }
 
-    void SetKilled()   { killed = true;  }
-    void UnsetKilled() { killed = false; }
+    void SetKilled(World* map);
 
   private:
     void FixHorizontalDirection(Keyboard& keyboard);

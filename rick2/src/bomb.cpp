@@ -70,7 +70,7 @@ void Bomb::UpdateFSMState(World* map) {
         ((Block*)blockColPtr)->SetTrigger(true);
       }
       if (playerCol) {
-        playerPtr->SetKilled();
+        playerPtr->SetKilled(map);
       }
       if (itemCol) {
         itemColPtr->SetKilled();

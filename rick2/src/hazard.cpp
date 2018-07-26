@@ -53,7 +53,7 @@ void Hazard::AddAction(int direction, int desp, int wait, float speed, bool _ena
   }
 }
 
-void Hazard::ComputeCollisionsPlayer(Character* player) {
+void Hazard::ComputeCollisionsPlayer(World* map, Character* player) {
   int col_x;
   int col_y;
   int col_width;
@@ -101,12 +101,12 @@ void Hazard::ComputeCollisionsPlayer(Character* player) {
                             player->GetBBHeight()));
 
   if (playerCol) {    
-    player->SetKilled();
+    player->SetKilled(map);
   }
 }
 
 // No use of ObjectStep
-void Hazard::HazardStep(Character* player) {
+void Hazard::HazardStep(World* map, Character* player) {
   bool advance_action = false;
   int  current_speed;
 
@@ -129,7 +129,7 @@ void Hazard::HazardStep(Character* player) {
   }
 
   // If there are action, check collisions first
-  this->ComputeCollisionsPlayer(player);
+  this->ComputeCollisionsPlayer(map, player);
 
   // Check if we have completed all actions
   if (current_action == actions.end()) {
