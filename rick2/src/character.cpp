@@ -50,8 +50,8 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 710;  // REVISIT: should be 0
+  pos_y = 1478; // REVISIT: should be 0
   height = 21;  // REVISIT: should be 0
   width  = 23;  // REVISIT: should be 0
   // REVISIT: think on how to pass this information automatically
@@ -564,7 +564,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
         break;
   
       case RICK_STATE_CROUCHING:
-        if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {
+        if ((!collisionHeadOrig && !keyboard.PressedDown()) || inAir) {          
           pos_y = pos_y - (height_orig - height);
           height = 21;                            // REVISIT: Hard-coded. Need to be obtained from state (now it is in animation)
           bb_height = height;                     // REVISIT: think on how to adapt this
@@ -724,7 +724,7 @@ void Character::ComputeNextPosition(World* map) {
   switch(state) {
     case RICK_STATE_STOP:
       break;
-    case RICK_STATE_RUNNING:
+    case RICK_STATE_RUNNING:      
     case RICK_STATE_CROUCHING:
       if (direction & RICK_DIR_RIGHT) {
         SetPosX(map, GetPosX() + speed_x);
@@ -733,19 +733,26 @@ void Character::ComputeNextPosition(World* map) {
       }
       break;
     case RICK_STATE_JUMPING:
-
+      
       // Correct first the horizontal movement because
       // it may affect where the vertical movement is placed
       // at the end.
-      if (direction & RICK_DIR_RIGHT)
-        SetPosX(map, GetPosX() + speed_x);
-      else if (direction & RICK_DIR_LEFT)
-        SetPosX(map, GetPosX() - speed_x);
+      // Special case: if collisioning with head but moving down,
+      // then avoid correcting position x. Otherwise, the correction
+      // may try to move the player to a previous position where
+      // it collides again
+      if (!(collisionHead && (direction & RICK_DIR_DOWN))) {
+        if (direction & RICK_DIR_RIGHT)
+          SetPosX(map, GetPosX() + speed_x);
+        else if (direction & RICK_DIR_LEFT)
+          SetPosX(map, GetPosX() - speed_x);
+      }
 
       if (direction & RICK_DIR_UP)
         SetPosY(map, GetPosY() - speed_y, false);
-      else if (direction & RICK_DIR_DOWN)
+      else if (direction & RICK_DIR_DOWN) {
         SetPosY(map, GetPosY() + speed_y, true);
+      }
 
       break;
     case RICK_STATE_CLIMBING:
