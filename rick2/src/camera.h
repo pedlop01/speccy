@@ -64,11 +64,21 @@ class Camera
     void PositionBasedOnPlayer(Character* player);
 
     void SetMap(World* _map) { map = _map; }
-
+    
     void DrawScreen(World* world, Character *player, ALLEGRO_FONT *font);
 
   private:
     bool CoordsWithinCamera(int x, int y);
+
+    void DrawBackTiles(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawFrontTiles(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawPlayer(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawPlayerDying(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawPlatforms(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawBackObjects(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawFrontObjects(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawBlocks(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawCheckpoints(World* world, Character *player, ALLEGRO_FONT *font);
 
 };
 

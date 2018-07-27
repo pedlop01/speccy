@@ -91,33 +91,23 @@ void Camera::SetTilesHeight(int _tiles_height) {
   tiles_height = _tiles_height;
 }
 
-void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
+void Camera::DrawBackTiles(World* world, Character* player, ALLEGRO_FONT *font) {
   Tile* tile;
   int left_up_x;
   int left_up_y;
   ALLEGRO_BITMAP* tileset_bitmap;
 
-  // Get the tileset bitmap
-  tileset_bitmap = map->GetWorldImage();
-
   // Compute x and y corrections to draw world
   int correct_x = pos_x % tile_width;
   int correct_y = pos_y % tile_height;
 
-  // Draw everything on internal bitmap before resizing it
-  // into the screen bitmap  
-  al_set_target_bitmap(camera_bitmap);
-  // REVISIT: Drawing background as black. This helps with transparent tiles drawing  
-  al_clear_to_color(al_map_rgb(0, 0, 0));
-    
+  // Get the tileset bitmap
+  tileset_bitmap = map->GetWorldImage();
+
   // Check if it is needed to add an extra tile
   int tiles_width_corrected = (pos_x % tile_width) ? tiles_width + 1 : tiles_width;
   int tiles_height_corrected = (pos_y % tile_height) ? tiles_height + 1 : tiles_height;
 
-  // Set transparent color for tileset
-  al_convert_mask_to_alpha(tileset_bitmap, al_map_rgb(255,0,255));  
-
-  // Traverse map and draw background tiles in the screen
   int tile_y = pos_y / tile_height;
   for (int y = 0; y < tiles_height_corrected; y++) {
     int tile_x = pos_x / tile_width;    
@@ -146,108 +136,26 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
     tile_y++;
   }
 
-  list<Object*>* back_objects = world->GetBackObjects();
-  for (list<Object*>::iterator it = back_objects->begin() ; it != back_objects->end(); ++it) {
-    Object* object = *it;    
-    if (object->GetState() != OBJ_STATE_DEAD) {
-      // Only draw object in camera
-      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
-          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
-        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-        al_draw_bitmap(object_sprite,
-                       object->GetX() - GetPosX(),
-                       object->GetY() - GetPosY(),
-                       object->GetCurrentAnimationBitmapAttributes());
-      }
-    }
-  }
-/*
-  // Draw the player in front of back tiles
-  al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
-                    player->GetPosY() - GetPosY() + 1,
-                    player->GetPosX() + player->GetWidth() - 1 - GetPosX() + 1,
-                    player->GetPosY() + player->GetHeight() - 1 - GetPosY() + 1,
-                    al_map_rgb(0xAD, 0x21, 0x56), 1.0);
-  // - External
-  al_draw_rectangle(player->GetPosX() - 1 - GetPosX() + 1,
-                    player->GetPosY() - 1 - GetPosY() + 1,
-                    player->GetPosX() + player->GetWidth() - GetPosX() + 1,
-                    player->GetPosY() + player->GetHeight() - GetPosY() + 1,
-                    al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
-  // - Bounding box
-  al_draw_rectangle(player->GetPosX() + player->GetBBX() - GetPosX() + 1,
-                    player->GetPosY() + player->GetBBY() - GetPosY() + 1,
-                    player->GetPosX() + player->GetBBX() + player->GetBBWidth() - 1 - GetPosX() + 1,
-                    player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
-                    al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-*/
+}
 
-  // Player bitmap
-  // DYING animation requires an special function to scale the sprite
-  if (player->GetState() != RICK_STATE_DEAD) {
-    ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
-    if (player->GetState() == RICK_STATE_DYING) {
-      al_draw_scaled_bitmap(player_bitmap,
-        0,
-        0,
-        player->GetCurrentAnimationWidth(),
-        player->GetCurrentAnimationHeight(),
-        player->GetPosX() - GetPosX(),
-        player->GetPosY() - GetPosY(),
-        player->GetCurrentAnimationWidth()*player->GetCurrentAnimationScalingFactor(),
-        player->GetCurrentAnimationHeight()*player->GetCurrentAnimationScalingFactor(),
-        player->GetCurrentAnimationBitmapAttributes());
-  
-    } else {
-      al_draw_bitmap(player_bitmap,
-                     player->GetPosX() - GetPosX(),
-                     player->GetPosY() - GetPosY(),
-                     player->GetCurrentAnimationBitmapAttributes());
-    }
-  } 
+void Camera::DrawFrontTiles(World* world, Character* player, ALLEGRO_FONT *font) {
+  Tile* tile;
+  int left_up_x;
+  int left_up_y;
+  ALLEGRO_BITMAP* tileset_bitmap;
 
-  // Draw objects
-  list<Object*>* objects = world->GetObjects();
-  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
-    Object* object = *it;    
-    if (object->GetVisible() && (object->GetState() != OBJ_STATE_DEAD)) {
-      // Only draw object in camera
-      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
-          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
-          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
-        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
-        al_draw_bitmap(object_sprite,
-                       object->GetX() - GetPosX(),
-                       object->GetY() - GetPosY(),
-                       object->GetCurrentAnimationBitmapAttributes());
-      }
-/*      char buffer[30];
-      sprintf(buffer, "%d", object->GetTypeId());
-      al_draw_text(font,
-                   al_map_rgb(255, 255, 0),
-                   object->GetX() + object->GetBBX() - GetPosX(),
-                   object->GetY() + object->GetBBY() - GetPosY(),
-                   ALLEGRO_ALIGN_LEFT,
-                   buffer);
-      al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
-                        object->GetY() + object->GetBBY() - GetPosY() + 1,
-                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX() + 1,
-                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY() + 1,
-                        al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
-      al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX() + 1,
-                        object->GetY() + object->GetBBY() - 1 - GetPosY() + 1,
-                        object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
-                        object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
-                        al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-*/      
-    }
-  }
+  // Compute x and y corrections to draw world
+  int correct_x = pos_x % tile_width;
+  int correct_y = pos_y % tile_height;
 
-  // Traverse front map and draw front tiles in the screen
-  tile_y = pos_y / tile_height;
+  // Get the tileset bitmap
+  tileset_bitmap = map->GetWorldImage();
+
+  // Check if it is needed to add an extra tile
+  int tiles_width_corrected = (pos_x % tile_width) ? tiles_width + 1 : tiles_width;
+  int tiles_height_corrected = (pos_y % tile_height) ? tiles_height + 1 : tiles_height;
+
+  int tile_y = pos_y / tile_height;
   for (int y = 0; y < tiles_height_corrected; y++) {
     int tile_x = pos_x / tile_width;    
     for (int x = 0; x < tiles_width_corrected; x++) {
@@ -274,8 +182,120 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
     }
     tile_y++;
   }
+}
 
-  // Draw platforms
+void Camera::DrawBackObjects(World* world, Character* player, ALLEGRO_FONT *font) {
+  list<Object*>* back_objects = world->GetBackObjects();
+  for (list<Object*>::iterator it = back_objects->begin() ; it != back_objects->end(); ++it) {
+    Object* object = *it;    
+    if (object->GetState() != OBJ_STATE_DEAD) {
+      // Only draw object in camera
+      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
+          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
+        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+        al_draw_bitmap(object_sprite,
+                       object->GetX() - GetPosX(),
+                       object->GetY() - GetPosY(),
+                       object->GetCurrentAnimationBitmapAttributes());
+      }
+    }
+  }
+}
+
+void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *font) {
+  // Draw objects
+  list<Object*>* objects = world->GetObjects();
+  for (list<Object*>::iterator it = objects->begin() ; it != objects->end(); ++it) {
+    Object* object = *it;    
+    if (object->GetVisible() && (object->GetState() != OBJ_STATE_DEAD)) {
+      // Only draw object in camera
+      if (CoordsWithinCamera(object->GetX(),                      object->GetY()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY()) ||
+          CoordsWithinCamera(object->GetX(),                      object->GetY() + object->GetHeight()) ||
+          CoordsWithinCamera(object->GetX() + object->GetWidth(), object->GetY() + object->GetHeight())) {
+        ALLEGRO_BITMAP* object_sprite = object->GetCurrentAnimationBitmap();
+        al_draw_bitmap(object_sprite,
+                       object->GetX() - GetPosX(),
+                       object->GetY() - GetPosY(),
+                       object->GetCurrentAnimationBitmapAttributes());
+/*
+        char buffer[30];
+        sprintf(buffer, "%d", object->GetTypeId());
+        al_draw_text(font,
+                     al_map_rgb(255, 255, 0),
+                     object->GetX() + object->GetBBX() - GetPosX(),
+                     object->GetY() + object->GetBBY() - GetPosY(),
+                     ALLEGRO_ALIGN_LEFT,
+                     buffer);
+        al_draw_rectangle(object->GetX() + object->GetBBX() - GetPosX() + 1,
+                          object->GetY() + object->GetBBY() - GetPosY() + 1,
+                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) - GetPosX() + 1,
+                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) - GetPosY() + 1,
+                          al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
+        al_draw_rectangle(object->GetX() + object->GetBBX() - 1 - GetPosX() + 1,
+                          object->GetY() + object->GetBBY() - 1 - GetPosY() + 1,
+                          object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
+                          object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
+                          al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
+*/
+      }
+    }
+  }
+}
+
+void Camera::DrawPlayer(World* world, Character* player, ALLEGRO_FONT *font) {
+  // DYING animation requires an special function to scale the sprite
+  if ((player->GetState() == RICK_STATE_DEAD) || (player->GetState() == RICK_STATE_DYING))
+    return;
+
+  ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
+  al_draw_bitmap(player_bitmap,
+                 player->GetPosX() - GetPosX(),
+                 player->GetPosY() - GetPosY(),
+                 player->GetCurrentAnimationBitmapAttributes());
+/*
+  // Draw the player in front of back tiles
+  al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
+                    player->GetPosY() - GetPosY() + 1,
+                    player->GetPosX() + player->GetWidth() - 1 - GetPosX() + 1,
+                    player->GetPosY() + player->GetHeight() - 1 - GetPosY() + 1,
+                    al_map_rgb(0xAD, 0x21, 0x56), 1.0);
+  // - External
+  al_draw_rectangle(player->GetPosX() - 1 - GetPosX() + 1,
+                    player->GetPosY() - 1 - GetPosY() + 1,
+                    player->GetPosX() + player->GetWidth() - GetPosX() + 1,
+                    player->GetPosY() + player->GetHeight() - GetPosY() + 1,
+                    al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
+  // - Bounding box
+  al_draw_rectangle(player->GetPosX() + player->GetBBX() - GetPosX() + 1,
+                    player->GetPosY() + player->GetBBY() - GetPosY() + 1,
+                    player->GetPosX() + player->GetBBX() + player->GetBBWidth() - 1 - GetPosX() + 1,
+                    player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
+                    al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
+*/
+}
+
+void Camera::DrawPlayerDying(World* world, Character* player, ALLEGRO_FONT *font) {
+
+  if ((player->GetState() != RICK_STATE_DYING))
+    return;
+
+  ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
+  al_draw_scaled_bitmap(player_bitmap,
+                        0,
+                        0,
+                        player->GetCurrentAnimationWidth(),
+                        player->GetCurrentAnimationHeight(),
+                        player->GetPosX() - GetPosX(),
+                        player->GetPosY() - GetPosY(),
+                        player->GetCurrentAnimationWidth()*player->GetCurrentAnimationScalingFactor(),
+                        player->GetCurrentAnimationHeight()*player->GetCurrentAnimationScalingFactor(),
+                        player->GetCurrentAnimationBitmapAttributes());
+}
+
+void Camera::DrawPlatforms(World* world, Character* player, ALLEGRO_FONT *font) {
   vector<Platform*>* platforms = world->GetPlatforms();
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
     Platform* platform = *it;
@@ -294,8 +314,9 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                  buffer);
 
   }
+}
 
-  // Draw blocks
+void Camera::DrawBlocks(World* world, Character* player, ALLEGRO_FONT *font) {
   list<Block*>* blocks = world->GetBlocks();
   for (list<Block*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
     Block* block = *it;
@@ -307,9 +328,9 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                      block->GetCurrentAnimationBitmapAttributes());
     }
   }
+}
 
-  // Draw checkpoints (only for debug)
-/*  
+void Camera::DrawCheckpoints(World* world, Character* player, ALLEGRO_FONT *font) {
   list<Checkpoint*>* checkpoints = world->GetCheckpoints();
   for (list<Checkpoint*>::iterator it = checkpoints->begin(); it != checkpoints->end(); it++) {
     Checkpoint* checkpoint = *it;
@@ -325,7 +346,34 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
                     world->GetCurrentCheckpoint()->GetChkX() + world->GetCurrentCheckpoint()->GetChkWidth() - GetPosX() + 1,
                     world->GetCurrentCheckpoint()->GetChkY() + world->GetCurrentCheckpoint()->GetChkHeight() - GetPosY() + 1,
                     al_map_rgb(0x0, 0xFF, 0xFF), 1.0);
-*/
+}
+
+void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
+
+  // Draw everything on internal bitmap before resizing it
+  // into the screen bitmap  
+  al_set_target_bitmap(camera_bitmap);  
+  al_clear_to_color(al_map_rgb(0, 0, 0));   // REVISIT: Drawing background as black. This helps with transparent tiles drawing  
+    
+  // Traverse map and draw background tiles in the screen
+  this->DrawBackTiles(map, player, font);
+  // Draw back objects
+  this->DrawBackObjects(map, player, font);
+  // Draw the player if he is not dying
+  this->DrawPlayer(map, player, font);
+  // Draw resting objects
+  this->DrawFrontObjects(map, player, font);
+  // Draw platforms
+  this->DrawPlatforms(map, player, font);
+  // Traverse map and draw front tiles in the screen
+  this->DrawFrontTiles(map, player, font);
+  // Draw blocks
+  this->DrawBlocks(map, player, font);
+  // Draw checkpoints (only for debug)
+  this->DrawCheckpoints(map, player, font);
+  // Draw player dying if required
+  this->DrawPlayerDying(map, player, font);
+
   // Move camera to screen
   al_set_target_bitmap(screen);
   al_draw_scaled_bitmap(camera_bitmap,

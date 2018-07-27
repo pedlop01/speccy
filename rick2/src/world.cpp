@@ -39,6 +39,9 @@ World::World(const char *file, bool tileExtractedOption)
     printf("Error: failed to load tileset\n");    
   }
 
+  // Set transparent color for tileset
+  al_convert_mask_to_alpha(world_image, al_map_rgb(255,0,255));
+
   tileset_count = tileset.attribute("tilecount").as_int();
   tileset_columns = tileset.attribute("columns").as_int();
   tileset_tile_width = tileset.attribute("tilewidth").as_int();

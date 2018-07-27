@@ -163,10 +163,10 @@ void Character::Reset() {
 }
 
 void Character::SetKilled(World* map) {
+  killed = true;
   initial_x         = map->GetCurrentCheckpoint()->GetPlayerX();
   initial_y         = map->GetCurrentCheckpoint()->GetPlayerY();
   initial_direction = map->GetCurrentCheckpoint()->GetPlayerFace();
-  this->Reset();
 }
 
 int Character::GetCorrectedPosX() {
@@ -649,7 +649,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
 
       case RICK_STATE_DYING:
         if (direction & RICK_DIR_UP) {
-          if (abs(pos_y_chk - pos_y) >= 6*8) {                   // REVISIT: hard coded the maximum distance for jumping
+          if (abs(pos_y_chk - pos_y) >= 10*8) {                   // REVISIT: hard coded the maximum distance for jumping
             direction &= ~RICK_DIR_UP;
             direction |=  RICK_DIR_DOWN;
           }
