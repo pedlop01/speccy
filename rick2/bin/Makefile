@@ -8,7 +8,7 @@ rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o characte
 endif
 
 world.o: ../src/world.cpp
-	g++ -c ../src/world.cpp
+	g++ -std=c++11 -c ../src/world.cpp
 
 keyboard.o: ../src/keyboard.cpp
 	g++ -c ../src/keyboard.cpp
