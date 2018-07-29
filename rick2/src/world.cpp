@@ -535,7 +535,7 @@ void World::InitializeCheckpoints(const char* file) {
   int pl_y;
   int pl_face;
   pugi::xml_document chk_file;
-  vector<vector<int>> nxt_chks;
+  vector<vector<int> > nxt_chks;
 
   printf("------------------------------------\n");
   printf("| Initializing checkpoints objects |\n");
