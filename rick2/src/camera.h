@@ -16,6 +16,7 @@
 #include "character.h"
 #include "platform.h"
 #include "block.h"
+#include "trigger.h"
 
 using namespace std;
 
@@ -79,6 +80,7 @@ class Camera
     void DrawFrontObjects(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawBlocks(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawCheckpoints(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawTriggers(World* world, Character *player, ALLEGRO_FONT *font);
 
 };
 

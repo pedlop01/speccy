@@ -54,7 +54,7 @@
     </actions>
   </platform>
   <platform id="7">
-    <attributes file="../designs/platforms/platforms.xml" ini_x="288" ini_y="1560" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
+    <attributes file="../designs/platforms/platforms.xml" ini_x="288" ini_y="1560" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="64" wait="0" speed="2"></action>
       <action direction="stop" desp="0" wait="40" speed="0"></action>
@@ -63,7 +63,7 @@
     </actions>
   </platform>
   <platform id="8">
-    <attributes file="../designs/platforms/platforms.xml" ini_x="452" ini_y="1480" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
+    <attributes file="../designs/platforms/platforms.xml" ini_x="452" ini_y="1480" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="64" wait="0" speed="2"></action>
       <action direction="stop" desp="0" wait="40" speed="0"></action>
@@ -78,7 +78,7 @@
     </actions>
   </platform>
   <platform id="10">
-    <attributes file="../designs/platforms/platforms.xml" ini_x="480" ini_y="1336" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
+    <attributes file="../designs/platforms/platforms.xml" ini_x="480" ini_y="1336" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="up" desp="96" wait="0" speed="2"></action>
       <action direction="stop" desp="0" wait="40" speed="0"></action>
@@ -87,7 +87,7 @@
     </actions>
   </platform>
   <platform id="11">
-    <attributes file="../designs/platforms/platforms.xml" ini_x="388" ini_y="952" width="24" height="8" visible="1" recursive="1" one_use="0" ini_state="stop"></attributes>
+    <attributes file="../designs/platforms/platforms.xml" ini_x="388" ini_y="952" width="24" height="8" visible="1" recursive="0" one_use="0" ini_state="stop"></attributes>
     <actions>
       <action direction="down" desp="96" wait="0" speed="2"></action>
       <action direction="stop" desp="0" wait="40" speed="0"></action>

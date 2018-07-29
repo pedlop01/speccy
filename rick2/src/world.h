@@ -26,7 +26,12 @@
 #include "shoot.h"
 #include "bomb.h"
 
+
 using namespace std;
+
+// Forward declaration for Trigger
+class Trigger;
+class Hazard;
 
 class Tile
 {
@@ -90,6 +95,9 @@ class World
         list<Checkpoint*>    checkpoints;
         vector<Checkpoint*>* target_checkpoints;
 
+        // Triggers
+        list<Trigger*> triggers;
+
         bool shoot_exists;
         bool bomb_exists;
 
@@ -127,6 +135,7 @@ class World
         list<Object*>*     GetBackObjects() { return &back_objects; }
         list<Block*>*      GetBlocks()      { return &blocks;       }
         list<Checkpoint*>* GetCheckpoints() { return &checkpoints;  }
+        list<Trigger*>*    GetTriggers()    { return &triggers;     }
 
         Checkpoint* GetCurrentCheckpoint()  { return current_checkpoint; }
 
@@ -138,11 +147,16 @@ class World
         void  InitializeBlocks(const char* file);
         void  InitializeHazards(const char* file);
         void  InitializeCheckpoints(const char* file);
+        void  InitializeTriggers(const char* file);
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 
     private:
-            
+
+      Platform* GetPlatform(int id);
+      Hazard*   GetHazard(int id);
+      Laser*    GetLaser(int id);
+
       inline string chopToDirectory(char *file)
       {
         char copy_file[250];

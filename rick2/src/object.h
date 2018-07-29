@@ -172,6 +172,8 @@ class Object {
 
     void Reset();
 
+    virtual void SetTrigger() {;};
+
     void SetX(int _x)              { x = _x;              };
     void SetY(int _y)              { y = _y;              };
     void SetWidth(int _width)      { width = _width;      };

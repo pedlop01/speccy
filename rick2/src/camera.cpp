@@ -348,6 +348,27 @@ void Camera::DrawCheckpoints(World* world, Character* player, ALLEGRO_FONT *font
                     al_map_rgb(0x0, 0xFF, 0xFF), 1.0);
 }
 
+void Camera::DrawTriggers(World* world, Character* player, ALLEGRO_FONT *font) {
+  list<Trigger*>* triggers = world->GetTriggers();
+  for (list<Trigger*>::iterator it = triggers->begin(); it != triggers->end(); it++) {
+    Trigger* trigger = *it;
+    al_draw_rectangle(trigger->GetX() - GetPosX() + 1,
+                      trigger->GetY() - GetPosY() + 1,
+                      trigger->GetX() + trigger->GetWidth() - GetPosX() + 1,
+                      trigger->GetY() + trigger->GetHeight() - GetPosY() + 1,
+                      al_map_rgb(0xFF, 0xFF, 0xFF), 1.0);
+    char buffer[30];
+    sprintf(buffer, "%d", trigger->GetId());
+    al_draw_text(font,
+                 al_map_rgb(255, 255, 0),
+                 trigger->GetX() - GetPosX(),
+                 trigger->GetY() - GetPosY(),
+                 ALLEGRO_ALIGN_LEFT,
+                 buffer);
+  }
+
+}
+
 void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
 
   // Draw everything on internal bitmap before resizing it
@@ -371,6 +392,8 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   this->DrawBlocks(map, player, font);
   // Draw checkpoints (only for debug)
   this->DrawCheckpoints(map, player, font);
+  // Draw triggers (only for debug)
+  this->DrawTriggers(map, player, font);
   // Draw player dying if required
   this->DrawPlayerDying(map, player, font);
 

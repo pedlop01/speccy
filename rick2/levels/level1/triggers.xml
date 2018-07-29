@@ -1,0 +1,80 @@
+<triggers>
+  <trigger id="0">
+    <attributes x="990" y="1706" width="16" height="16" action="hits" face="right" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="0" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="1">
+    <attributes x="782" y="1290" width="16" height="16" action="hits" face="left" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="1" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="2">
+    <attributes x="990" y="980" width="16" height="16" action="hits" face="right" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="2" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="3">
+    <attributes x="735" y="1196" width="16" height="16" action="hits" face="right" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="3" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="4">
+    <attributes x="352" y="1620" width="32" height="32" action="enters" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="7" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="5">
+    <attributes x="274" y="1546" width="16" height="16" action="hits" face="left" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="8" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="6">
+    <attributes x="414" y="1292" width="16" height="16" action="hits" face="right" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="9" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="7">
+    <attributes x="478" y="1312" width="24" height="24" action="enters" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="10" delay="10"></target>
+    </targets>
+  </trigger>
+  <trigger id="8">
+    <attributes x="272" y="1064" width="16" height="16" action="hits" face="left" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="11" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="9">
+    <attributes x="368" y="868" width="16" height="24" action="enters" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="12" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="10">
+    <attributes x="572" y="890" width="32" height="16" action="enters" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="13" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="12">
+    <attributes x="736" y="330" width="16" height="16" action="hits" face="right" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="15" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="13">
+    <attributes x="526" y="266" width="16" height="16" action="hits" face="left" onehot="1"></attributes>
+    <targets>
+      <target type="platform" id="16" delay="0"></target>
+    </targets>
+  </trigger>
+</triggers>
