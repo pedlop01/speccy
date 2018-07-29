@@ -26,7 +26,6 @@
 #include "shoot.h"
 #include "bomb.h"
 
-
 using namespace std;
 
 // Forward declaration for Trigger

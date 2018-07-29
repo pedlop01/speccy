@@ -103,4 +103,22 @@
       <action direction="stop" desp="0" wait="60" speed="1"></action>
     </actions>
   </hazard>
+  <hazard id="16">
+    <attributes file="../designs/hazards/wave_hazard.xml" ini_x="592" ini_y="1532" width="24" height="12" trigger="0"></attributes>
+    <actions>
+      <action direction="deactivate" desp="0" wait="40" speed="0"></action>
+      <action direction="right" desp="32" wait="0" speed="4"></action>
+      <action direction="deactivate" desp="0" wait="40" speed="0"></action>
+      <action direction="left" desp="32" wait="0" speed="4"></action>
+    </actions>
+  </hazard>
+  <hazard id="17">
+    <attributes file="../designs/hazards/wave_hazard.xml" ini_x="664" ini_y="1596" width="24" height="12" trigger="1"></attributes>
+    <actions>
+      <action direction="deactivate" desp="0" wait="50" speed="0"></action>
+      <action direction="right" desp="24" wait="0" speed="4"></action>
+      <action direction="deactivate" desp="0" wait="50" speed="0"></action>
+      <action direction="left" desp="24" wait="0" speed="4"></action>
+    </actions>
+  </hazard>
 </hazards>

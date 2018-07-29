@@ -77,4 +77,10 @@
       <target type="platform" id="16" delay="0"></target>
     </targets>
   </trigger>
+  <trigger id="14">
+    <attributes x="576" y="1540" width="88" height="24" action="enters" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="hazard" id="16" delay="0"></target>
+    </targets>
+  </trigger>
 </triggers>

@@ -40,7 +40,7 @@ class Hazard : public Object {
     void AddAction(int direction, int desp, int wait, float speed, bool enabled);
 
     // Set the onehot trigger
-    void SetTrigger() { trigger = true; }
+    void SetTrigger() { printf("trigger\n"); trigger = true; }
 
     int  GetID()      { return obj_id;    }
     int  GetTypeId()  { return hazard_id; };
