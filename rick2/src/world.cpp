@@ -273,6 +273,7 @@ void World::InitializeHazards(const char* file) {
   int   hazard_width;
   int   hazard_height;
   bool  hazard_trigger;
+  bool  hazard_stop_inactive;
   int   action_direction;
   int   action_desp;
   int   action_wait;
@@ -304,12 +305,16 @@ void World::InitializeHazards(const char* file) {
     hazard_width                = hazard_attrs.attribute("width").as_int();
     hazard_height               = hazard_attrs.attribute("height").as_int();
     hazard_trigger              = hazard_attrs.attribute("trigger").as_bool();
+    hazard_stop_inactive        = hazard_attrs.attribute("stop_inactive").as_bool();
 
-    printf(" - File = %s\n",   hazard_attrs.attribute("file").as_string());
-    printf(" - ini_x = %d\n",  hazard_ini_x);
-    printf(" - ini_y = %d\n",  hazard_ini_y);
-    printf(" - width = %d\n",  hazard_width);
-    printf(" - height = %d\n", hazard_height);
+
+    printf(" - File = %s\n",          hazard_attrs.attribute("file").as_string());
+    printf(" - ini_x = %d\n",         hazard_ini_x);
+    printf(" - ini_y = %d\n",         hazard_ini_y);
+    printf(" - width = %d\n",         hazard_width);
+    printf(" - height = %d\n",        hazard_height);
+    printf(" - trigger = %d\n",       hazard_trigger);
+    printf(" - stop_inactive = %d\n", hazard_stop_inactive);
 
     // Create hazard
     Hazard* world_hazard = new Hazard(hazard_attrs.attribute("file").as_string(),
@@ -318,7 +323,8 @@ void World::InitializeHazards(const char* file) {
                                       hazard_ini_y,
                                       hazard_width,
                                       hazard_height,
-                                      hazard_trigger);
+                                      hazard_trigger,
+                                      hazard_stop_inactive);
 
     printf(" - actions:\n");
     num_actions = 0;

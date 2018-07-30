@@ -78,9 +78,21 @@
     </targets>
   </trigger>
   <trigger id="14">
-    <attributes x="576" y="1540" width="88" height="24" action="enters" face="any" onehot="1"></attributes>
+    <attributes x="576" y="1540" width="88" height="24" action="stays" face="any" onehot="1"></attributes>
     <targets>
       <target type="hazard" id="16" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="15">
+    <attributes x="382" y="1432" width="64" height="32" action="stays" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="hazard" id="11" delay="0"></target>
+    </targets>
+  </trigger>
+  <trigger id="16">
+    <attributes x="320" y="924" width="64" height="32" action="stays" face="any" onehot="1"></attributes>
+    <targets>
+      <target type="hazard" id="12" delay="0"></target>
     </targets>
   </trigger>
 </triggers>

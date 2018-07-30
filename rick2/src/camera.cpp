@@ -220,7 +220,7 @@ void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *fon
                        object->GetX() - GetPosX(),
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
-/*
+
         char buffer[30];
         sprintf(buffer, "%d", object->GetTypeId());
         al_draw_text(font,
@@ -239,7 +239,7 @@ void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *fon
                           object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
                           object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
                           al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-*/
+
       }
     }
   }

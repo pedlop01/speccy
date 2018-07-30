@@ -20,6 +20,7 @@ class Hazard : public Object {
 
     bool trigger;
     bool always_trigger;
+    bool stop_inactive;
 
     // List of actions
     list<Action*> actions;
@@ -33,14 +34,15 @@ class Hazard : public Object {
            int _y,
            int _width,
            int _height,
-           bool _trigger);
+           bool _trigger,
+           bool _stop_inactive);
     ~Hazard();
 
     // Add new action
     void AddAction(int direction, int desp, int wait, float speed, bool enabled);
 
     // Set the onehot trigger
-    void SetTrigger() { printf("trigger\n"); trigger = true; }
+    void SetTrigger() { trigger = true; }
 
     int  GetID()      { return obj_id;    }
     int  GetTypeId()  { return hazard_id; };

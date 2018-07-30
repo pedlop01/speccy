@@ -16,7 +16,8 @@ Hazard::Hazard(const char* file,
                int _y,
                int _width,
                int _height,
-               bool _trigger) : 
+               bool _trigger,
+               bool _stop_inactive) : 
   Object(_x, _y, _width, _height, true, true) {
   obj_type = OBJ_HAZARD;
 
@@ -25,6 +26,7 @@ Hazard::Hazard(const char* file,
   ini_y = _y;
   always_trigger = _trigger;
   trigger = always_trigger;
+  stop_inactive = _stop_inactive;
   current_action = actions.begin();  // REVISIT
   current_desp = 0;
   current_wait_time = 0;  
@@ -114,6 +116,7 @@ void Hazard::HazardStep(World* map, Character* player) {
   if (actions.size() == 0) return;
 
   if (!always_trigger && (state == OBJ_STATE_STOP)) {
+    visible = !stop_inactive;
     // wait for trigger before moving
     if (trigger) {
       trigger = false;
