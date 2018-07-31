@@ -41,7 +41,7 @@
 
 class Camera;
 class Character {
-  private:
+  protected:
     int pos_x;
     int pos_y;
 

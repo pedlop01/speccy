@@ -3,21 +3,21 @@
 
 // class constructor
 Character::Character() {
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 0;
+  pos_y = 0;
 
-  using_bb = true;
-  height = 21;  // REVISIT: should be 0
-  width  = 23;  // REVISIT: should be 0
+  // Default values that shouldn´t be used
+  height = 0;
+  width  = 0;
   height_orig = height;
   width_orig = width;
 
-  // REVISIT: think on how to pass this information automatically
-  bb_x = 5;
+  using_bb = false;  
+  bb_x = 0;
   bb_y = 0;
-  bb_width = 13;
+  bb_width = 0;
   bb_width_orig = bb_width;
-  bb_height = 21;
+  bb_height = 0;
   bb_height_orig = bb_height;
 
   state = CHAR_STATE_STOP;
@@ -50,19 +50,17 @@ Character::Character() {
 
 Character::Character(const char* file) {
   // REVISIT: most of this information should be read from the file
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
-  height = 21;  // REVISIT: should be 0
-  width  = 23;  // REVISIT: should be 0
-  // REVISIT: think on how to pass this information automatically
-  using_bb = true;
-  bb_x = 5;
+  pos_x = 0;
+  pos_y = 0;
+  height = 0;
+  width  = 0;
+  using_bb = false;
+  bb_x = 0;
   bb_y = 0;
-  bb_width = 13;
+  bb_width = 0;
   bb_width_orig = bb_width;
-  bb_height = 21;
+  bb_height = 0;
   bb_height_orig = bb_height;
-  // END REVISIT
   height_orig = height;
   width_orig = width;
   state = CHAR_STATE_STOP;
@@ -84,6 +82,7 @@ Character::Character(const char* file) {
   killed = false;
   stop_move_block_col = false;
 
+  // Initialize animations
   pugi::xml_parse_result result = character_file.load_file(file);
   if(!result) {
       printf("Error: loading character data from file = %s, description = %s\n", file, result.description());
