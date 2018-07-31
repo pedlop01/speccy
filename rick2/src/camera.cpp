@@ -220,7 +220,7 @@ void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *fon
                        object->GetX() - GetPosX(),
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
-
+#ifdef SHOW_BOUNDING_BOXES
         char buffer[30];
         sprintf(buffer, "%d", object->GetTypeId());
         al_draw_text(font,
@@ -239,7 +239,7 @@ void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *fon
                           object->GetX() + object->GetBBX() + (object->GetBBWidth() - 1) + 1 - GetPosX() + 1,
                           object->GetY() + object->GetBBY() + (object->GetBBHeight() - 1) + 1 - GetPosY() + 1,
                           al_map_rgb(0xFF, 0x0F, 0x0F), 1.0);
-
+#endif
       }
     }
   }
@@ -255,7 +255,7 @@ void Camera::DrawPlayer(World* world, Character* player, ALLEGRO_FONT *font) {
                  player->GetPosX() - GetPosX(),
                  player->GetPosY() - GetPosY(),
                  player->GetCurrentAnimationBitmapAttributes());
-/*
+#ifdef SHOW_BOUNDING_BOXES
   // Draw the player in front of back tiles
   al_draw_rectangle(player->GetPosX() - GetPosX() + 1,
                     player->GetPosY() - GetPosY() + 1,
@@ -274,7 +274,7 @@ void Camera::DrawPlayer(World* world, Character* player, ALLEGRO_FONT *font) {
                     player->GetPosX() + player->GetBBX() + player->GetBBWidth() - 1 - GetPosX() + 1,
                     player->GetPosY() + player->GetBBY() + player->GetBBHeight() - 1 - GetPosY() + 1,
                     al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-*/
+#endif
 }
 
 void Camera::DrawPlayerDying(World* world, Character* player, ALLEGRO_FONT *font) {
@@ -331,6 +331,7 @@ void Camera::DrawBlocks(World* world, Character* player, ALLEGRO_FONT *font) {
 }
 
 void Camera::DrawCheckpoints(World* world, Character* player, ALLEGRO_FONT *font) {
+#ifdef SHOW_BOUNDING_BOXES
   list<Checkpoint*>* checkpoints = world->GetCheckpoints();
   for (list<Checkpoint*>::iterator it = checkpoints->begin(); it != checkpoints->end(); it++) {
     Checkpoint* checkpoint = *it;
@@ -346,9 +347,11 @@ void Camera::DrawCheckpoints(World* world, Character* player, ALLEGRO_FONT *font
                     world->GetCurrentCheckpoint()->GetChkX() + world->GetCurrentCheckpoint()->GetChkWidth() - GetPosX() + 1,
                     world->GetCurrentCheckpoint()->GetChkY() + world->GetCurrentCheckpoint()->GetChkHeight() - GetPosY() + 1,
                     al_map_rgb(0x0, 0xFF, 0xFF), 1.0);
+#endif
 }
 
 void Camera::DrawTriggers(World* world, Character* player, ALLEGRO_FONT *font) {
+#ifdef SHOW_BOUNDING_BOXES
   list<Trigger*>* triggers = world->GetTriggers();
   for (list<Trigger*>::iterator it = triggers->begin(); it != triggers->end(); it++) {
     Trigger* trigger = *it;
@@ -366,7 +369,7 @@ void Camera::DrawTriggers(World* world, Character* player, ALLEGRO_FONT *font) {
                  ALLEGRO_ALIGN_LEFT,
                  buffer);
   }
-
+#endif
 }
 
 void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
@@ -405,8 +408,15 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
 }
 
 bool Camera::CoordsWithinCamera(int x, int y) {
-  return ((x >= pos_x) &&
-          (x <= pos_x + pixels_width) &&
-          (y >= pos_y) &&
-          (y <= pos_y + pixels_height));
+  // Make the camera slightly bigger to allow
+  // drawing of objects that may be in the limits
+  // of the camera
+  int camera_x = pos_x - 32;
+  int camera_y = pos_y - 32;
+  int camera_width = pixels_width + 32;
+  int camera_height = pixels_height + 32;
+  return ((x >= camera_x) &&
+          (x <= camera_x + camera_width) &&
+          (y >= camera_y) &&
+          (y <= camera_y + camera_height));
 }

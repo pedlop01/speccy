@@ -3,7 +3,7 @@
 Trigger::Trigger(
   int _id,
   int _x, int _y, int _width, int _height,
-  int _action_event, int _action_face, int _onehot) {
+  int _action_event, int _action_face, bool _recursive) {
 
   id      = _id;
   x       = _x;
@@ -14,7 +14,7 @@ Trigger::Trigger(
   action_event = _action_event;
   action_face  = _action_face;
 
-  onehot = _onehot;
+  recursive = _recursive;
 
   player_was_in_trigger = false;
   already_triggered = false;
@@ -27,10 +27,23 @@ Trigger::~Trigger() {
 
 }
 
-void Trigger::AddTarget(Object* _object, int _delay) {
+void Trigger::Reset() {
+  player_was_in_trigger = false;
+  already_triggered = false;
+  trigger_targets = false;
+
+  for (vector<bool>::iterator it = targets_triggered.begin(); it != targets_triggered.end(); it++) {
+    *it = false;
+  }
+
+  steps = 0;
+}
+
+void Trigger::AddTarget(Object* _object, int _delay, bool _trigger) {
   targets.push_back(_object);
   targets_delay.push_back(_delay);
   targets_triggered.push_back(false);
+  targets_trigger.push_back(_trigger);
 }
 
 bool Trigger::InTrigger(int _x, int _y, int _width, int _height) {
@@ -50,12 +63,23 @@ bool Trigger::InTrigger(int _x, int _y, int _width, int _height) {
 void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
                           int _face, int _state) {
 
-  if (onehot && already_triggered)
+  if ((_state == RICK_STATE_DYING) || (_state == RICK_STATE_DEAD))
     return;
 
   if (!trigger_targets) {
     //printf("[Trigger %d] No trigger target. In analysis!\n", id);
 
+    // Recursive triggers keep triggering all the time.
+    // This is the same piece of code than the regular one for
+    // initiating triggers. Not moved there to avoid all the 
+    // next unnecessary computations.
+    if (recursive && already_triggered) {
+      steps = 0;
+      trigger_targets = true;
+      //printf("[Trigger %d] Initiate targets for this recursive trigger already triggered trigger!\n", id);
+      return;
+    }
+      
     bool player_enters     = false;
     bool player_stays      = false;
     bool player_exits      = false;
@@ -84,7 +108,7 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
     if (expected_event && expected_face) {
       steps = 0;
       trigger_targets = true;
-      printf("[Trigger %d] Initiate targets for this trigger!\n", id);
+      //printf("[Trigger %d] Initiate targets for this trigger!\n", id);
     }
   } else {
     int num_target = 0;
@@ -93,16 +117,18 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
       if ((steps >= targets_delay[num_target]) && !targets_triggered[num_target]) {
         // Set trigger on for object. Objects shall put trigger to false once
         // the action has been taken. Note that, recursive triggers may keep setting
-        // object trigger continously.        
-        object->SetTrigger();
+        // object trigger continously.
+        if (targets_trigger[num_target])
+          object->SetTrigger();
+        else
+          object->UnsetTrigger();
         targets_triggered[num_target] = true;
       }
       num_target++;
 
     }
 
-    // Check if all triggers have been set. If !onehot trigger
-    // then clear targets_triggered, clear steps and proceed again.
+    // Check if all triggers have been set.
     bool all_completed = true;
     for (vector<bool>::iterator it = targets_triggered.begin(); (it != targets_triggered.end()) && all_completed; it++) {
       if (!(*it)) {
@@ -110,7 +136,8 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
       }
     }
     if (all_completed) {
-      printf("[Trigger %d] Completed targets for this trigger!\n", id);
+      already_triggered = true;
+      //printf("[Trigger %d] Completed targets for this trigger!\n", id);
       for (vector<bool>::iterator it = targets_triggered.begin(); it != targets_triggered.end(); it++) {
         *it = false;
       }

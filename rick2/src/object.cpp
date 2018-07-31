@@ -162,6 +162,13 @@ void Object::Init(const char* file,
   direction = _direction;
   face = OBJ_DIR_RIGHT;
 
+  initial_x = x;
+  initial_y = y;
+  initial_visible = visible;
+  intial_active = active;
+  initial_direction = direction;
+  initial_state = state;
+
   this->SetSpeeds(_speed_x_max, _speed_x_min, _speed_x_step,
                   _speed_y_max, _speed_y_min, _speed_y_step);
 
@@ -229,6 +236,8 @@ void Object::Reset() {
   speed_y = initial_speed_y;
   state = initial_state;
   killed = false;
+  state = OBJ_STATE_STOP;
+  prev_state = state;
 }
 
 void Object::SetX(World* map, int _x) {

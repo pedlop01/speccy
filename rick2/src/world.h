@@ -147,6 +147,7 @@ class World
         void  InitializeHazards(const char* file);
         void  InitializeCheckpoints(const char* file);
         void  InitializeTriggers(const char* file);
+        void  InitializeLasers(const char* file);
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 

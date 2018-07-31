@@ -32,13 +32,14 @@ class Trigger {
     int action_event;
     int action_face;
 
-    bool onehot;    
+    bool recursive;
 
     // List of next checkpoints from the current one
     vector<Object*> targets;
     // Associated delays for target
     vector<int> targets_delay;
     vector<bool> targets_triggered;
+    vector<bool> targets_trigger;
 
     bool player_was_in_trigger;
     bool already_triggered;
@@ -49,10 +50,12 @@ class Trigger {
   public:
     Trigger(int _id,
             int _x, int _y, int _width, int _height,
-            int _action_event, int _action_face, int _onehot);
+            int _action_event, int _action_face, bool _recursive);
     ~Trigger();
 
-    void AddTarget(Object* _object, int _delay);
+    void Reset();
+
+    void AddTarget(Object* _object, int _delay, bool _trigger);
 
     // Read methods
     int GetId()     { return id;     }

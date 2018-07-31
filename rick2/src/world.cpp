@@ -119,12 +119,10 @@ World::World(const char *file, bool tileExtractedOption)
   this->InitializeHazards("../levels/level1/hazards.xml");
   // Read checkpoints
   this->InitializeCheckpoints("../levels/level1/checkpoints.xml");
+  // Read lasers
+  this->InitializeLasers("../levels/level1/lasers.xml");
   // Read triggers
-  this->InitializeTriggers("../levels/level1/triggers.xml");
-
-  // REVISIT: adding lasers manually
-//  Laser* laser1 = new Laser("../designs/lasers/laser_horizontal.xml", 264, 1980, 26, 6, LASER_TYPE_RECURSIVE, 5.0, OBJ_DIR_RIGHT);
-//  objects.push_back(laser1);
+  this->InitializeTriggers("../levels/level1/triggers.xml");  
 
   shoot_exists = false;
   bomb_exists = false;
@@ -636,18 +634,19 @@ void World::InitializeCheckpoints(const char* file) {
 
 
 void World::InitializeTriggers(const char* file) {
-  int trig_id;
-  int trig_x;
-  int trig_y;
-  int trig_width;
-  int trig_height;
-  int trig_onehot;
-  int trig_action;
-  int trig_face;
-  int target_type;
-  int target_id;
-  int target_delay;
-  int num_targets;
+  int  trig_id;
+  int  trig_x;
+  int  trig_y;
+  int  trig_width;
+  int  trig_height;
+  bool trig_recursive;
+  int  trig_action;
+  int  trig_face;
+  int  target_type;
+  int  target_id;
+  int  target_delay;
+  bool target_trigger;
+  int  num_targets;
   pugi::xml_document trig_file;
 
   printf("---------------------------\n");
@@ -673,7 +672,7 @@ void World::InitializeTriggers(const char* file) {
     trig_y         = trig_attrs.attribute("y").as_int();
     trig_width     = trig_attrs.attribute("width").as_int();
     trig_height    = trig_attrs.attribute("height").as_int();
-    trig_onehot    = trig_attrs.attribute("onehot").as_int();
+    trig_recursive = trig_attrs.attribute("recursive").as_bool();
     if ((strcmp(trig_attrs.attribute("action").as_string(), "enters")) == 0) {
       trig_action = ACTION_EVENT_ENTERS;
     } else if ((strcmp(trig_attrs.attribute("action").as_string(), "stays")) == 0) {
@@ -702,7 +701,7 @@ void World::InitializeTriggers(const char* file) {
     printf(" - y = %d\n",      trig_y);
     printf(" - width = %d\n",  trig_width);
     printf(" - height = %d\n", trig_height);
-    printf(" - onehot = %d\n", trig_onehot);
+    printf(" - recursive = %d\n", trig_recursive);
     printf(" - action = %d\n", trig_action);
     printf(" - face = %d\n",   trig_face);    
 
@@ -714,7 +713,7 @@ void World::InitializeTriggers(const char* file) {
                                          trig_height,
                                          trig_action,
                                          trig_face,
-                                         trig_onehot);
+                                         trig_recursive);
 
     printf(" - targets:\n");
     num_targets = 0;
@@ -736,9 +735,11 @@ void World::InitializeTriggers(const char* file) {
       }
       target_id = target.attribute("id").as_int();
       target_delay = target.attribute("delay").as_int();
+      target_trigger = target.attribute("trigger").as_bool();
       printf("\t\t - type=%s\n", target.attribute("type").as_string());
       printf("\t\t - id=%d\n", target_id);
       printf("\t\t - delay=%d\n", target_delay);
+      printf("\t\t - trigger=%d\n", target_trigger);
 
       Object* target_ptr;
       if (target_type == OBJ_PLATFORM)
@@ -753,13 +754,99 @@ void World::InitializeTriggers(const char* file) {
         exit(-1);
       }
 
-      world_trigger->AddTarget(target_ptr, target_delay);
+      world_trigger->AddTarget(target_ptr, target_delay, target_trigger);
 
       num_targets++;
     }
 
     triggers.push_back(world_trigger);
 
+  }  
+
+  printf("---------------------------\n");
+}
+
+void World::InitializeLasers(const char* file) {
+  int   laser_id;
+  int   laser_x;
+  int   laser_y;
+  int   laser_bb_x;
+  int   laser_bb_y;
+  int   laser_bb_width;
+  int   laser_bb_height;
+  int   laser_type;
+  float laser_speed;
+  bool  laser_onehot;
+  int   laser_direction;
+  int   laser_default_trigger;
+  pugi::xml_document laser_file;  
+
+  printf("------------------------------\n");
+  printf("| Initializing laser objects |\n");
+  printf("------------------------------\n");
+
+  pugi::xml_parse_result result = laser_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world lasers data\n");
+  }
+ 
+  for (pugi::xml_node laser = laser_file.child("lasers").first_child();
+       laser;
+       laser = laser.next_sibling()) {
+    // First read attributes
+    laser_id = laser.attribute("id").as_int();
+    printf("Laser id = %d\n", laser_id);
+    
+    laser_x         = laser.attribute("x").as_int();
+    laser_y         = laser.attribute("y").as_int();
+    laser_bb_x      = laser.attribute("bb_x").as_int();
+    laser_bb_y      = laser.attribute("bb_y").as_int();
+    laser_bb_width  = laser.attribute("bb_width").as_int();
+    laser_bb_height = laser.attribute("bb_height").as_int();
+    if (strcmp(laser.attribute("type").as_string(), "horizontal") == 0) {
+      laser_type = LASER_TYPE_HORIZONTAL;
+    } else if (strcmp(laser.attribute("type").as_string(), "vertical") == 0) {
+      laser_type = LASER_TYPE_VERTICAL;
+    } else if (strcmp(laser.attribute("type").as_string(), "diagonal") == 0) {
+      laser_type = LASER_TYPE_DIAGONAL;
+    } else {
+      printf("Error: incorrect type for laser\n");
+      exit(-1);
+    }
+    laser_speed = laser.attribute("speed").as_float();
+    laser_onehot = !laser.attribute("recursive").as_bool();
+    laser_default_trigger = laser.attribute("default_trigger").as_int();
+    if (strcmp(laser.attribute("direction").as_string(), "right") == 0) {
+      laser_direction = OBJ_DIR_RIGHT;
+    } else if (strcmp(laser.attribute("direction").as_string(), "left") == 0) {
+      laser_direction = OBJ_DIR_LEFT;
+    } else {
+      printf("Error: incorrect direction for laser\n");
+      exit(-1);
+    }
+    printf(" - x = %d\n", laser_x);
+    printf(" - y = %d\n", laser_y);
+    printf(" - bb_x = %d\n", laser_bb_x);
+    printf(" - bb_y = %d\n", laser_bb_y);
+    printf(" - bb_width = %d\n", laser_bb_width);
+    printf(" - bb_height = %d\n", laser_bb_height);
+    printf(" - type = %d\n", laser_type);
+    printf(" - onehot = %d\n", laser_onehot);
+    printf(" - direction = %d\n", laser_direction);
+    printf(" - speed = %f\n", laser_speed);
+    printf(" - default_trigger = %d\n", laser_default_trigger);
+
+    // Create checkpoint
+    Laser* world_laser = new Laser(laser.attribute("file").as_string(),
+                                   laser_id,
+                                   laser_x, laser_y,
+                                   laser_bb_x, laser_bb_y,
+                                   laser_bb_width, laser_bb_height,
+                                   laser_type, laser_onehot, laser_speed, laser_direction, laser_default_trigger);
+
+
+    objects.push_back(world_laser);
   }  
 
   printf("---------------------------\n");
@@ -936,15 +1023,17 @@ void World::WorldStep(Character* player) {
 
   // Handle checkpoints
   //printf("[WorldStep] Handling checkpoints...\n");
-  for (vector<Checkpoint*>::iterator it = target_checkpoints->begin(); it != target_checkpoints->end(); it++) {
-    Checkpoint* checkpoint = *it;
-    if (checkpoint->InCheckpoint(player->GetPosX(), player->GetPosY(),
-                                 player->GetWidth(), player->GetHeight())) {
-      // player is in a target checkpoint. Move the current_checkpoint.
-      current_checkpoint = checkpoint;
-      // re-compute target_checkpoints
-      target_checkpoints = current_checkpoint->GetNextCheckpoints();
-      break;
+  if (player->GetState() != RICK_STATE_DYING) {
+    for (vector<Checkpoint*>::iterator it = target_checkpoints->begin(); it != target_checkpoints->end(); it++) {
+      Checkpoint* checkpoint = *it;
+      if (checkpoint->InCheckpoint(player->GetPosX(), player->GetPosY(),
+                                   player->GetWidth(), player->GetHeight())) {
+        // player is in a target checkpoint. Move the current_checkpoint.
+        current_checkpoint = checkpoint;
+        // re-compute target_checkpoints
+        target_checkpoints = current_checkpoint->GetNextCheckpoints();
+        break;
+      }
     }
   }
 
@@ -954,6 +1043,24 @@ void World::WorldStep(Character* player) {
     trigger->TriggerStep(player->GetPosX(), player->GetPosY(),
                          player->GetWidth(), player->GetHeight(),
                          player->GetDirection(), player->GetState());
+  }
+
+  // Check if player has been killed in this step
+  // REVISIT: this check can be done at the begginning of this function and avoid
+  // traversing some of the list. Triggers for instance is traversed two times.
+  if (player->GetKilled()) {
+    printf("[WorldStep] Player killed!\n");
+    // If player got killed, then reset the triggers
+    for (list<Trigger*>:: iterator it = triggers.begin(); it != triggers.end(); it++) {
+      Trigger* trigger = *it;
+      trigger->Reset();
+    }
+    // Traverse some objects to reset them if required
+    for (list<Object*>::iterator it = objects.begin() ; it != objects.end(); ++it) {
+      Object* object = *it;
+      if (object->GetType() == OBJ_LASER)
+        ((Laser*)object)->Reset();
+    }
   }
 
   //printf("[WorldStep] Completed!\n");  

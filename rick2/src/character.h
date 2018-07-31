@@ -174,6 +174,7 @@ class Character {
 
     void RegisterCamera(Camera* _camera) { camera = _camera; }
 
+    bool GetKilled() { return killed; }
     void SetKilled(World* map);
 
   private:
