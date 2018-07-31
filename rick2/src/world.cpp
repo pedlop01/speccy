@@ -565,9 +565,9 @@ void World::InitializeCheckpoints(const char* file) {
     pl_x       = chk.attribute("pl_x").as_int();
     pl_y       = chk.attribute("pl_y").as_int();
     if (strcmp(chk.attribute("pl_face").as_string(), "right") == 0) {
-      pl_face = RICK_DIR_RIGHT;
+      pl_face = CHAR_DIR_RIGHT;
     } else if (strcmp(chk.attribute("pl_face").as_string(), "left") == 0) {
-      pl_face = RICK_DIR_LEFT;
+      pl_face = CHAR_DIR_LEFT;
     } else {
       printf("Error: incorrect player direction for checkpoint\n");
       exit(-1);
@@ -928,7 +928,7 @@ void World::WorldStep(Character* player) {
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
       (*it)->PlatformStep();
       // REVISIT: remove this code
-      //if (player->GetState() == RICK_STATE_HITTING) {
+      //if (player->GetState() == CHAR_STATE_HITTING) {
       //  (*it)->SetTrigger();
       //}
   }
@@ -966,7 +966,7 @@ void World::WorldStep(Character* player) {
     Object* object = *it;
 
     // REVISIT: to trigger some events. Remove this code
-    if (player->GetState() == RICK_STATE_HITTING) {
+    if (player->GetState() == CHAR_STATE_HITTING) {
       if (object->GetType() == OBJ_HAZARD)
         ((Hazard*)object)->SetTrigger();
     }
@@ -1023,7 +1023,7 @@ void World::WorldStep(Character* player) {
 
   // Handle checkpoints
   //printf("[WorldStep] Handling checkpoints...\n");
-  if (player->GetState() != RICK_STATE_DYING) {
+  if (player->GetState() != CHAR_STATE_DYING) {
     for (vector<Checkpoint*>::iterator it = target_checkpoints->begin(); it != target_checkpoints->end(); it++) {
       Checkpoint* checkpoint = *it;
       if (checkpoint->InCheckpoint(player->GetPosX(), player->GetPosY(),

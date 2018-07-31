@@ -79,8 +79,8 @@ void Hazard::ComputeCollisionsPlayer(World* map, Character* player) {
   // If hazard is not visible it cannot kill the player
   playerCol = (visible &&
 
-               (player->GetState() != RICK_STATE_DYING) &&
-               (player->GetState() != RICK_STATE_DEAD)) &&
+               (player->GetState() != CHAR_STATE_DYING) &&
+               (player->GetState() != CHAR_STATE_DEAD)) &&
 
               // Player within object
               (BoxWithinBox(player->GetPosX() + player->GetBBX(),

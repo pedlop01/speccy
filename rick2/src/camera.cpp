@@ -50,7 +50,7 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
 
 void Camera::PositionBasedOnPlayer(Character* player) {
   // Do not move the camera when DYING
-  if (player->GetState() == RICK_STATE_DYING) return;
+  if (player->GetState() == CHAR_STATE_DYING) return;
   SetPosX(player->GetCorrectedPosX() - pixels_width/2);
   SetPosY(player->GetCorrectedPosY() - pixels_height/2);
 }
@@ -247,7 +247,7 @@ void Camera::DrawFrontObjects(World* world, Character* player, ALLEGRO_FONT *fon
 
 void Camera::DrawPlayer(World* world, Character* player, ALLEGRO_FONT *font) {
   // DYING animation requires an special function to scale the sprite
-  if ((player->GetState() == RICK_STATE_DEAD) || (player->GetState() == RICK_STATE_DYING))
+  if ((player->GetState() == CHAR_STATE_DEAD) || (player->GetState() == CHAR_STATE_DYING))
     return;
 
   ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();
@@ -279,7 +279,7 @@ void Camera::DrawPlayer(World* world, Character* player, ALLEGRO_FONT *font) {
 
 void Camera::DrawPlayerDying(World* world, Character* player, ALLEGRO_FONT *font) {
 
-  if ((player->GetState() != RICK_STATE_DYING))
+  if ((player->GetState() != CHAR_STATE_DYING))
     return;
 
   ALLEGRO_BITMAP* player_bitmap = player->GetCurrentAnimationBitmap();

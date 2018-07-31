@@ -573,8 +573,8 @@ void Object::ComputeCollisions(World* map, Character* player) {
 
   // Check collisions with player. Player does not collision
   // when DYING or DEAD
-  playerCol = ((player->GetState() != RICK_STATE_DYING) &&
-               (player->GetState() != RICK_STATE_DEAD)) &&
+  playerCol = ((player->GetState() != CHAR_STATE_DYING) &&
+               (player->GetState() != CHAR_STATE_DEAD)) &&
 
               // Player within object
               (BoxWithinBox(player->GetPosX() + player->GetBBX(),

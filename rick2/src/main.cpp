@@ -17,7 +17,7 @@
 #include "world.h"
 #include "keyboard.h"
 #include "camera.h"
-#include "character.h"
+#include "player.h"
 #include "timer.h"
 #include "colbox.h"
 #include "object.h"
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
   ALLEGRO_SAMPLE*        sample      = NULL;
   ALLEGRO_MOUSE_STATE    mouse_state;
   World*                 map_level1;
-  Character*             player;
+  Player*                player;
   Keyboard               keyboard;
   Camera                 camera;
   Timer                  timer;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
   // Game initializations
   map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
   camera.InitCamera(0, 0, CAMERA_X, CAMERA_Y, map_level1, bitmap);
-  player = new Character("../characters/rick.xml");
+  player = new Player("../characters/rick.xml");
   player->RegisterCamera(&camera);
 
   // Start counter for first iteration

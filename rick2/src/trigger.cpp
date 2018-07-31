@@ -63,7 +63,7 @@ bool Trigger::InTrigger(int _x, int _y, int _width, int _height) {
 void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
                           int _face, int _state) {
 
-  if ((_state == RICK_STATE_DYING) || (_state == RICK_STATE_DEAD))
+  if ((_state == CHAR_STATE_DYING) || (_state == CHAR_STATE_DEAD))
     return;
 
   if (!trigger_targets) {
@@ -93,14 +93,14 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
     player_stays  =  player_in_trigger &&  player_was_in_trigger;
     player_exits  = !player_in_trigger &&  player_was_in_trigger;
 
-    expected_face = ((action_face == ACTION_FACE_RIGHT) ? (_face == RICK_DIR_RIGHT) :
-                     (action_face == ACTION_FACE_LEFT)  ? (_face == RICK_DIR_LEFT)  :
+    expected_face = ((action_face == ACTION_FACE_RIGHT) ? (_face == CHAR_DIR_RIGHT) :
+                     (action_face == ACTION_FACE_LEFT)  ? (_face == CHAR_DIR_LEFT)  :
                                                           true);
 
     expected_event = ((action_event == ACTION_EVENT_ENTERS) ? player_enters :
                       (action_event == ACTION_EVENT_STAYS)  ? player_stays  :
                       (action_event == ACTION_EVENT_EXITS)  ? player_exits  :
-                      (action_event == ACTION_EVENT_HITS)   ? player_stays && (_state == RICK_STATE_HITTING) :
+                      (action_event == ACTION_EVENT_HITS)   ? player_stays && (_state == CHAR_STATE_HITTING) :
                                                               false);
 
     player_was_in_trigger = player_in_trigger;

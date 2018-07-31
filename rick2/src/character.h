@@ -14,23 +14,23 @@
 #include "animation.h"
 
 // REVISIT: state will be provided from a file
-#define RICK_STATE_STOP      0
-#define RICK_STATE_JUMPING   1
-#define RICK_STATE_RUNNING   2
-#define RICK_STATE_CLIMBING  3
-#define RICK_STATE_CROUCHING 4
-#define RICK_STATE_SHOOTING  5
-#define RICK_STATE_BOMBING   6
-#define RICK_STATE_HITTING   7
-#define RICK_STATE_DYING     8
-#define RICK_STATE_DEAD      9
+#define CHAR_STATE_STOP      0
+#define CHAR_STATE_JUMPING   1
+#define CHAR_STATE_RUNNING   2
+#define CHAR_STATE_CLIMBING  3
+#define CHAR_STATE_CROUCHING 4
+#define CHAR_STATE_SHOOTING  5
+#define CHAR_STATE_BOMBING   6
+#define CHAR_STATE_HITTING   7
+#define CHAR_STATE_DYING     8
+#define CHAR_STATE_DEAD      9
 
 // REVISIT: direction will be provided from a file
-#define RICK_DIR_STOP  0b0000
-#define RICK_DIR_RIGHT 0b0001
-#define RICK_DIR_LEFT  0b0010
-#define RICK_DIR_UP    0b0100
-#define RICK_DIR_DOWN  0b1000
+#define CHAR_DIR_STOP  0b0000
+#define CHAR_DIR_RIGHT 0b0001
+#define CHAR_DIR_LEFT  0b0010
+#define CHAR_DIR_UP    0b0100
+#define CHAR_DIR_DOWN  0b1000
 
 #define HOR_SPEED_MAX   2.0
 #define HOR_SPEED_MIN   1.0
@@ -177,7 +177,7 @@ class Character {
     bool GetKilled() { return killed; }
     void SetKilled(World* map);
 
-  private:
+  protected:
     void FixHorizontalDirection(Keyboard& keyboard);
 };
 
