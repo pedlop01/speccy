@@ -863,6 +863,10 @@ void World::InitializeEnemies(const char* file) {
   int enemy_bb_width;
   int enemy_bb_height;
   int enemy_direction;
+  int enemy_ia_type;
+  int enemy_ia_random;
+  int enemy_ia_limit_x;
+  int enemy_ia_limit_y;
   pugi::xml_document enemy_file;
 
   printf("------------------------------------\n");
@@ -896,6 +900,17 @@ void World::InitializeEnemies(const char* file) {
       printf("Error: incorrect direction for enemy\n");
       exit(-1);
     }
+    if (strcmp(enemy.attribute("ia_type").as_string(), "walker") == 0) {
+      enemy_ia_type = ENEMY_IA_WALKER;
+    } else if (strcmp(enemy.attribute("ia_type").as_string(), "chaser") == 0) {
+      enemy_ia_type = ENEMY_IA_CHASER;
+    } else {
+      printf("Error: incorrect ia type for enemy\n");
+      exit(-1);
+    }
+    enemy_ia_random = enemy.attribute("ia_random").as_bool();
+    enemy_ia_limit_x = enemy.attribute("ia_limit_x").as_int();
+    enemy_ia_limit_y = enemy.attribute("ia_limit_y").as_int();
 
     printf(" - file = %s\n", enemy.attribute("file").as_string());
     printf(" - x = %d\n", enemy_x);
@@ -905,13 +920,18 @@ void World::InitializeEnemies(const char* file) {
     printf(" - bb_width = %d\n", enemy_bb_width);
     printf(" - bb_height = %d\n", enemy_bb_height);
     printf(" - direction = %d\n", enemy_direction);
+    printf(" - ia_type = %d\n", enemy_ia_type);
+    printf(" - ia_random = %d\n", enemy_ia_random);
+    printf(" - ia_limit_x = %d\n", enemy_ia_limit_x);
+    printf(" - ia_limit_y = %d\n", enemy_ia_limit_y);
 
     // Create enemy
     Enemy* world_enemy = new Enemy(enemy.attribute("file").as_string(),
                                    enemy_id,
                                    enemy_x, enemy_y,
                                    enemy_bb_x, enemy_bb_y, enemy_bb_width, enemy_bb_height,
-                                   enemy_direction);
+                                   enemy_direction,
+                                   enemy_ia_type, enemy_ia_random, enemy_ia_limit_x, enemy_ia_limit_y);
     enemies.push_back(world_enemy);
   }  
 
@@ -1114,8 +1134,7 @@ void World::WorldStep(Character* player) {
   // Handle enemies
   //printf("[WorldStep] Handling enemies...\n");
   for (vector<Character*>::iterator it = enemies.begin(); it != enemies.end(); it++) {   
-    Keyboard keyboard_enemy;
-    (*it)->CharacterStep(this, keyboard_enemy);
+    ((Enemy*)*it)->CharacterStep(this, player);
   }
 
   // Check if player has been killed in this step

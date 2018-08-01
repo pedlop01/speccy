@@ -44,6 +44,10 @@ int Keyboard::ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue) {
   return keys;
 }
 
+void Keyboard::SetKeys(int _keys) {
+  keys = _keys;
+}
+
 int Keyboard::GetKeys() {
   return keys;
 }

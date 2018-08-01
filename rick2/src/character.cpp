@@ -355,12 +355,21 @@ void Character::GetCollisionsInternalHeightBoxInt(World* map, Colbox &mask_col) 
                               pos_y + bb_y + bb_height - 1);
 }
 
+void Character::GetCollisionsInternalWeightBoxExt(World* map, Colbox &mask_col) {  
+  this->GetCollisionsByCoords(map,
+                              mask_col,
+                              pos_x + bb_x - 1,
+                              pos_y + bb_y,
+                              pos_x + bb_x + bb_width,
+                              pos_y + bb_y + bb_height - 1);
+}
+
 void Character::ComputeCollisions(World* map) {
   int down_left_x;
   int down_right_x;
   int down_y;
 
-  printf("[ComputeCollisions] state = %d\n", state);
+  //printf("[ComputeCollisions] state = %d\n", state);
 
   // Do not check collisions when DYING
   if ((state == CHAR_STATE_DYING) || (state == CHAR_STATE_DEAD)) return;
@@ -372,7 +381,7 @@ void Character::ComputeCollisions(World* map) {
   this->GetCollisionsInternalHeightBoxExt(map, heightColExt);  
 
   // First check if there is collision with an object over the tiles
-  printf("[ComputeCollisions] Checking collisions with platforms\n");
+  //printf("[ComputeCollisions] Checking collisions with platforms\n");
   vector<Platform*> *platforms = map->GetPlatforms();
   for (vector<Platform*>::iterator it = platforms->begin() ; it != platforms->end(); ++it) {
     down_left_x = pos_x;
@@ -393,7 +402,7 @@ void Character::ComputeCollisions(World* map) {
     }
   } 
 
-  printf("[ComputeCollisions] Getting simple collisions checks\n");
+  //printf("[ComputeCollisions] Getting simple collisions checks\n");
   // Check if there is a collision with the tiles
   inStairs = ((heightColInt.GetLeftUpCol() == TILE_STAIRS) ||
               (heightColInt.GetRightUpCol() == TILE_STAIRS) ||
@@ -456,7 +465,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
   // Save current direction before computing next state and direction
   prevDirection = direction;
 
-  printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
+  //printf("Pre: State = %d, direction = %d, face = %d\n", state, direction, face);
 
   // No matter what is the state update, if rick is being killed, then
   // the kill takes precedence
@@ -473,7 +482,6 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
       case CHAR_STATE_RUNNING:
 
         if (inAir) {
-          printf("inAir = %d\n", state);
           state = CHAR_STATE_JUMPING;
           direction = CHAR_DIR_DOWN;
         } else if (keyboard.PressedSpace()) {
@@ -693,7 +701,7 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
     face = CHAR_DIR_RIGHT;
   }
 
-  printf("Post: State = %d, direction = %d, face = %d\n", state, direction, face);
+  //printf("Post: State = %d, direction = %d, face = %d\n", state, direction, face);
   //printf("Steps in state = %d, steps in direction x = %d, steps in direction y = %d\n", stepsInState, stepsInDirectionX, stepsInDirectionY);
 }
 

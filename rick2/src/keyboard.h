@@ -27,19 +27,22 @@ class Keyboard
        Keyboard();
        ~Keyboard();
 
-       int ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue);
+       // Is it possible force a set of keys simultanously
+       void SetKeys(int _keys);
 
-       int GetKeys();
-       int PressedLeft();
-       int PressedRight();
-       int PressedUp();
-       int PressedDown();
-       int PressedSpace();
-       int PressedA();
-       int PressedK();
-       int PressedM();
-       int PressedZ();
-       int PressedESC();
+       // Read methods
+       int  ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue);
+       int  GetKeys();
+       int  PressedLeft();
+       int  PressedRight();
+       int  PressedUp();
+       int  PressedDown();
+       int  PressedSpace();
+       int  PressedA();
+       int  PressedK();
+       int  PressedM();
+       int  PressedZ();
+       int  PressedESC();
 };
 
 #endif // KEYBOARD_H
