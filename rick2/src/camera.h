@@ -80,6 +80,7 @@ class Camera
     void DrawFrontObjects(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawBlocks(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawCheckpoints(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawEnemies(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawTriggers(World* world, Character *player, ALLEGRO_FONT *font);
 
 };

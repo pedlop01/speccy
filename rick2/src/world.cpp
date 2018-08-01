@@ -2,7 +2,7 @@
 
 #include "world.h" // class's header file
 #include "trigger.h"
-
+#include "enemy.h"
 
 // class constructor
 World::World()
@@ -108,21 +108,23 @@ World::World(const char *file, bool tileExtractedOption)
   }
 
   // Read platforms
-  this->InitializePlatforms("../levels/level1/platforms.xml");
+  //this->InitializePlatforms("../levels/level1/platforms.xml");
   // Read items
-  this->InitializeItems("../levels/level1/items.xml");
+  //this->InitializeItems("../levels/level1/items.xml");
   // Read dynamic background objects
-  this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
+  //this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
   // Read blocks
-  this->InitializeBlocks("../levels/level1/blocks.xml");
+  //this->InitializeBlocks("../levels/level1/blocks.xml");
   // Read hazards
-  this->InitializeHazards("../levels/level1/hazards.xml");
+  //this->InitializeHazards("../levels/level1/hazards.xml");
   // Read checkpoints
   this->InitializeCheckpoints("../levels/level1/checkpoints.xml");
   // Read lasers
-  this->InitializeLasers("../levels/level1/lasers.xml");
+  //this->InitializeLasers("../levels/level1/lasers.xml");
   // Read triggers
-  this->InitializeTriggers("../levels/level1/triggers.xml");  
+  //this->InitializeTriggers("../levels/level1/triggers.xml");
+  // Read enemies
+  this->InitializeEnemies("../levels/level1/enemies.xml");
 
   shoot_exists = false;
   bomb_exists = false;
@@ -852,6 +854,70 @@ void World::InitializeLasers(const char* file) {
   printf("---------------------------\n");
 }
 
+void World::InitializeEnemies(const char* file) {
+  int enemy_id;
+  int enemy_x;
+  int enemy_y;
+  int enemy_bb_x;
+  int enemy_bb_y;  
+  int enemy_bb_width;
+  int enemy_bb_height;
+  int enemy_direction;
+  pugi::xml_document enemy_file;
+
+  printf("------------------------------------\n");
+  printf("| Initializing enemies             |\n");
+  printf("------------------------------------\n");
+
+  pugi::xml_parse_result result = enemy_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world enemies data\n");
+  }
+ 
+  for (pugi::xml_node enemy = enemy_file.child("enemies").first_child();
+       enemy;
+       enemy = enemy.next_sibling()) {
+    // First read attributes
+    enemy_id = enemy.attribute("id").as_int();
+    printf("Enemy id = %d\n", enemy_id);
+    
+    enemy_x         = enemy.attribute("x").as_int();
+    enemy_y         = enemy.attribute("y").as_int();
+    enemy_bb_x      = enemy.attribute("bb_x").as_int();
+    enemy_bb_y      = enemy.attribute("bb_y").as_int();
+    enemy_bb_width  = enemy.attribute("bb_width").as_int();
+    enemy_bb_height = enemy.attribute("bb_height").as_int();
+    if (strcmp(enemy.attribute("direction").as_string(), "right") == 0) {
+      enemy_direction = CHAR_DIR_RIGHT;
+    } else if (strcmp(enemy.attribute("direction").as_string(), "left") == 0) {
+      enemy_direction = CHAR_DIR_LEFT;
+    } else {
+      printf("Error: incorrect direction for enemy\n");
+      exit(-1);
+    }
+
+    printf(" - file = %s\n", enemy.attribute("file").as_string());
+    printf(" - x = %d\n", enemy_x);
+    printf(" - y = %d\n", enemy_y);
+    printf(" - bb_x = %d\n", enemy_bb_x);
+    printf(" - bb_y = %d\n", enemy_bb_y);
+    printf(" - bb_width = %d\n", enemy_bb_width);
+    printf(" - bb_height = %d\n", enemy_bb_height);
+    printf(" - direction = %d\n", enemy_direction);
+
+    // Create enemy
+    Enemy* world_enemy = new Enemy(enemy.attribute("file").as_string(),
+                                   enemy_id,
+                                   enemy_x, enemy_y,
+                                   enemy_bb_x, enemy_bb_y, enemy_bb_width, enemy_bb_height,
+                                   enemy_direction);
+    enemies.push_back(world_enemy);
+  }  
+
+  printf("---------------------------\n");
+}
+
 int World::GetMapWidth() {
    return map_width;
 }
@@ -1043,6 +1109,13 @@ void World::WorldStep(Character* player) {
     trigger->TriggerStep(player->GetPosX(), player->GetPosY(),
                          player->GetWidth(), player->GetHeight(),
                          player->GetDirection(), player->GetState());
+  }
+
+  // Handle enemies
+  //printf("[WorldStep] Handling enemies...\n");
+  for (vector<Character*>::iterator it = enemies.begin(); it != enemies.end(); it++) {   
+    Keyboard keyboard_enemy;
+    (*it)->CharacterStep(this, keyboard_enemy);
   }
 
   // Check if player has been killed in this step

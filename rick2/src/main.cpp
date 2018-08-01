@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     // Handle player
 //    printf("[Main] Calling player step\n");
-    player->CharacterStep(map_level1, keyboard);
+    //player->CharacterStep(map_level1, keyboard);
 
 //    printf("[Main] Camera position\n");
     camera.PositionBasedOnPlayer(player);

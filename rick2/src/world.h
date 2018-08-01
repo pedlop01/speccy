@@ -14,7 +14,6 @@
 
 #include "pugixml.hpp"
 #include "rick_params.h"
-#include "character.h"
 #include "checkpoint.h"
 #include "object.h"
 #include "item.h"
@@ -25,6 +24,7 @@
 #include "block.h"
 #include "shoot.h"
 #include "bomb.h"
+#include "character.h"
 
 using namespace std;
 
@@ -97,6 +97,9 @@ class World
         // Triggers
         list<Trigger*> triggers;
 
+        // Enemies belonging to this world
+        vector<Character*> enemies;
+
         bool shoot_exists;
         bool bomb_exists;
 
@@ -129,12 +132,13 @@ class World
 		    int   GetTileValueByCoord(int x, int y);
         Tile* GetTileByCoord(int x, int y);
 
-        vector<Platform*>* GetPlatforms()   { return &platforms;    }
-        list<Object*>*     GetObjects()     { return &objects;      }
-        list<Object*>*     GetBackObjects() { return &back_objects; }
-        list<Block*>*      GetBlocks()      { return &blocks;       }
-        list<Checkpoint*>* GetCheckpoints() { return &checkpoints;  }
-        list<Trigger*>*    GetTriggers()    { return &triggers;     }
+        vector<Platform*>*  GetPlatforms()   { return &platforms;    }
+        list<Object*>*      GetObjects()     { return &objects;      }
+        list<Object*>*      GetBackObjects() { return &back_objects; }
+        list<Block*>*       GetBlocks()      { return &blocks;       }
+        list<Checkpoint*>*  GetCheckpoints() { return &checkpoints;  }
+        list<Trigger*>*     GetTriggers()    { return &triggers;     }
+        vector<Character*>* GetEnemies()     { return &enemies;      }
 
         Checkpoint* GetCurrentCheckpoint()  { return current_checkpoint; }
 
@@ -148,6 +152,8 @@ class World
         void  InitializeCheckpoints(const char* file);
         void  InitializeTriggers(const char* file);
         void  InitializeLasers(const char* file);
+        void  InitializeEnemies(const char* file);
+
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);
 
