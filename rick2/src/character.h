@@ -13,13 +13,6 @@
 #include "colbox.h"
 #include "animation.h"
 
-#define HOR_SPEED_MAX   2.0
-#define HOR_SPEED_MIN   1.0
-#define HOR_SPEED_STEP  0.1
-#define VERT_SPEED_MAX  3.0
-#define VERT_SPEED_MIN  1.0
-#define VERT_SPEED_STEP 0.1
-
 class Camera;
 class Character {
   protected:
@@ -49,6 +42,13 @@ class Character {
 
     float speed_x;
     float speed_y;
+
+    float speed_x_max;
+    float speed_x_min;
+    float speed_x_step;
+    float speed_y_max;
+    float speed_y_min;
+    float speed_y_step;
 
     int stepsInState;
     int stepsInDirectionX;

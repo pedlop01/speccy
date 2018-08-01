@@ -11,7 +11,7 @@ Enemy::Enemy(const char* file,
              int _id,
              int _x, int _y,
              int _bb_x, int _bb_y, int _bb_width, int _bb_height,
-             int _direction,
+             int _direction, float _speed_x, float _speed_y,
              int ia_type, bool ia_random, int ia_limit_x, int ia_limit_y) : Character(file) {
   id = _id;
 
@@ -33,6 +33,9 @@ Enemy::Enemy(const char* file,
 
   direction = _direction;
 
+  speed_x_max = _speed_x;
+  speed_y_max = _speed_y;
+
   ia = new EnemyIA(ENEMY_IA_WALKER, ia_random, pos_x, pos_y, ia_limit_x, ia_limit_y);
 }
 
@@ -42,9 +45,6 @@ Enemy::~Enemy() {
 }
 
 void Enemy::CharacterStep(World* map, Character* player) {
-  // REVISIT: remove the speed_x forced
-  speed_x = 1.0;
-
   this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
 
   Keyboard keyboard_enemy;

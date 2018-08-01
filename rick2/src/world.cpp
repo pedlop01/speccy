@@ -855,18 +855,20 @@ void World::InitializeLasers(const char* file) {
 }
 
 void World::InitializeEnemies(const char* file) {
-  int enemy_id;
-  int enemy_x;
-  int enemy_y;
-  int enemy_bb_x;
-  int enemy_bb_y;  
-  int enemy_bb_width;
-  int enemy_bb_height;
-  int enemy_direction;
-  int enemy_ia_type;
-  int enemy_ia_random;
-  int enemy_ia_limit_x;
-  int enemy_ia_limit_y;
+  int   enemy_id;
+  int   enemy_x;
+  int   enemy_y;
+  int   enemy_bb_x;
+  int   enemy_bb_y;  
+  int   enemy_bb_width;
+  int   enemy_bb_height;
+  int   enemy_direction;
+  float enemy_speed_x;
+  float enemy_speed_y;
+  int   enemy_ia_type;
+  int   enemy_ia_random;
+  int   enemy_ia_limit_x;
+  int   enemy_ia_limit_y;
   pugi::xml_document enemy_file;
 
   printf("------------------------------------\n");
@@ -892,6 +894,8 @@ void World::InitializeEnemies(const char* file) {
     enemy_bb_y      = enemy.attribute("bb_y").as_int();
     enemy_bb_width  = enemy.attribute("bb_width").as_int();
     enemy_bb_height = enemy.attribute("bb_height").as_int();
+    enemy_speed_x   = enemy.attribute("speed_x").as_float();
+    enemy_speed_y   = enemy.attribute("speed_y").as_float();
     if (strcmp(enemy.attribute("direction").as_string(), "right") == 0) {
       enemy_direction = CHAR_DIR_RIGHT;
     } else if (strcmp(enemy.attribute("direction").as_string(), "left") == 0) {
@@ -919,6 +923,8 @@ void World::InitializeEnemies(const char* file) {
     printf(" - bb_y = %d\n", enemy_bb_y);
     printf(" - bb_width = %d\n", enemy_bb_width);
     printf(" - bb_height = %d\n", enemy_bb_height);
+    printf(" - speed_x=%f\n", enemy_speed_x);
+    printf(" - speed_y=%f\n", enemy_speed_y);
     printf(" - direction = %d\n", enemy_direction);
     printf(" - ia_type = %d\n", enemy_ia_type);
     printf(" - ia_random = %d\n", enemy_ia_random);
@@ -930,7 +936,7 @@ void World::InitializeEnemies(const char* file) {
                                    enemy_id,
                                    enemy_x, enemy_y,
                                    enemy_bb_x, enemy_bb_y, enemy_bb_width, enemy_bb_height,
-                                   enemy_direction,
+                                   enemy_direction, enemy_speed_x, enemy_speed_y,
                                    enemy_ia_type, enemy_ia_random, enemy_ia_limit_x, enemy_ia_limit_y);
     enemies.push_back(world_enemy);
   }  

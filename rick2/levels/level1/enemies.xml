@@ -1,3 +1,3 @@
 ﻿<enemies>
-  <enemy id="0" file="../characters/robot_simple.xml" x="890" y="1600" bb_x="0" bb_y="0" bb_width="19" bb_height="21" direction="right" ia_type="walker" ia_random="1" ia_limit_x="0" ia_limit_y="0"></enemy>
+  <enemy id="0" file="../characters/robot_simple.xml" x="890" y="1600" bb_x="0" bb_y="0" bb_width="19" bb_height="21" direction="right" speed_x="1.0" speed_y="1.0" ia_type="walker" ia_random="1" ia_limit_x="0" ia_limit_y="0"></enemy>
 </enemies>

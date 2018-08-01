@@ -23,8 +23,14 @@ Character::Character() {
   state = CHAR_STATE_STOP;
   direction = CHAR_DIR_STOP;
 
-  speed_x = HOR_SPEED_MAX;
-  speed_y = VERT_SPEED_MAX;
+  speed_x = RICK_HOR_SPEED_MAX;
+  speed_y = RICK_VERT_SPEED_MAX;
+  speed_x_max = RICK_HOR_SPEED_MAX;
+  speed_x_min = RICK_HOR_SPEED_MIN;
+  speed_x_step = RICK_HOR_SPEED_STEP;
+  speed_y_max = RICK_VERT_SPEED_MAX;
+  speed_y_min = RICK_VERT_SPEED_MIN;
+  speed_y_step = RICK_VERT_SPEED_STEP;
 
   stepsInState = 0;
   stepsInDirectionX = 0;
@@ -65,8 +71,14 @@ Character::Character(const char* file) {
   width_orig = width;
   state = CHAR_STATE_STOP;
   direction = CHAR_DIR_STOP;
-  speed_x = HOR_SPEED_MAX;
-  speed_y = VERT_SPEED_MAX;
+  speed_x = RICK_HOR_SPEED_MAX;
+  speed_y = RICK_VERT_SPEED_MAX;
+  speed_x_max = RICK_HOR_SPEED_MAX;
+  speed_x_min = RICK_HOR_SPEED_MIN;
+  speed_x_step = RICK_HOR_SPEED_STEP;
+  speed_y_max = RICK_VERT_SPEED_MAX;
+  speed_y_min = RICK_VERT_SPEED_MIN;
+  speed_y_step = RICK_VERT_SPEED_STEP;
   stepsInState = 0;
   stepsInDirectionX = 0;
   stepsInDirectionY = 0;
@@ -770,11 +782,11 @@ void Character::ComputeNextPosition(World* map) {
         if ((extColExt.GetLeftUpCol() == TILE_COL) &&
             (heightColExt.GetLeftUpCol() == TILE_COL) &&
             (heightColExt.GetRightUpCol() == TILE_STAIRS)) {
-          SetPosX(map, GetPosX() + HOR_SPEED_MAX);
+          SetPosX(map, GetPosX() + speed_x_max);
         } else if ((extColExt.GetRightUpCol() == TILE_COL) &&
                    (heightColExt.GetRightUpCol() == TILE_COL) &&
                    (heightColExt.GetLeftUpCol() == TILE_STAIRS)) {
-          SetPosX(map, GetPosX() - HOR_SPEED_MAX);
+          SetPosX(map, GetPosX() - speed_x_max);
         }
 
         SetPosY(map, GetPosY() - speed_y, false);
@@ -834,56 +846,56 @@ void Character::ComputeNextSpeed() {
       speed_y = 0.0;
       break;
     case CHAR_STATE_RUNNING:
-      speed_x = HOR_SPEED_MAX;
+      speed_x = speed_x_max;
       break;
     case CHAR_STATE_JUMPING:
         if (!stepsInState) {
           if (direction & CHAR_DIR_UP)
-            speed_y = VERT_SPEED_MAX;
+            speed_y = speed_y_max;
           else
-            speed_y = VERT_SPEED_MIN;
+            speed_y = speed_y_min;
         } else if ((direction & CHAR_DIR_UP) && (stepsInDirectionY > 0)) {
-          if (speed_y > VERT_SPEED_MIN)
-            speed_y = speed_y - VERT_SPEED_STEP;
+          if (speed_y > speed_y_min)
+            speed_y = speed_y - speed_y_step;
           else
-            speed_y = VERT_SPEED_MIN;
+            speed_y = speed_y_min;
         } else if ((direction & CHAR_DIR_DOWN) && (stepsInDirectionY > 0)) {
-          if (speed_y < VERT_SPEED_MAX)
-            speed_y = speed_y + VERT_SPEED_STEP;
+          if (speed_y < speed_y_max)
+            speed_y = speed_y + speed_y_step;
           else
-            speed_y = VERT_SPEED_MAX;
+            speed_y = speed_y_max;
         }
 
-        speed_x = HOR_SPEED_MAX;
+        speed_x = speed_x_max;
       break;
 
     case CHAR_STATE_CLIMBING:
-      speed_x = HOR_SPEED_MAX;
-      speed_y = HOR_SPEED_MAX;  // Same as horizontal speed
+      speed_x = speed_x_max;
+      speed_y = speed_x_max;  // Same as horizontal speed
       break;
       case CHAR_STATE_DYING:
       if (!stepsInState) {
         if (direction & CHAR_DIR_UP)
-          speed_y = 2*VERT_SPEED_MAX;
+          speed_y = 2*speed_y_max;
         else
-          speed_y = 2*VERT_SPEED_MIN;
+          speed_y = 2*speed_y_min;
       } else if ((direction & CHAR_DIR_UP) && (stepsInDirectionY > 0)) {
-        if (speed_y > 2*VERT_SPEED_MIN)
-          speed_y = speed_y - 2*VERT_SPEED_STEP;
+        if (speed_y > 2*speed_y_min)
+          speed_y = speed_y - 2*speed_y_step;
         else
-          speed_y = VERT_SPEED_MIN;
+          speed_y = speed_y_min;
       } else if ((direction & CHAR_DIR_DOWN) && (stepsInDirectionY > 0)) {
-        if (speed_y < 2*VERT_SPEED_MAX)
-          speed_y = speed_y + 2*VERT_SPEED_STEP;
+        if (speed_y < 2*speed_y_max)
+          speed_y = speed_y + 2*speed_y_step;
         else
-          speed_y = 2*VERT_SPEED_MAX;
+          speed_y = 2*speed_y_max;
       }
 
-      speed_x = HOR_SPEED_MAX;
+      speed_x = speed_x_max;
       break;
     default:      
-      speed_x = HOR_SPEED_MAX;
-      speed_y = VERT_SPEED_MAX;
+      speed_x = speed_x_max;
+      speed_y = speed_y_max;
       break;
   }
 

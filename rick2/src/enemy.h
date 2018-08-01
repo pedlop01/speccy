@@ -24,7 +24,7 @@ class Enemy : public Character {
           int _id,
           int _x, int _y,
           int _bb_x, int _bb_y, int _bb_width, int _bb_height,
-          int _direction,
+          int _direction, float _speed_x, float _speed_y,
           int _ia_type, bool _ia_random, int _ia_limit_x, int _ia_limit_y);
 
     ~Enemy();
