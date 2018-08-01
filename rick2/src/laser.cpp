@@ -1,5 +1,6 @@
 #include "laser.h"
 #include "character.h"
+#include "enemy.h"
 
 Laser::Laser() {
   obj_type = OBJ_LASER;
@@ -99,6 +100,12 @@ void Laser::UpdateFSMState(World* map) {
   if (visible && playerCol) {
     playerPtr->SetKilled(map);
     return;
+  }
+
+  this->ComputeCollisionObjects(map);
+
+  if (visible && enemyCol) {
+    enemyPtr->SetKilled();
   }
 
   upCol    = ((extColExt.GetLeftUpCol() != 0) ||

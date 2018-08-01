@@ -376,35 +376,35 @@ void Camera::DrawTriggers(World* world, Character* player, ALLEGRO_FONT *font) {
 void Camera::DrawEnemies(World* world, Character* player, ALLEGRO_FONT *font) {
   for(vector<Character*>::iterator it = world->GetEnemies()->begin(); it != world->GetEnemies()->end(); it++) {
     Enemy* enemy = (Enemy*)*it;
-    // DYING animation requires an special function to scale the sprite
-    if ((enemy->GetState() == CHAR_STATE_DEAD) || (enemy->GetState() == CHAR_STATE_DYING))
-      return;
-  
-    ALLEGRO_BITMAP* enemy_bitmap = enemy->GetCurrentAnimationBitmap();
-    al_draw_bitmap(enemy_bitmap,
-                   enemy->GetPosX() - GetPosX(),
-                   enemy->GetPosY() - GetPosY(),
-                   enemy->GetCurrentAnimationBitmapAttributes());
-  #ifdef SHOW_BOUNDING_BOXES
-    // Draw the enemy in front of back tiles
-    al_draw_rectangle(enemy->GetPosX() - GetPosX() + 1,
-                      enemy->GetPosY() - GetPosY() + 1,
-                      enemy->GetPosX() + enemy->GetWidth() - 1 - GetPosX() + 1,
-                      enemy->GetPosY() + enemy->GetHeight() - 1 - GetPosY() + 1,
-                      al_map_rgb(0xAD, 0x21, 0x56), 1.0);
-    // - External
-    al_draw_rectangle(enemy->GetPosX() - 1 - GetPosX() + 1,
-                      enemy->GetPosY() - 1 - GetPosY() + 1,
-                      enemy->GetPosX() + enemy->GetWidth() - GetPosX() + 1,
-                      enemy->GetPosY() + enemy->GetHeight() - GetPosY() + 1,
-                      al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
-    // - Bounding box
-    al_draw_rectangle(enemy->GetPosX() + enemy->GetBBX() - GetPosX() + 1,
-                      enemy->GetPosY() + enemy->GetBBY() - GetPosY() + 1,
-                      enemy->GetPosX() + enemy->GetBBX() + enemy->GetBBWidth() - 1 - GetPosX() + 1,
-                      enemy->GetPosY() + enemy->GetBBY() + enemy->GetBBHeight() - 1 - GetPosY() + 1,
-                      al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
-  #endif
+
+    if (enemy->GetState() != CHAR_STATE_DEAD) {
+
+      ALLEGRO_BITMAP* enemy_bitmap = enemy->GetCurrentAnimationBitmap();
+      al_draw_bitmap(enemy_bitmap,
+                     enemy->GetPosX() - GetPosX(),
+                     enemy->GetPosY() - GetPosY(),
+                     enemy->GetCurrentAnimationBitmapAttributes());
+#ifdef SHOW_BOUNDING_BOXES
+      // Draw the enemy in front of back tiles
+      al_draw_rectangle(enemy->GetPosX() - GetPosX() + 1,
+                        enemy->GetPosY() - GetPosY() + 1,
+                        enemy->GetPosX() + enemy->GetWidth() - 1 - GetPosX() + 1,
+                        enemy->GetPosY() + enemy->GetHeight() - 1 - GetPosY() + 1,
+                        al_map_rgb(0xAD, 0x21, 0x56), 1.0);
+      // - External
+      al_draw_rectangle(enemy->GetPosX() - 1 - GetPosX() + 1,
+                        enemy->GetPosY() - 1 - GetPosY() + 1,
+                        enemy->GetPosX() + enemy->GetWidth() - GetPosX() + 1,
+                        enemy->GetPosY() + enemy->GetHeight() - GetPosY() + 1,
+                        al_map_rgb(0xDF, 0xDF, 0xDF), 1.0);
+      // - Bounding box
+      al_draw_rectangle(enemy->GetPosX() + enemy->GetBBX() - GetPosX() + 1,
+                        enemy->GetPosY() + enemy->GetBBY() - GetPosY() + 1,
+                        enemy->GetPosX() + enemy->GetBBX() + enemy->GetBBWidth() - 1 - GetPosX() + 1,
+                        enemy->GetPosY() + enemy->GetBBY() + enemy->GetBBHeight() - 1 - GetPosY() + 1,
+                        al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
+#endif
+    }
   }
 }
 

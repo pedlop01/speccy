@@ -1,6 +1,7 @@
 #include "bomb.h"
 #include "block.h"
 #include "character.h"
+#include "enemy.h"
 
 Bomb::Bomb() {
   obj_type = OBJ_BOMB;
@@ -74,6 +75,9 @@ void Bomb::UpdateFSMState(World* map) {
       }
       if (itemCol) {
         itemColPtr->SetKilled();
+      }
+      if (enemyCol) {
+        enemyPtr->SetKilled();
       }
       // wait until animation completes
       current_anim = this->GetCurrentAnimation();

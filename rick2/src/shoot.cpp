@@ -1,4 +1,5 @@
 #include "shoot.h"
+#include "enemy.h"
 
 Shoot::Shoot() {
   obj_type = OBJ_SHOOT;
@@ -46,10 +47,12 @@ void Shoot::UpdateFSMState(World* map) {
 
     case OBJ_STATE_MOVING:
 
-      if (inCol || blockCollision || itemCol) {
+      if (inCol || blockCollision || itemCol || enemyCol) {
         state = OBJ_STATE_DEAD;
         if (itemCol) {
           itemColPtr->SetKilled();
+        } else if (enemyCol) {
+          enemyPtr->SetKilled();
         }
       }
 

@@ -2,6 +2,8 @@
 
 // class constructor
 Player::Player() : Character() {
+  type = CHARACTER_PLAYER;
+
   pos_x = 264;  // REVISIT: should be 0
   pos_y = 2000; // REVISIT: should be 0
 
@@ -21,8 +23,10 @@ Player::Player() : Character() {
 }
 
 Player::Player(const char* file) : Character(file) {
-  pos_x = 920;  // REVISIT: should be 0
-  pos_y = 1690; // REVISIT: should be 0
+  type = CHARACTER_PLAYER;
+
+  pos_x = 264;  // REVISIT: should be 0
+  pos_y = 2000; // REVISIT: should be 0
 
   using_bb = true;
   height = 21;  // REVISIT: should be 0

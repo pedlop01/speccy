@@ -26,6 +26,14 @@ class EnemyIA {
     bool limited_hor;
     bool limited_ver;
 
+    int  wait_for_decision;
+
+  private:
+    bool RandomDecision(Keyboard& keyboard, int direction, int steps_in_x);
+    bool WalkerDecision(Keyboard& keyboard, int direction, bool col_right, bool col_left);  // Returns true if change of direction
+    void ChaserDecision(Keyboard& keyboard, bool block_hor, int player_x, int player_y, int enemy_x, int enemy_y, int _enemy_state, bool over_stairs, bool in_floor);
+    bool CorrectDecisionBasedOnLimits(Keyboard& keyboard, int x, int y, int direction);
+
   public:    
 	EnemyIA();
     EnemyIA(int _type,
@@ -36,9 +44,21 @@ class EnemyIA {
 
     int GetType();
 
+    void IAStepWalker(Keyboard &keyboard,
+                      int state, int direction, int x, int y,
+                      bool col_right, bool col_left,
+                      int steps_in_x);
+
+    void IAStepChaser(Keyboard &keyboard,
+                      int player_x, int player_y,
+                      int state, int direction, int x, int y,
+                      bool col_right, bool col_left, bool over_stairs, bool in_floor,
+                      int steps_in_x);
+
     void IAStep(Keyboard &keyboard,
-                int direction, int x, int y,
-                bool col_right, bool col_left,
+                int player_x, int player_y,
+                int state, int direction, int x, int y,
+                bool col_right, bool col_left, bool over_stairs, bool in_floor,
                 int steps_in_x);
 };
 

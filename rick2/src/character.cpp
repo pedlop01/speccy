@@ -52,6 +52,8 @@ Character::Character() {
   killed = false;
 
   stop_move_block_col = false;
+
+  camera = nullptr;
 }
 
 Character::Character(const char* file) {
@@ -93,6 +95,7 @@ Character::Character(const char* file) {
   animation_scaling_factor = 1.0;
   killed = false;
   stop_move_block_col = false;
+  camera = nullptr;
 
   // Initialize animations
   pugi::xml_parse_result result = character_file.load_file(file);
@@ -675,7 +678,12 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
             direction |=  CHAR_DIR_DOWN;
           }
         } else if (direction & CHAR_DIR_DOWN) {
-          if (pos_y >= (camera->GetPosY() + CAMERA_Y)) {
+          int camera_y;
+          if (camera)
+            camera_y = camera->GetPosY();
+          else
+            camera_y = map->GetMapHeight()*map->GetTilesetTileHeight() - CAMERA_Y;
+          if (pos_y >= (camera_y + CAMERA_Y)) {   // REVISIT
             state = CHAR_STATE_DEAD;
           }
         }
@@ -800,10 +808,11 @@ void Character::ComputeNextPosition(World* map) {
       }
       break;
     case CHAR_STATE_DYING:
-      if (direction & CHAR_DIR_UP)
+      if (direction & CHAR_DIR_UP) {
         pos_y -= speed_y;
-      else if (direction & CHAR_DIR_DOWN)
+      } else if (direction & CHAR_DIR_DOWN) {
         pos_y += speed_y;
+      }
 
       if (direction & CHAR_DIR_RIGHT)
         pos_x += speed_x;
@@ -873,7 +882,8 @@ void Character::ComputeNextSpeed() {
       speed_x = speed_x_max;
       speed_y = speed_x_max;  // Same as horizontal speed
       break;
-      case CHAR_STATE_DYING:
+
+    case CHAR_STATE_DYING:
       if (!stepsInState) {
         if (direction & CHAR_DIR_UP)
           speed_y = 2*speed_y_max;
@@ -904,21 +914,21 @@ void Character::ComputeNextSpeed() {
 
 void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Collisions with world and platforms
-//  printf("[CharacterStep] ComputeCollisions\n");
+  //printf("[CharacterStep] ComputeCollisions\n");
   this->ComputeCollisions(map);
   this->ComputeCollisionBlocks(map);
   // Compute next state
-//  printf("[CharacterStep] ComputeNextState\n");
+  //printf("[CharacterStep] ComputeNextState\n");
   this->ComputeNextState(map, keyboard);
   // Compute next position 
-//  printf("[CharacterStep] ComputeNextPosition\n");
+  //printf("[CharacterStep] ComputeNextPosition\n");
   this->ComputeNextPositionBasedOnBlocks(map, keyboard);
   this->ComputeNextPosition(map);  
   // Re-calulate speed
-//  printf("[CharacterStep] ComputeNextSpeed\n");
+  //printf("[CharacterStep] ComputeNextSpeed\n");
   this->ComputeNextSpeed();
   // Compute next animation frame
-//  printf("[CharacterStep] ComputeNextAnimation\n");
+  //printf("[CharacterStep] ComputeNextAnimation\n");
   if (direction == CHAR_DIR_STOP)
     animations[state]->ResetAnim();
   else if (state != CHAR_STATE_DEAD)
@@ -930,7 +940,7 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   else if (state == CHAR_STATE_DEAD)
     animation_scaling_factor = 1.0;
   
-//  printf("[CharacterStep] End CharacterStep\n");
+  //printf("[CharacterStep] End CharacterStep\n");
 }
 
 ALLEGRO_BITMAP* Character::GetCurrentAnimationBitmap() {

@@ -36,6 +36,7 @@
 // Forward declaration
 class World;
 class Character;
+class Enemy;
 
 // Some objects use Actions.
 // REVISIT: should we define this in a different file?
@@ -136,10 +137,12 @@ class Object {
     bool       blockColDown;    
     bool       inPlatform;
     bool       itemCol;
+    bool       enemyCol;
     Character* playerPtr;
     Object*    blockColPtr;
     Object*    inPlatformPtr;
     Object*    itemColPtr;
+    Enemy*     enemyPtr;
 
     vector<Animation*> animations;
 

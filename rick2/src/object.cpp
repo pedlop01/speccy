@@ -3,6 +3,7 @@
 #include "character.h"
 #include "block.h"
 #include "platform.h"
+#include "enemy.h"
 
 int Object::id = 0;
 
@@ -42,6 +43,7 @@ Object::Object() {
   inPlatform = false;
   itemCol = false;
   killed = false;
+  enemyCol = false;
 
   steps_in_state = 0;
   steps_in_direction_x = 0;
@@ -481,9 +483,13 @@ void Object::ComputeCollisionBlocks(World* map) {
 void Object::ComputeCollisionObjects(World* map) {
   int col_width  = (using_bb ? bb_width  : width);
   int col_height = (using_bb ? bb_height : height);
+  int col_x      = (using_bb ? x + bb_x : x);
+  int col_y      = (using_bb ? y + bb_y : y);
 
   itemCol = false;
+  enemyCol = false;
 
+  // Traverse objects
   list<Object*> *blocks = map->GetObjects();
   for (list<Object*>::iterator it = blocks->begin() ; it != blocks->end(); ++it) {
     Object* object = *it;    
@@ -519,6 +525,43 @@ void Object::ComputeCollisionObjects(World* map) {
       // Take first object with collision
       break;
     }
+  }
+
+  // Traverse enemies
+  vector<Character*>* enemies = map->GetEnemies();
+  for (vector<Character*>::iterator it = enemies->begin(); it != enemies->end(); it++) {
+    Enemy* enemy = (Enemy*)*it;
+    if ((enemy->GetState() == CHAR_STATE_DYING) ||
+        (enemy->GetState() == CHAR_STATE_DEAD)) {
+      continue;
+    }
+
+
+    enemyCol = // Player within object
+                (BoxWithinBox(enemy->GetPosX() + enemy->GetBBX(),
+                              enemy->GetPosY() + enemy->GetBBY(),
+                              enemy->GetBBWidth(),
+                              enemy->GetBBHeight(),
+                              col_x,
+                              col_y,
+                              col_width,
+                              col_height) ||
+
+                 // Object within player
+                 BoxWithinBox(col_x,
+                              col_y,
+                              col_width,
+                              col_height,
+                              enemy->GetPosX() + enemy->GetBBX(),
+                              enemy->GetPosY() + enemy->GetBBY(),
+                              enemy->GetBBWidth(),
+                              enemy->GetBBHeight()));
+
+    if (enemyCol) {
+      enemyPtr = enemy;
+      break;
+    }
+
   }
 }
 

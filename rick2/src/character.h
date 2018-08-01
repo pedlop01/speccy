@@ -13,9 +13,14 @@
 #include "colbox.h"
 #include "animation.h"
 
+#define CHARACTER_PLAYER 0
+#define CHARACTER_ENEMY  1
+
 class Camera;
 class Character {
   protected:
+    int type;
+
     int pos_x;
     int pos_y;
 
@@ -159,6 +164,8 @@ class Character {
 
     bool GetKilled() { return killed; }
     void SetKilled(World* map);
+
+    int GetType() { return type; }
 
   protected:
     void FixHorizontalDirection(Keyboard& keyboard);

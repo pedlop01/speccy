@@ -4,7 +4,7 @@
 
 // class constructor
 Enemy::Enemy() : Character() {
-
+  type = CHARACTER_ENEMY;
 }
 
 Enemy::Enemy(const char* file,
@@ -14,6 +14,7 @@ Enemy::Enemy(const char* file,
              int _direction, float _speed_x, float _speed_y,
              int ia_type, bool ia_random, int ia_limit_x, int ia_limit_y) : Character(file) {
   id = _id;
+  type = CHARACTER_ENEMY;
 
   pos_x = _x;
   pos_y = _y;
@@ -36,7 +37,7 @@ Enemy::Enemy(const char* file,
   speed_x_max = _speed_x;
   speed_y_max = _speed_y;
 
-  ia = new EnemyIA(ENEMY_IA_WALKER, ia_random, pos_x, pos_y, ia_limit_x, ia_limit_y);
+  ia = new EnemyIA(ia_type, ia_random, pos_x, pos_y, ia_limit_x, ia_limit_y);
 }
 
 // class destructor
@@ -45,13 +46,110 @@ Enemy::~Enemy() {
 }
 
 void Enemy::CharacterStep(World* map, Character* player) {
-  this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
-
   Keyboard keyboard_enemy;
-  ia->IAStep(keyboard_enemy,
-             direction, pos_x, pos_y,
-             weightColExt.GetRightDownCol() == TILE_COL,
-             weightColExt.GetLeftDownCol() == TILE_COL,
-             stepsInDirectionX);
+
+  if (state == CHAR_STATE_DEAD)
+    return;
+
+  keyboard_enemy.SetKeys(0);
+
+  if (state != CHAR_STATE_DYING) {
+    this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
+
+    // Check if there is a collision with the player
+    this->CheckCollisionPlayer(map, player);
+
+    bool col_right = (weightColExt.GetRightDownCol() == TILE_COL) ||
+                   (weightColExt.GetRightUpCol() == TILE_COL);
+
+    bool col_left = (weightColExt.GetLeftDownCol() == TILE_COL) ||
+                  (weightColExt.GetLeftUpCol() == TILE_COL);
+
+    ia->IAStep(keyboard_enemy,
+               player->GetPosX(), player->GetPosY(),
+               state, direction, pos_x, pos_y,
+               col_right, col_left, overStairs || inStairs, inFloor,
+               stepsInDirectionX);
+  }
+
   Character::CharacterStep(map, keyboard_enemy);
+}
+
+void Enemy::SetKilled() {
+  killed = true;
+}
+
+bool Enemy::CheckCollisionPlayer(World* map, Character* player) {
+  int col_x;
+  int col_y;
+  int col_width;
+  int col_height;
+  bool playerCol;
+
+  if (using_bb) {
+    col_x      = pos_x + bb_x;
+    col_y      = pos_y + bb_y;
+    col_width  = bb_width;
+    col_height = bb_height;
+  } else {
+    col_x      = pos_x;
+    col_y      = pos_y;
+    col_width  = width;
+    col_height = height;
+  }
+
+  // Check collisions with player. Player does not collision
+  // when DYING or DEAD
+  playerCol = ((player->GetState() != CHAR_STATE_DYING) &&
+               (player->GetState() != CHAR_STATE_DEAD)) &&
+
+              // Player within object
+              (BoxWithinBox(player->GetPosX() + player->GetBBX(),
+                            player->GetPosY() + player->GetBBY(),
+                            player->GetBBWidth(),
+                            player->GetBBHeight(),
+                            col_x,
+                            col_y,
+                            col_width,
+                            col_height) ||
+
+               // Object within player
+               BoxWithinBox(col_x,
+                            col_y,
+                            col_width,
+                            col_height,
+                            player->GetPosX() + player->GetBBX(),
+                            player->GetPosY() + player->GetBBY(),
+                            player->GetBBWidth(),
+                            player->GetBBHeight()));
+
+  if (playerCol) {
+    player->SetKilled(map);
+  }
+}
+
+bool Enemy::BoxWithinBox(int a_x, int a_y, int a_width, int a_height,
+                          int b_x, int b_y, int b_width, int b_height) {
+
+  bool inside = ((a_x >= b_x) &&
+                 (a_x <= (b_x + b_width)) &&
+                 (a_y >= b_y) &&
+                 (a_y <= (b_y + b_height))) ||
+
+                (((a_x + a_width) >= b_x) &&
+                 ((a_x + a_width) <= (b_x + b_width)) &&
+                 (a_y >= b_y) &&
+                 (a_y <= (b_y + b_height))) ||
+
+                ((a_x >= b_x) &&
+                 (a_x <= (b_x + b_width)) &&
+                 ((a_y + a_height) >= b_y) &&
+                 ((a_y + a_height) <= (b_y + b_height))) ||
+
+                (((a_x + a_width) >= b_x) &&
+                 ((a_x + a_width) <= (b_x + b_width)) &&
+                 ((a_y + a_height) >= b_y) &&
+                 ((a_y + a_height) <= (b_y + b_height)));
+
+  return inside;
 }
