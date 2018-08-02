@@ -41,6 +41,8 @@ class Enemy : public Character {
     void CharacterStep(World* map, Character* player);
 
     void SetKilled();
+    bool GetOverStairs();
+    bool GetInFloor();
 
     EnemyIA* GetEnemyIA();
 };

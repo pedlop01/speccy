@@ -60,17 +60,8 @@ void Enemy::CharacterStep(World* map, Character* player) {
     // Check if there is a collision with the player
     this->CheckCollisionPlayer(map, player);
 
-    bool col_right = (weightColExt.GetRightDownCol() == TILE_COL) ||
-                   (weightColExt.GetRightUpCol() == TILE_COL);
-
-    bool col_left = (weightColExt.GetLeftDownCol() == TILE_COL) ||
-                  (weightColExt.GetLeftUpCol() == TILE_COL);
-
     ia->IAStep(keyboard_enemy,
-               player->GetPosX(), player->GetPosY(),
-               state, direction, pos_x, pos_y,
-               col_right, col_left, overStairs || inStairs, inFloor,
-               stepsInDirectionX);
+               (Player*)player, this);
   }
 
   Character::CharacterStep(map, keyboard_enemy);
@@ -78,6 +69,13 @@ void Enemy::CharacterStep(World* map, Character* player) {
 
 void Enemy::SetKilled() {
   killed = true;
+}
+
+bool Enemy::GetOverStairs() {
+  return overStairs;
+}
+bool Enemy::GetInFloor() {
+  return inFloor;
 }
 
 bool Enemy::CheckCollisionPlayer(World* map, Character* player) {

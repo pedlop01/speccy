@@ -8,12 +8,16 @@
 
 #include "rick_params.h"
 #include "keyboard.h"
+#include "colbox.h"
 
 #define ENEMY_IA_WALKER 0
 #define ENEMY_IA_CHASER 1
 
 #define STEPS_IN_HOR_DIRECTION 200
 #define RANDOM_DECISION_VALUE  15
+
+class Player;
+class Enemy;
 
 class EnemyIA {
   private:
@@ -69,10 +73,7 @@ class EnemyIA {
                       int steps_in_x);
 
     void IAStep(Keyboard &keyboard,
-                int player_x, int player_y,
-                int state, int direction, int x, int y,
-                bool col_right, bool col_left, bool over_stairs, bool in_floor,
-                int steps_in_x);
+                Player* player, Enemy* enemy);
 };
 
 #endif // ENEMYIA_H

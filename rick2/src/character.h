@@ -167,6 +167,11 @@ class Character {
 
     int GetType() { return type; }
 
+    int GetStepsInDirectionX() { return stepsInDirectionX; }
+    int GetStepsInDirectionY() { return stepsInDirectionY; }
+
+    Colbox* GetWeightColExt()  { return &weightColExt; }
+
   protected:
     void FixHorizontalDirection(Keyboard& keyboard);
 };

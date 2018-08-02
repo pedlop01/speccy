@@ -1,4 +1,6 @@
 #include "enemy_ia.h"
+#include "enemy.h"
+#include "player.h"
 
 EnemyIA::EnemyIA() {
   type = ENEMY_IA_WALKER;
@@ -217,10 +219,25 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
 }
 
 void EnemyIA::IAStep(Keyboard &keyboard,
-                     int player_x, int player_y,
-                     int state, int direction, int x, int y,
-                     bool col_right, bool col_left, bool over_stairs, bool in_floor,
-                     int steps_in_x) {
+                     Player* player, Enemy* enemy) {
+  int player_x = player->GetPosX();
+  int player_y = player->GetPosY();
+  int state = enemy->GetState();
+  int direction = enemy->GetDirection();
+  int x = enemy->GetPosX();
+  int y = enemy->GetPosY();
+  bool over_stairs = enemy->GetOverStairs();
+  bool in_floor = enemy->GetInFloor();
+  int steps_in_x = enemy->GetStepsInDirectionX();
+  bool col_right;
+  bool col_left;  
+
+  col_right = (enemy->GetWeightColExt()->GetRightDownCol() == TILE_COL) ||
+              (enemy->GetWeightColExt()->GetRightUpCol() == TILE_COL);
+
+  col_left  = (enemy->GetWeightColExt()->GetLeftDownCol() == TILE_COL) ||
+              (enemy->GetWeightColExt()->GetLeftUpCol() == TILE_COL);
+
   switch(type) {
     case ENEMY_IA_WALKER:
       this->IAStepWalker(keyboard, state, direction, x, y, col_right, col_left, steps_in_x);
