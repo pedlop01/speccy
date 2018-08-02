@@ -867,6 +867,8 @@ void World::InitializeEnemies(const char* file) {
   float enemy_speed_y;
   int   enemy_ia_type;
   int   enemy_ia_random;
+  int   enemy_ia_orig_x;
+  int   enemy_ia_orig_y;
   int   enemy_ia_limit_x;
   int   enemy_ia_limit_y;
   pugi::xml_document enemy_file;
@@ -913,6 +915,8 @@ void World::InitializeEnemies(const char* file) {
       exit(-1);
     }
     enemy_ia_random = enemy.attribute("ia_random").as_bool();
+    enemy_ia_orig_x = enemy.attribute("ia_orig_x").as_int();
+    enemy_ia_orig_y = enemy.attribute("ia_orig_y").as_int();
     enemy_ia_limit_x = enemy.attribute("ia_limit_x").as_int();
     enemy_ia_limit_y = enemy.attribute("ia_limit_y").as_int();
 
@@ -928,6 +932,8 @@ void World::InitializeEnemies(const char* file) {
     printf(" - direction = %d\n", enemy_direction);
     printf(" - ia_type = %d\n", enemy_ia_type);
     printf(" - ia_random = %d\n", enemy_ia_random);
+    printf(" - ia_orig_x = %d\n", enemy_ia_orig_x);
+    printf(" - ia_orig_y = %d\n", enemy_ia_orig_y);
     printf(" - ia_limit_x = %d\n", enemy_ia_limit_x);
     printf(" - ia_limit_y = %d\n", enemy_ia_limit_y);
 
@@ -937,7 +943,7 @@ void World::InitializeEnemies(const char* file) {
                                    enemy_x, enemy_y,
                                    enemy_bb_x, enemy_bb_y, enemy_bb_width, enemy_bb_height,
                                    enemy_direction, enemy_speed_x, enemy_speed_y,
-                                   enemy_ia_type, enemy_ia_random, enemy_ia_limit_x, enemy_ia_limit_y);
+                                   enemy_ia_type, enemy_ia_random, enemy_ia_orig_x, enemy_ia_orig_y, enemy_ia_limit_x, enemy_ia_limit_y);
     enemies.push_back(world_enemy);
   }  
 

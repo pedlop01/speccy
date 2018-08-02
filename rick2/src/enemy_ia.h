@@ -19,6 +19,8 @@ class EnemyIA {
   private:
     int  type;
     bool random_decisions;
+    int  orig_x;
+    int  orig_y;
     int  initial_x;
     int  initial_y;
     int  limit_x;
@@ -35,14 +37,21 @@ class EnemyIA {
     bool CorrectDecisionBasedOnLimits(Keyboard& keyboard, int x, int y, int direction);
 
   public:    
-	EnemyIA();
+	  EnemyIA();
     EnemyIA(int _type,
             int _random_decisions,
-            int initial_x, int _initial_y,
+            int _orig_x, int _orig_y, int _initial_x, int _initial_y,
             int limit_x, int limit_y);
     ~EnemyIA();
 
-    int GetType();
+    int  GetType();
+    int  GetOrigX();
+    int  GetOrigY();
+    int  GetLimitX();
+    int  GetLimitY();
+    bool IsLimited();
+
+    bool OnIALimits(int player_x, int player_y);
 
     void IAStepWalker(Keyboard &keyboard,
                       int state, int direction, int x, int y,

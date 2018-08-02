@@ -178,10 +178,10 @@ void Character::Reset() {
 }
 
 void Character::SetKilled(World* map) {
-  killed = true;
-  initial_x         = map->GetCurrentCheckpoint()->GetPlayerX();
-  initial_y         = map->GetCurrentCheckpoint()->GetPlayerY();
-  initial_direction = map->GetCurrentCheckpoint()->GetPlayerFace();
+  //killed = true;
+  //initial_x         = map->GetCurrentCheckpoint()->GetPlayerX();
+  //initial_y         = map->GetCurrentCheckpoint()->GetPlayerY();
+  //initial_direction = map->GetCurrentCheckpoint()->GetPlayerFace();
 }
 
 int Character::GetCorrectedPosX() {

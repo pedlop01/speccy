@@ -8,10 +8,12 @@ EnemyIA::EnemyIA() {
 
 EnemyIA::EnemyIA(int _type,
                  int _random_decisions,
-                 int _initial_x, int _initial_y,
+                 int _orig_x, int _orig_y, int _initial_x, int _initial_y,
                  int _limit_x, int _limit_y) {
   type = _type;
   random_decisions = _random_decisions;
+  orig_x = _orig_x;
+  orig_y = _orig_y;
   initial_x = _initial_x;
   initial_y = _initial_y;
   limit_x = _limit_x;
@@ -29,6 +31,26 @@ EnemyIA::~EnemyIA() {
 
 int EnemyIA::GetType() {
   return type;
+}
+
+int EnemyIA::GetOrigX() {
+  return orig_x;
+}
+
+int EnemyIA::GetOrigY() {
+  return orig_y;
+}
+
+int EnemyIA::GetLimitX() {
+  return limit_x;
+}
+
+int EnemyIA::GetLimitY() {
+  return limit_y;
+}
+
+bool EnemyIA::IsLimited() {
+  return limited_hor || limited_ver;
 }
 
 bool EnemyIA::RandomDecision(Keyboard& keyboard, int direction, int steps_in_x) {
@@ -93,12 +115,12 @@ bool EnemyIA::CorrectDecisionBasedOnLimits(Keyboard& keyboard, int x, int y, int
   // REVISIT: consider if adding vertical limits
   if (limited_hor) {
     if (direction & CHAR_DIR_RIGHT) {
-      if (x >= initial_x + limit_x) {
+      if (x >= orig_x + limit_x) {
         keyboard.SetKeys(KEY_LEFT);
         return true;
       }
     } else if (direction & CHAR_DIR_LEFT) {
-      if (x <= initial_x) {
+      if (x <= orig_x) {
         keyboard.SetKeys(KEY_RIGHT);
         return true;
       }
@@ -201,9 +223,20 @@ void EnemyIA::IAStep(Keyboard &keyboard,
       this->IAStepWalker(keyboard, state, direction, x, y, col_right, col_left, steps_in_x);
       break;
     case ENEMY_IA_CHASER:
-      this->IAStepChaser(keyboard, player_x, player_y, state, direction, x, y, col_right, col_left, over_stairs, in_floor, steps_in_x);
+      // A chaser only behaves as a chaser if player is on the limits
+      if (this->IsLimited() && this->OnIALimits(player_x, player_y))
+        this->IAStepChaser(keyboard, player_x, player_y, state, direction, x, y, col_right, col_left, over_stairs, in_floor, steps_in_x);
+      else
+        this->IAStepWalker(keyboard, state, direction, x, y, col_right, col_left, steps_in_x);
       break;
     default:
       break;
   }
+}
+
+bool EnemyIA::OnIALimits(int player_x, int player_y) {
+  return ((player_x >= orig_x) &&
+          (player_x < orig_x + limit_x) &&
+          (player_y >= orig_y) &&
+          (player_y < orig_y + limit_y));
 }

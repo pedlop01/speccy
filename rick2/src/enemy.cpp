@@ -12,7 +12,7 @@ Enemy::Enemy(const char* file,
              int _x, int _y,
              int _bb_x, int _bb_y, int _bb_width, int _bb_height,
              int _direction, float _speed_x, float _speed_y,
-             int ia_type, bool ia_random, int ia_limit_x, int ia_limit_y) : Character(file) {
+             int _ia_type, bool _ia_random, int _ia_orig_x, int _ia_orig_y, int _ia_limit_x, int _ia_limit_y) : Character(file) {
   id = _id;
   type = CHARACTER_ENEMY;
 
@@ -37,7 +37,7 @@ Enemy::Enemy(const char* file,
   speed_x_max = _speed_x;
   speed_y_max = _speed_y;
 
-  ia = new EnemyIA(ia_type, ia_random, pos_x, pos_y, ia_limit_x, ia_limit_y);
+  ia = new EnemyIA(_ia_type, _ia_random, pos_x, pos_y, _ia_orig_x, _ia_orig_y, _ia_limit_x, _ia_limit_y);
 }
 
 // class destructor
@@ -126,6 +126,10 @@ bool Enemy::CheckCollisionPlayer(World* map, Character* player) {
   if (playerCol) {
     player->SetKilled(map);
   }
+}
+
+EnemyIA* Enemy::GetEnemyIA() {
+  return ia;
 }
 
 bool Enemy::BoxWithinBox(int a_x, int a_y, int a_width, int a_height,
