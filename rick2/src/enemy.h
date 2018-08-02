@@ -29,7 +29,8 @@ class Enemy : public Character {
           int _x, int _y,
           int _bb_x, int _bb_y, int _bb_width, int _bb_height,
           int _direction, float _speed_x, float _speed_y,
-          int _ia_type, bool _ia_random, int _orig_x, int _orig_y, int _ia_limit_x, int _ia_limit_y);
+          int _ia_type, bool _ia_random, int _ia_randomness, int _block_steps,
+          int _orig_x, int _orig_y, int _ia_limit_x, int _ia_limit_y);
 
     ~Enemy();
 

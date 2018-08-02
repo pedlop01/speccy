@@ -1,3 +1,5 @@
 ﻿<enemies>
-  <enemy id="0" file="../characters/robot_simple.xml" x="564" y="2000" bb_x="5" bb_y="0" bb_width="10" bb_height="21" direction="right" speed_x="1.0" speed_y="3.0" ia_type="chaser" ia_random="1" ia_orig_x="480" ia_orig_y="2000" ia_limit_x="300" ia_limit_y="32"></enemy>
+  <enemy id="0" file="../characters/robot_simple.xml" x="610" y="1848"
+                                                                                            bb_x="5" bb_y="0" bb_width="10" bb_height="21" direction="right" speed_x="1.0" speed_y="3.0"
+                                                                                            ia_type="chaser" ia_random="1" ia_randomness="64" ia_block_steps="100" ia_orig_x="532" ia_orig_y="1820" ia_limit_x="200" ia_limit_y="220"></enemy>
 </enemies>

@@ -12,7 +12,8 @@ Enemy::Enemy(const char* file,
              int _x, int _y,
              int _bb_x, int _bb_y, int _bb_width, int _bb_height,
              int _direction, float _speed_x, float _speed_y,
-             int _ia_type, bool _ia_random, int _ia_orig_x, int _ia_orig_y, int _ia_limit_x, int _ia_limit_y) : Character(file) {
+             int _ia_type, bool _ia_random, int _ia_randomness, int _ia_block_steps,
+             int _ia_orig_x, int _ia_orig_y, int _ia_limit_x, int _ia_limit_y) : Character(file) {
   id = _id;
   type = CHARACTER_ENEMY;
 
@@ -37,7 +38,7 @@ Enemy::Enemy(const char* file,
   speed_x_max = _speed_x;
   speed_y_max = _speed_y;
 
-  ia = new EnemyIA(_ia_type, _ia_random, pos_x, pos_y, _ia_orig_x, _ia_orig_y, _ia_limit_x, _ia_limit_y);
+  ia = new EnemyIA(_ia_type, _ia_random, _ia_randomness, _ia_block_steps, pos_x, pos_y, _ia_orig_x, _ia_orig_y, _ia_limit_x, _ia_limit_y);
 }
 
 // class destructor

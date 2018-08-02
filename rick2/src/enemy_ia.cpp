@@ -7,11 +7,13 @@ EnemyIA::EnemyIA() {
 }
 
 EnemyIA::EnemyIA(int _type,
-                 int _random_decisions,
-                 int _orig_x, int _orig_y, int _initial_x, int _initial_y,
+                 int _random_decisions, int _randomness, int _block_steps,
+                 int _initial_x, int _initial_y, int _orig_x, int _orig_y, 
                  int _limit_x, int _limit_y) {
   type = _type;
   random_decisions = _random_decisions;
+  randomness = _randomness;
+  block_steps = _block_steps;
   orig_x = _orig_x;
   orig_y = _orig_y;
   initial_x = _initial_x;
@@ -22,7 +24,8 @@ EnemyIA::EnemyIA(int _type,
   limited_ver = (limit_y > 0);
 
   srand(time(0));
-  wait_for_decision = 200;
+  wait_for_decision = block_steps;
+  randomness = RANDOM_DECISION_VALUE;
 }
 
 EnemyIA::~EnemyIA() {
@@ -55,7 +58,7 @@ bool EnemyIA::IsLimited() {
 
 bool EnemyIA::RandomDecision(Keyboard& keyboard, int direction, int steps_in_x) {
   if (random_decisions) {    
-    if ((steps_in_x >= STEPS_IN_HOR_DIRECTION) && ((rand() % RANDOM_DECISION_VALUE) == 0)) {  // REVISIT: totally arbitrary number
+    if ((rand() % randomness) == 0) {  // REVISIT: totally arbitrary number
       if (direction & CHAR_DIR_LEFT)
         keyboard.SetKeys(KEY_RIGHT);
       else
@@ -152,6 +155,8 @@ void EnemyIA::IAStepWalker(Keyboard &keyboard,
                            bool col_right, bool col_left,
                            int steps_in_x) {
 
+  bool disable_decisions = (wait_for_decision < block_steps);
+
   // No IA actions until enemy is in floor  
   if (state == CHAR_STATE_JUMPING)
     return;
@@ -159,10 +164,12 @@ void EnemyIA::IAStepWalker(Keyboard &keyboard,
   this->SetKeyboardBasedOnDirection(keyboard, direction);
 
   //printf("[Enemy IA] direction=%d col_right=%d col_left=%d\n", direction, col_right, col_left);
-  if(this->RandomDecision(keyboard, direction, steps_in_x))
-    return;
+  if(!disable_decisions && this->RandomDecision(keyboard, direction, steps_in_x)) {
+    wait_for_decision = 0;
+  }
 
   this->WalkerDecision(keyboard, direction, col_right, col_left);
+  wait_for_decision++;
 
   // If crossing limits, then recompute decision
   this->CorrectDecisionBasedOnLimits(keyboard, x, y, direction);
@@ -173,6 +180,9 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
                            int state, int direction, int x, int y,
                            bool col_right, bool col_left, bool over_stairs, bool in_floor,
                            int steps_in_x) {
+
+  bool disable_decisions = (wait_for_decision < block_steps);
+
   // No IA actions until enemy is in floor
   if (state == CHAR_STATE_JUMPING)
     return;
@@ -180,19 +190,21 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
   this->SetKeyboardBasedOnDirection(keyboard, direction);
 
   //printf("[Enemy IA] direction=%d col_right=%d col_left=%d\n", direction, col_right, col_left);
-  if((state == CHAR_STATE_RUNNING) && this->RandomDecision(keyboard, direction, steps_in_x))
-    return;
+  if((state == CHAR_STATE_RUNNING) && !disable_decisions && this->RandomDecision(keyboard, direction, steps_in_x)) {
+    wait_for_decision = 0;
+  }
 
   if((state == CHAR_STATE_RUNNING) && this->WalkerDecision(keyboard, direction, col_right, col_left)) {
     wait_for_decision = 0;
   }
 
-  this->ChaserDecision(keyboard, (wait_for_decision < 200), player_x, player_y, x, y, state, over_stairs, in_floor);
+  this->ChaserDecision(keyboard, disable_decisions, player_x, player_y, x, y, state, over_stairs, in_floor);
   wait_for_decision++;
 
   // If crossing limits, then recompute decision
-  if (this->CorrectDecisionBasedOnLimits(keyboard, x, y, direction) )
+  if (this->CorrectDecisionBasedOnLimits(keyboard, x, y, direction)) {
     wait_for_decision = 0;
+  }
 
   // If in stairs, don´t allow movements right or left
   if (state == CHAR_STATE_CLIMBING) {

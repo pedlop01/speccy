@@ -27,6 +27,8 @@ class EnemyIA {
     int  limit_y;
     bool limited_hor;
     bool limited_ver;
+    int  randomness;
+    int  block_steps;
 
     int  wait_for_decision;
 
@@ -39,8 +41,8 @@ class EnemyIA {
   public:    
 	  EnemyIA();
     EnemyIA(int _type,
-            int _random_decisions,
-            int _orig_x, int _orig_y, int _initial_x, int _initial_y,
+            int _random_decisions, int _randomness, int _block_steps,
+            int _initial_x, int _initial_y, int _orig_x, int _orig_y,
             int limit_x, int limit_y);
     ~EnemyIA();
 
