@@ -55,6 +55,7 @@ void Enemy::CharacterStep(World* map, Character* player) {
   keyboard_enemy.SetKeys(0);
 
   if (state != CHAR_STATE_DYING) {
+
     this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
 
     // Check if there is a collision with the player
@@ -76,6 +77,10 @@ bool Enemy::GetOverStairs() {
 }
 bool Enemy::GetInFloor() {
   return inFloor;
+}
+
+Colbox* Enemy::GetWeightColExt() {
+  return &weightColExt;
 }
 
 bool Enemy::CheckCollisionPlayer(World* map, Character* player) {

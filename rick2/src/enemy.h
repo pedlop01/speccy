@@ -43,6 +43,7 @@ class Enemy : public Character {
     void SetKilled();
     bool GetOverStairs();
     bool GetInFloor();
+    Colbox* GetWeightColExt();
 
     EnemyIA* GetEnemyIA();
 };

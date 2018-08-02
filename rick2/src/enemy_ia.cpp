@@ -196,10 +196,10 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
     wait_for_decision = 0;
   }
 
-  if((state == CHAR_STATE_RUNNING) && this->WalkerDecision(keyboard, direction, col_right, col_left)) {
+  if((state == CHAR_STATE_RUNNING) && this->WalkerDecision(keyboard, direction, col_right, col_left)) {    
     wait_for_decision = 0;
   }
-
+  
   this->ChaserDecision(keyboard, disable_decisions, player_x, player_y, x, y, state, over_stairs, in_floor);
   wait_for_decision++;
 
@@ -246,8 +246,7 @@ void EnemyIA::IAStep(Keyboard &keyboard,
       // A chaser only behaves as a chaser if player is on the limits
       if (this->IsLimited() && this->OnIALimits(player_x, player_y))
         this->IAStepChaser(keyboard, player_x, player_y, state, direction, x, y, col_right, col_left, over_stairs, in_floor, steps_in_x);
-      else
-        this->IAStepWalker(keyboard, state, direction, x, y, col_right, col_left, steps_in_x);
+      // REVISIT: I would rather prefer doing something when no in limits
       break;
     default:
       break;
