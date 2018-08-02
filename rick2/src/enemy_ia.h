@@ -53,6 +53,8 @@ class EnemyIA {
 
     bool OnIALimits(int player_x, int player_y);
 
+    void SetKeyboardBasedOnDirection(Keyboard& keyboard, int direction);
+
     void IAStepWalker(Keyboard &keyboard,
                       int state, int direction, int x, int y,
                       bool col_right, bool col_left,

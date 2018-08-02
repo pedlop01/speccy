@@ -129,15 +129,7 @@ bool EnemyIA::CorrectDecisionBasedOnLimits(Keyboard& keyboard, int x, int y, int
   return false;
 }
 
-void EnemyIA::IAStepWalker(Keyboard &keyboard,
-                           int state, int direction, int x, int y,
-                           bool col_right, bool col_left,
-                           int steps_in_x) {
-
-  // No IA actions until enemy is in floor  
-  if (state == CHAR_STATE_JUMPING)
-    return;
-
+void EnemyIA::SetKeyboardBasedOnDirection(Keyboard& keyboard, int direction) {
   int keys = 0;
   if (direction == CHAR_DIR_STOP) {
     keys = KEY_RIGHT;
@@ -153,6 +145,18 @@ void EnemyIA::IAStepWalker(Keyboard &keyboard,
     keys |= KEY_DOWN;
   }  
   keyboard.SetKeys(keys);
+}
+
+void EnemyIA::IAStepWalker(Keyboard &keyboard,
+                           int state, int direction, int x, int y,
+                           bool col_right, bool col_left,
+                           int steps_in_x) {
+
+  // No IA actions until enemy is in floor  
+  if (state == CHAR_STATE_JUMPING)
+    return;
+
+  this->SetKeyboardBasedOnDirection(keyboard, direction);
 
   //printf("[Enemy IA] direction=%d col_right=%d col_left=%d\n", direction, col_right, col_left);
   if(this->RandomDecision(keyboard, direction, steps_in_x))
@@ -173,20 +177,7 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
   if (state == CHAR_STATE_JUMPING)
     return;
 
-  int keys = 0;
-  if (direction == CHAR_DIR_STOP) {
-    keys = KEY_RIGHT;
-  }
-  if (!(direction & CHAR_DIR_DOWN)) {
-    if (direction & CHAR_DIR_RIGHT) {
-      keys |= KEY_RIGHT;
-    } else if (direction & CHAR_DIR_LEFT) {
-      keys |= KEY_LEFT;
-    }
-  } else {
-    keys |= KEY_DOWN;
-  }  
-  keyboard.SetKeys(keys);
+  this->SetKeyboardBasedOnDirection(keyboard, direction);
 
   //printf("[Enemy IA] direction=%d col_right=%d col_left=%d\n", direction, col_right, col_left);
   if((state == CHAR_STATE_RUNNING) && this->RandomDecision(keyboard, direction, steps_in_x))
@@ -205,7 +196,7 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
 
   // If in stairs, don´t allow movements right or left
   if (state == CHAR_STATE_CLIMBING) {
-    keys = keyboard.GetKeys();
+    int keys = keyboard.GetKeys();
     keys &= ~KEY_LEFT;
     keys &= ~KEY_RIGHT;
     keyboard.SetKeys(keys);
