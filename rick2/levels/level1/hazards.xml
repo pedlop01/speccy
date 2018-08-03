@@ -1,4 +1,4 @@
-<hazards>
+﻿<hazards>
   <hazard id="0">
     <attributes file="../designs/hazards/wave_hazard.xml" ini_x="592" ini_y="1787" width="24" height="12" trigger="1" stop_inactive="0"></attributes>
     <actions>
@@ -71,13 +71,13 @@
   <hazard id="11">
     <attributes file="../designs/hazards/vapor_hazard.xml" ini_x="400" ini_y="1436" width="24" height="11" trigger="0" stop_inactive="0"></attributes>
     <actions>
-      <action direction="stop" desp="0" wait="50" speed="1"></action>
+      <action direction="right" desp="0" wait="50" speed="0"></action>
     </actions>
   </hazard>
   <hazard id="12">
     <attributes file="../designs/hazards/vapor_hazard.xml" ini_x="336" ini_y="924" width="24" height="11" trigger="0" stop_inactive="0"></attributes>
     <actions>
-      <action direction="stop" desp="0" wait="50" speed="1"></action>
+      <action direction="right" desp="0" wait="50" speed="1"></action>
     </actions>
   </hazard>
   <hazard id="13">
@@ -119,6 +119,31 @@
       <action direction="right" desp="24" wait="0" speed="4"></action>
       <action direction="deactivate" desp="0" wait="50" speed="0"></action>
       <action direction="left" desp="24" wait="0" speed="4"></action>
+    </actions>
+  </hazard>
+  <hazard id="18">
+    <attributes file="../designs/hazards/cube_hazard.xml" ini_x="436" ini_y="1123" width="16" height="21" trigger="0" stop_inactive="0"></attributes>
+    <actions>
+      <action direction="left" desp="96" wait="0" speed="1"></action>
+      <action direction="right" desp="96" wait="0" speed="1"></action>
+    </actions>
+  </hazard>
+    <hazard id="19">
+    <attributes file="../designs/hazards/cube_hazard.xml" ini_x="426" ini_y="867" width="16" height="21" trigger="1" stop_inactive="0"></attributes>
+    <actions>
+      <action direction="left" desp="48" wait="0" speed="1"></action>
+      <action direction="right" desp="48" wait="0" speed="1"></action>
+    </actions>
+  </hazard>
+      <hazard id="20">
+    <attributes file="../designs/hazards/cube_hazard.xml" ini_x="577" ini_y="1635" width="16" height="21" trigger="1" stop_inactive="0"></attributes>
+    <actions>
+      <action direction="stop" desp="0" wait="30" speed="0"></action>
+      <action direction="right" desp="32" wait="0" speed="1"></action>
+      <action direction="stop" desp="0" wait="30" speed="0"></action>
+      <action direction="right" desp="32" wait="0" speed="1"></action>
+      <action direction="stop" desp="0" wait="30" speed="0"></action>
+      <action direction="left" desp="64" wait="0" speed="1"></action>
     </actions>
   </hazard>
 </hazards>

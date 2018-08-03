@@ -242,4 +242,10 @@
       <target type="laser" id="31" delay="0" trigger="1"></target>
     </targets>
   </trigger>
+  <trigger id="40">
+    <attributes x="332" y="1112" width="96" height="32" action="enters" face="any" onehot="0" recursive="1"></attributes>
+    <targets>
+      <target type="hazard" id="18" delay="0" trigger="1"></target>
+    </targets>
+  </trigger>
 </triggers>

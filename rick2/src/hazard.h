@@ -21,6 +21,7 @@ class Hazard : public Object {
     bool trigger;
     bool always_trigger;
     bool stop_inactive;
+    bool completed_trigger;
 
     // List of actions
     list<Action*> actions;

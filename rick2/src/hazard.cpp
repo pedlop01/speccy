@@ -8,6 +8,7 @@ Hazard::Hazard() {
   current_wait_time = 0;
   always_trigger = true;
   trigger = true;
+  completed_trigger = true;
 }
 
 Hazard::Hazard(const char* file,
@@ -26,10 +27,11 @@ Hazard::Hazard(const char* file,
   ini_y = _y;
   always_trigger = _trigger;
   trigger = always_trigger;
+  completed_trigger = true;
   stop_inactive = _stop_inactive;
   current_action = actions.begin();  // REVISIT
   current_desp = 0;
-  current_wait_time = 0;  
+  current_wait_time = 0;
 
   // Initialize animations from parent class
   // Speeds and direction are not really relevant for initialization  
@@ -115,7 +117,7 @@ void Hazard::HazardStep(World* map, Character* player) {
   // If no actions, then return
   if (actions.size() == 0) return;
 
-  if (!always_trigger && (state == OBJ_STATE_STOP)) {
+  if (!always_trigger && completed_trigger && (state == OBJ_STATE_STOP)) {
     visible = !stop_inactive;
     // wait for trigger before moving
     if (trigger) {
@@ -124,6 +126,7 @@ void Hazard::HazardStep(World* map, Character* player) {
       current_desp = 0;
       current_wait_time = 0;
       current_action = actions.begin();
+      completed_trigger = false;
     } else {
       // No actions for this hazard. However, need to move animation if present        
       animations[state]->AnimStep();
@@ -142,6 +145,7 @@ void Hazard::HazardStep(World* map, Character* player) {
       state = OBJ_STATE_STOP;
       trigger = false;
     }
+    completed_trigger = true;
     return;
   }
 
@@ -151,7 +155,8 @@ void Hazard::HazardStep(World* map, Character* player) {
   //printf("hazard dir=%d, desp=%d, wait=%d\n", current_action_ptr->GetDirection(), current_action_ptr->GetDesp(), current_action_ptr->GetWait());
   switch (current_action_ptr->GetDirection()) {    
     case OBJ_DIR_STOP:
-      visible = current_action_ptr->GetEnabled();
+      state = OBJ_STATE_STOP;
+      visible = current_action_ptr->GetEnabled();      
       // Active and inactive stop actions enters here
       // only wait time can be used here
       if (current_wait_time >= current_action_ptr->GetWait()) {
@@ -162,7 +167,8 @@ void Hazard::HazardStep(World* map, Character* player) {
       }
       break;
     case OBJ_DIR_RIGHT:
-    case OBJ_DIR_LEFT:
+    case OBJ_DIR_LEFT:      
+      state = OBJ_STATE_MOVING;      
       if (current_action_ptr->GetDesp() != 0) {
         if (current_action_ptr->GetDirection() == OBJ_DIR_RIGHT) {
           x += current_speed;
@@ -181,6 +187,7 @@ void Hazard::HazardStep(World* map, Character* player) {
       break;
     case OBJ_DIR_UP:
     case OBJ_DIR_DOWN:
+      state = OBJ_STATE_MOVING;
       if (current_action_ptr->GetDesp() != 0) {
         if (current_action_ptr->GetDirection() == OBJ_DIR_DOWN) {
           y += current_speed;

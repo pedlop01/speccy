@@ -200,6 +200,14 @@ void Camera::DrawBackObjects(World* world, Character* player, ALLEGRO_FONT *font
                        object->GetX() - GetPosX(),
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
+        char buffer[30];
+        sprintf(buffer, "%d", object->GetId());
+        al_draw_text(font,
+                     al_map_rgb(255, 255, 0),
+                     object->GetX() - GetPosX(),
+                     object->GetY() - GetPosY(),
+                     ALLEGRO_ALIGN_LEFT,
+                     buffer);
       }
     }
   }
