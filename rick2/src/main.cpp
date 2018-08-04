@@ -138,10 +138,8 @@ int main(int argc, char *argv[]) {
     //printf("[Main] Calling player step\n");
     player->CharacterStep(map_level1, keyboard);
 
-    //printf("[Main] Camera position\n");
-    camera.PositionBasedOnPlayer(player);
-    //printf("[Main] Camera draw screen\n");
-    camera.DrawScreen(map_level1, player, font);
+    //printf("[Main] Camera positioning and drawing\n");
+    camera.CameraStep(map_level1, player, font);
 
     // Check counter value for adding waiting time
     double delay = timer.GetCounter();

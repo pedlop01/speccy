@@ -10,10 +10,14 @@ Camera::Camera() {
   tiles_height = 0;
   tile_width = 0;
   tile_height = 0;
-  world_width = 0;
-  world_height = 0;
+  view_x = 0;
+  view_y = 0;
+  view_width = 0;
+  view_height = 0;
   camera_bitmap = 0;
   screen = 0;
+  current_camera_view = 0;
+  prev_camera_view = 0;
 }
 
 Camera::~Camera() {
@@ -33,8 +37,11 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
   tile_height = pixels_height / tiles_height;
 
   // REVISIT: Need to pass map
-  world_width = map->GetMapWidth()*tile_width;
-  world_height = map->GetMapHeight()*tile_height;
+  // REVISIT: by default passing full size of map
+  view_x = 0;
+  view_y = 0;
+  view_width = map->GetMapWidth()*tile_width;
+  view_height = map->GetMapHeight()*tile_height;
 
   // Using methods to set x and y because they control the limits of the camera in the world
   // These methods need to be call after initializing the other width parameters
@@ -50,27 +57,32 @@ void Camera::InitCamera(int _pos_x, int _pos_y, int _pixels_width, int _pixels_h
 }
 
 void Camera::PositionBasedOnPlayer(Character* player) {
+  int camera_width  = (view_width > pixels_width ? pixels_width : view_width);
+  int camera_height = (view_height > pixels_height ? pixels_height : view_height);
+
   // Do not move the camera when DYING
   if (player->GetState() == CHAR_STATE_DYING) return;
-  SetPosX(player->GetCorrectedPosX() - pixels_width/2);
-  SetPosY(player->GetCorrectedPosY() - pixels_height/2);
+  SetPosX(player->GetCorrectedPosX() - camera_width/2);
+  SetPosY(player->GetCorrectedPosY() - camera_height/2);
 }
 
 void Camera::SetPosX(int _pos_x) {
-  if (_pos_x < 0) {
-    pos_x = 0;
-  } else if (_pos_x > (world_width - pixels_width - tile_width)) { // REVISIT
-    pos_x = (world_width - pixels_width - tile_width);
+  int camera_width = (view_width > pixels_width ? pixels_width : view_width);
+  if (_pos_x < view_x) {
+    pos_x = view_x;
+  } else if (_pos_x > (view_x + view_width - camera_width)) {
+    pos_x = (view_x + view_width - camera_width);
   } else {
     pos_x = _pos_x;
 }
 }
 
 void Camera::SetPosY(int _pos_y) {
-  if (_pos_y < 0) {
-    pos_y = 0;
-  } else if (_pos_y > (world_height - pixels_height)) {
-    pos_y = (world_height - pixels_height);
+  int camera_height = (view_height > pixels_height ? pixels_height : view_height);
+  if (_pos_y < view_y) {
+    pos_y = view_y;
+  } else if (_pos_y > (view_y + view_height - camera_height)) {
+    pos_y = (view_y + view_height - camera_height);
   } else {
     pos_y = _pos_y;
   }
@@ -111,17 +123,19 @@ void Camera::DrawBackTiles(World* world, Character* player, ALLEGRO_FONT *font) 
 
   int tile_y = pos_y / tile_height;
   for (int y = 0; y < tiles_height_corrected; y++) {
-    int tile_x = pos_x / tile_width;    
-    for (int x = 0; x < tiles_width_corrected; x++) {      
+
+    int tile_x = pos_x / tile_width;
+    for (int x = 0; x < tiles_width_corrected; x++) {
+
       tile = map->GetTile(tile_x, tile_y);
       if (tile->GetValue() != 0) {
         left_up_x = tile->GetLeftUpX();
         left_up_y = tile->GetLeftUpY();
-  
+
         int dest_x = x*tile_width - correct_x;
         int dest_y = y*tile_height - correct_y;
     
-        if ((dest_x < world_width) && (dest_y < world_height)) {        
+        if ((dest_x < view_width) && (dest_y < view_height)) {        
           al_draw_bitmap_region(tileset_bitmap,
                                 left_up_x,
                                 left_up_y,
@@ -168,7 +182,7 @@ void Camera::DrawFrontTiles(World* world, Character* player, ALLEGRO_FONT *font)
         int dest_x = x*tile_width - correct_x;
         int dest_y = y*tile_height - correct_y;
   
-        if ((dest_x < world_width) && (dest_y < world_height)) {        
+        if ((dest_x < view_width) && (dest_y < view_height)) {        
           al_draw_bitmap_region(tileset_bitmap,
                                 left_up_x,
                                 left_up_y,
@@ -424,6 +438,20 @@ void Camera::DrawEnemies(World* world, Character* player, ALLEGRO_FONT *font) {
   }
 }
 
+void Camera::DrawCameraViews(World* world, Character* player, ALLEGRO_FONT *font) {
+#ifdef SHOW_BOUNDING_BOXES
+  vector<CameraView*>* camera_views = world->GetCameraViews();
+  for (vector<CameraView*>::iterator it = camera_views->begin(); it != camera_views->end(); it++) {
+    CameraView* view = *it;
+    al_draw_rectangle(view->GetLeftUpX() - GetPosX() + 1,
+                      view->GetLeftUpY() - GetPosY() + 1,
+                      view->GetRightDownX() - GetPosX() + 1,
+                      view->GetRightDownY() - GetPosY() + 1,
+                      al_map_rgb(0xFF, 0xFF, 0xFF), 4.0);
+  }
+#endif
+}
+
 void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
 
   // Draw everything on internal bitmap before resizing it
@@ -453,12 +481,28 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   this->DrawTriggers(map, player, font);
   // Draw player dying if required
   this->DrawPlayerDying(map, player, font);
+  // Draw camera views
+  this->DrawCameraViews(map, player, font);
 
   // Move camera to screen
   al_set_target_bitmap(screen);
   al_draw_scaled_bitmap(camera_bitmap,
                         0, 0, pixels_width, pixels_height,
                         0, 0, 320, 240, 0);
+}
+
+void Camera::SetCameraView(CameraView* camera_view) {
+  if(camera_view) {
+    view_x = camera_view->GetLeftUpX();
+    view_y = camera_view->GetLeftUpY();
+    view_width = camera_view->GetRightDownX() - camera_view->GetLeftUpX();
+    view_height = camera_view->GetRightDownY() - camera_view->GetLeftUpY();
+
+    if(current_camera_view != camera_view->GetId()) {
+      prev_camera_view = current_camera_view;
+      current_camera_view = camera_view->GetId();
+    }
+  }
 }
 
 bool Camera::CoordsWithinCamera(int x, int y) {
@@ -473,4 +517,15 @@ bool Camera::CoordsWithinCamera(int x, int y) {
           (x <= camera_x + camera_width) &&
           (y >= camera_y) &&
           (y <= camera_y + camera_height));
+}
+
+void Camera::CameraStep(World* world, Character *player, ALLEGRO_FONT *font) {
+  // Check in which camera view the player is
+  //printf("[CameraStep] Calling to set camera view\n");
+  //CameraView* camera_view = world->GetCurrentCameraView(player);
+  //this->SetCameraView(camera_view);
+
+  this->PositionBasedOnPlayer(player);
+  //printf("[CameraStep] Camera draw screen\n");
+  this->DrawScreen(world, player, font);
 }

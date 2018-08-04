@@ -15,6 +15,7 @@
 #include "pugixml.hpp"
 #include "rick_params.h"
 #include "checkpoint.h"
+#include "camera_view.h"
 #include "object.h"
 #include "item.h"
 #include "platform.h"
@@ -100,6 +101,9 @@ class World
         // Enemies belonging to this world
         vector<Character*> enemies;
 
+        // Camera views for this world
+        vector<CameraView*> camera_views;
+
         bool shoot_exists;
         bool bomb_exists;
 
@@ -132,15 +136,18 @@ class World
 		    int   GetTileValueByCoord(int x, int y);
         Tile* GetTileByCoord(int x, int y);
 
-        vector<Platform*>*  GetPlatforms()   { return &platforms;    }
-        list<Object*>*      GetObjects()     { return &objects;      }
-        list<Object*>*      GetBackObjects() { return &back_objects; }
-        list<Block*>*       GetBlocks()      { return &blocks;       }
-        list<Checkpoint*>*  GetCheckpoints() { return &checkpoints;  }
-        list<Trigger*>*     GetTriggers()    { return &triggers;     }
-        vector<Character*>* GetEnemies()     { return &enemies;      }
+        vector<Platform*>*  GetPlatforms()    { return &platforms;    }
+        list<Object*>*      GetObjects()      { return &objects;      }
+        list<Object*>*      GetBackObjects()  { return &back_objects; }
+        list<Block*>*       GetBlocks()       { return &blocks;       }
+        list<Checkpoint*>*  GetCheckpoints()  { return &checkpoints;  }
+        list<Trigger*>*     GetTriggers()     { return &triggers;     }
+        vector<Character*>* GetEnemies()      { return &enemies;      }
+        vector<CameraView*>* GetCameraViews() { return &camera_views; }
 
         Checkpoint* GetCurrentCheckpoint()  { return current_checkpoint; }
+
+        CameraView* GetCurrentCameraView(Character* player);
 
         void  WorldStep(Character* player);
 
@@ -153,6 +160,7 @@ class World
         void  InitializeTriggers(const char* file);
         void  InitializeLasers(const char* file);
         void  InitializeEnemies(const char* file);
+        void  InitializeCameraViews(const char* file);
 
         void  CreateNewShoot(int x, int y, int direction);
         void  CreateNewBomb(int x, int y, int direction);

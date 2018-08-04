@@ -110,11 +110,11 @@ World::World(const char *file, bool tileExtractedOption)
   // Read platforms
   this->InitializePlatforms("../levels/level1/platforms.xml");
   // Read items
-  this->InitializeItems("../levels/level1/items.xml");
+  //this->InitializeItems("../levels/level1/items.xml");
   // Read dynamic background objects
-  this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
+  //this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
   // Read blocks
-  this->InitializeBlocks("../levels/level1/blocks.xml");
+  //this->InitializeBlocks("../levels/level1/blocks.xml");
   // Read hazards
   this->InitializeHazards("../levels/level1/hazards.xml");
   // Read checkpoints
@@ -124,7 +124,9 @@ World::World(const char *file, bool tileExtractedOption)
   // Read triggers
   this->InitializeTriggers("../levels/level1/triggers.xml");
   // Read enemies
-  this->InitializeEnemies("../levels/level1/enemies.xml");
+  //this->InitializeEnemies("../levels/level1/enemies.xml");
+  // Read camera views
+  this->InitializeCameraViews("../levels/level1/camera_views.xml");
 
   shoot_exists = false;
   bomb_exists = false;
@@ -155,6 +157,9 @@ World::~World()
       delete *it;
   }
   for (list<Checkpoint*>::iterator it = checkpoints.begin() ; it != checkpoints.end(); ++it) {
+      delete *it;
+  }
+  for (vector<CameraView*>::iterator it = camera_views.begin() ; it != camera_views.end(); ++it) {
       delete *it;
   }
 }
@@ -968,6 +973,49 @@ void World::InitializeEnemies(const char* file) {
   printf("---------------------------\n");
 }
 
+void World::InitializeCameraViews(const char* file) {
+  int view_id;
+  int left_up_x;
+  int left_up_y;
+  int right_down_x;
+  int right_down_y;
+  pugi::xml_document view_file;
+
+  printf("------------------------------------\n");
+  printf("| Initializing camera views        |\n");
+  printf("------------------------------------\n");
+
+  pugi::xml_parse_result result = view_file.load_file(file);
+
+  if(!result) {
+    printf("Error: loading world camera view data\n");
+  }
+ 
+  for (pugi::xml_node view = view_file.child("views").first_child();
+       view;
+       view = view.next_sibling()) {
+    // First read attributes
+    view_id = view.attribute("id").as_int();
+    printf("View id = %d\n", view_id);
+    
+    left_up_x    = view.attribute("left_up_x").as_int();
+    left_up_y    = view.attribute("left_up_y").as_int();
+    right_down_x = view.attribute("right_down_x").as_int();
+    right_down_y = view.attribute("right_down_y").as_int();
+
+    printf(" - left_up_x = %d\n", left_up_x);
+    printf(" - left_up_y = %d\n", left_up_y);
+    printf(" - right_down_x = %d\n", right_down_x);
+    printf(" - right_down_y = %d\n", right_down_y);
+
+    // Create camera view
+    CameraView* world_view = new CameraView(view_id, left_up_x, left_up_y, right_down_x, right_down_y);
+    camera_views.push_back(world_view);
+  }
+
+  printf("---------------------------\n");
+}
+
 int World::GetMapWidth() {
    return map_width;
 }
@@ -1039,6 +1087,7 @@ Tile* World::GetTileByCoord(int x, int y)
 }
 
 void World::WorldStep(Character* player) {
+
   // Perform an step of all elements belonging to the world level
   //printf("[WorldStep] Moving platforms...\n");
   for (vector<Platform*>::iterator it = platforms.begin() ; it != platforms.end(); ++it) {
@@ -1240,4 +1289,40 @@ Laser* World::GetLaser(int id) {
   }
 
   return nullptr;
+}
+
+CameraView* World::GetCurrentCameraView(Character* player) {
+  int player_x;
+  int player_y;
+  int player_dir;
+  CameraView* view;
+
+  // REVISIT: at the moment, camera views are not taking into account vertical movements
+  player_dir = player->GetFace();
+  player_x   = player->GetPosX() + ((player_dir == CHAR_DIR_RIGHT) ? player->GetWidth() : 0);
+  player_y   = player->GetPosY();
+
+  view = nullptr;
+  for (vector<CameraView*>::iterator it = camera_views.begin(); it != camera_views.end(); it++) {
+    CameraView* view_to_analyze = *it;
+
+    if( (player_x >= view_to_analyze->GetLeftUpX())   &&
+        (player_x < view_to_analyze->GetRightDownX()) &&
+        (player_y >= view_to_analyze->GetLeftUpY())   &&
+        (player_y < view_to_analyze->GetRightDownY())) {
+      if(!view) {
+        view = view_to_analyze;
+      } else {
+        if (player_dir & CHAR_DIR_RIGHT) {
+          if (view_to_analyze->GetLeftUpX() > view->GetLeftUpX())
+            view = view_to_analyze;
+        } else if (player_dir & CHAR_DIR_LEFT) {
+          if (view_to_analyze->GetLeftUpX() < view->GetLeftUpX())
+            view = view_to_analyze;
+        }
+      }
+    }
+  }
+
+  return view;
 }

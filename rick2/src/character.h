@@ -124,6 +124,7 @@ class Character {
     int  GetWidth()      { return width;     }
     int  GetState()      { return state;     }
     int  GetDirection()  { return direction; }
+    int  GetFace()       { return face;      }
 
     int  GetBBX()        { return bb_x;      }
     int  GetBBY()        { return bb_y;      }

@@ -17,6 +17,7 @@
 #include "platform.h"
 #include "block.h"
 #include "trigger.h"
+#include "camera_view.h"
 
 using namespace std;
 
@@ -33,12 +34,17 @@ class Camera
     int tile_width;
     int tile_height;
 
-    int world_width;
-    int world_height;
+    int view_x;
+    int view_y;
+    int view_width;
+    int view_height;
 
     ALLEGRO_BITMAP* camera_bitmap;
     ALLEGRO_BITMAP* screen;
     World*          map;
+
+    int prev_camera_view;
+    int current_camera_view;    
 
   public:
     Camera();
@@ -65,8 +71,10 @@ class Camera
     void PositionBasedOnPlayer(Character* player);
 
     void SetMap(World* _map) { map = _map; }
-    
-    void DrawScreen(World* world, Character *player, ALLEGRO_FONT *font);
+
+    void SetCameraView(CameraView* camera_view);
+
+    void CameraStep(World* world, Character *player, ALLEGRO_FONT *font);
 
   private:
     bool CoordsWithinCamera(int x, int y);
@@ -82,6 +90,8 @@ class Camera
     void DrawCheckpoints(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawEnemies(World* world, Character *player, ALLEGRO_FONT *font);
     void DrawTriggers(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawCameraViews(World* world, Character *player, ALLEGRO_FONT *font);
+    void DrawScreen(World* world, Character *player, ALLEGRO_FONT *font);
 
 };
 

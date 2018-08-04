@@ -1,10 +1,10 @@
 PLATFORM := $(shell uname -o)
 ifeq  ($(PLATFORM),GNU/Linux)
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5 allegro_font-5 allegro_ttf-5`
+rick2: ../src/main.cpp world.o keyboard.o camera.o camera_view.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o camera_view.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o -O3 -std=c++11 `pkg-config --libs allegro-5.0 allegro_primitives-5.0 allegro_image-5 allegro_font-5 allegro_ttf-5`
 else
-rick2: ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o
-	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
+rick2: ../src/main.cpp world.o keyboard.o camera.o camera_view.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o
+	g++ -o rick2 ../src/main.cpp world.o keyboard.o camera.o camera_view.o sprite.o animation.o character.o player.o enemy.o colbox.o timer.o object.o platform.o item.o laser.o shoot.o bomb.o static_object.o block.o hazard.o checkpoint.o trigger.o enemy_ia.o pugixml.o -O3 -std=c++11 -static -lallegro-5.0.10-monolith-md
 endif
 
 world.o: ../src/world.cpp
@@ -15,6 +15,9 @@ keyboard.o: ../src/keyboard.cpp
 
 camera.o: ../src/camera.cpp
 	g++ -c ../src/camera.cpp
+
+camera_view.o: ../src/camera_view.cpp
+	g++ -c ../src/camera_view.cpp
 
 sprite.o: ../src/sprite.cpp
 	g++ -c ../src/sprite.cpp
