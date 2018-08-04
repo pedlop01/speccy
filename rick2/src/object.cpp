@@ -15,12 +15,13 @@ Action::~Action() {
 
 }
 
-Action::Action(int _direction, int _desp, int _wait, float _speed) {
+Action::Action(int _direction, int _desp, int _wait, float _speed, int _cond) {
   direction = _direction;
   desp = _desp;
   wait = _wait;
   speed = _speed;
   enabled = true;
+  condition = _cond;
 }
 
 Object::Object() {

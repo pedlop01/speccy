@@ -173,6 +173,7 @@ void World::InitializePlatforms(const char* file) {
   int action_desp;
   int action_wait;
   float action_speed;
+  int action_cond;
   int num_actions;
   pugi::xml_document plat_file;
 
@@ -248,15 +249,18 @@ void World::InitializePlatforms(const char* file) {
       action_desp = action.attribute("desp").as_int();
       action_wait = action.attribute("wait").as_int();
       action_speed = action.attribute("speed").as_float();      
+      action_cond = action.attribute("cond").as_int();
       printf("\t\t - direction=%s\n", action.attribute("direction").as_string());
       printf("\t\t - desp=%d\n", action_desp);
       printf("\t\t - wait=%d\n", action_wait);
       printf("\t\t - speed=%f\n", action_speed);
+      printf("\t\t - cond=%d\n", action_cond);
 
       world_platform->AddAction(action_direction,
                                 action_desp,
                                 action_wait,
-                                action_speed);
+                                action_speed,
+                                action_cond);  // REVISIT: no actions for platforms yet
       num_actions++;
     }
     platforms.push_back(world_platform);
@@ -279,6 +283,7 @@ void World::InitializeHazards(const char* file) {
   int   action_wait;
   float action_speed;
   bool  action_deactivate;
+  int   action_cond;
   int   num_actions;  
   pugi::xml_document hazard_file;
 
@@ -351,18 +356,21 @@ void World::InitializeHazards(const char* file) {
       }
       action_desp = action.attribute("desp").as_int();
       action_wait = action.attribute("wait").as_int();
-      action_speed = action.attribute("speed").as_float();      
+      action_speed = action.attribute("speed").as_float();
+      action_cond = action.attribute("cond").as_int();
       printf("\t\t - direction=%s\n", action.attribute("direction").as_string());
       printf("\t\t - deactivate=%d\n", (int)action_deactivate);
       printf("\t\t - desp=%d\n", action_desp);
       printf("\t\t - wait=%d\n", action_wait);
       printf("\t\t - speed=%f\n", action_speed);
+      printf("\t\t - wait=%d\n", action_cond);
 
       world_hazard->AddAction(action_direction,
                               action_desp,
                               action_wait,
                               action_speed,
-                              !action_deactivate);      
+                              !action_deactivate,
+                              action_cond);
       num_actions++;
     }
     objects.push_back(world_hazard);
@@ -648,6 +656,7 @@ void World::InitializeTriggers(const char* file) {
   int  target_id;
   int  target_delay;
   bool target_trigger;
+  bool target_trigger_cond;
   int  num_targets;
   pugi::xml_document trig_file;
 
@@ -738,10 +747,12 @@ void World::InitializeTriggers(const char* file) {
       target_id = target.attribute("id").as_int();
       target_delay = target.attribute("delay").as_int();
       target_trigger = target.attribute("trigger").as_bool();
+      target_trigger_cond = target.attribute("trigger_cond").as_bool();
       printf("\t\t - type=%s\n", target.attribute("type").as_string());
       printf("\t\t - id=%d\n", target_id);
       printf("\t\t - delay=%d\n", target_delay);
       printf("\t\t - trigger=%d\n", target_trigger);
+      printf("\t\t - trigger_cond=%d\n", target_trigger_cond);
 
       Object* target_ptr;
       if (target_type == OBJ_PLATFORM)
@@ -756,7 +767,7 @@ void World::InitializeTriggers(const char* file) {
         exit(-1);
       }
 
-      world_trigger->AddTarget(target_ptr, target_delay, target_trigger);
+      world_trigger->AddTarget(target_ptr, target_delay, target_trigger, target_trigger_cond);
 
       num_targets++;
     }

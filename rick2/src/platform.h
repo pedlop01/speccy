@@ -21,6 +21,8 @@ class Platform : public Object {
     int  current_desp;
     int  current_wait_time;
 
+    bool cond_actions;
+
     // List of actions
     list<Action*> actions;
     list<Action*>::iterator current_action;
@@ -40,10 +42,14 @@ class Platform : public Object {
     ~Platform();
 
     // Add new action
-    void AddAction(int direction, int desp, int wait, float speed);
+    void AddAction(int direction, int desp, int wait, float speed, int cond);
 
     // Set the onehot trigger
     void SetTrigger() { trigger = true; }
+
+    // Enable or disable conditional action execution
+    void SetCondActions(bool _cond_actions) { cond_actions = _cond_actions; }
+    bool GetCondActions()                   { return cond_actions; }
 
     // IDs
     int  GetID()      { return obj_id;      }
@@ -54,6 +60,8 @@ class Platform : public Object {
     float GetSpeed();
 
     void PlatformStep();
+
+    void HandleConditionalActions(list<Action*>::iterator& _current_action);
 };
 
 #endif // PLATFORM_H

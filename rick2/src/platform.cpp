@@ -6,6 +6,7 @@ Platform::Platform() {
   current_action = actions.begin();  // REVISIT
   current_desp = 0;
   current_wait_time = 0;
+  cond_actions = false;
 }
 
 Platform::Platform(const char* file,
@@ -33,6 +34,7 @@ Platform::Platform(const char* file,
   // Trigger is false by default. Platforms moving without trigger
   // go directly to state MOVING, so no need to use trigger
   trigger = false;
+  cond_actions = false;
 
   // Initialize animations from parent class
   // Speeds and direction are not really relevant for initialization  
@@ -47,8 +49,8 @@ Platform::~Platform() {
   actions.clear();
 }
 
-void Platform::AddAction(int direction, int desp, int wait, float speed) {
-  Action* action = new Action(direction, desp, wait, speed);
+void Platform::AddAction(int direction, int desp, int wait, float speed, int cond) {
+  Action* action = new Action(direction, desp, wait, speed, cond);
   actions.push_back(action);
 
   // Initialize current_action if first push
@@ -77,6 +79,26 @@ float Platform::GetSpeed() {
   return (*current_action)->GetSpeed();
 }
 
+// REVISIT: same function than in Hazard. Maybe we can unify this code
+void Platform::HandleConditionalActions(list<Action*>::iterator& _current_action) {
+  if (_current_action == actions.end()) {
+    return;
+  } else {
+    Action* current_action_ptr = *_current_action;
+    int condition = current_action_ptr->GetCondition();
+    if ((condition == ACTION_COND_ALWAYS) ||
+        (cond_actions && (condition == ACTION_COND_TRIG_ON)) ||
+        (!cond_actions && (condition == ACTION_COND_TRIG_OFF))) {
+      return;
+    } else {
+      // As in any advance action, need to reset the desp and wait time
+      current_desp = 0;
+      current_wait_time = 0;
+      HandleConditionalActions(++_current_action);
+    }
+  }
+}
+
 // No use of ObjectStep
 void Platform::PlatformStep() {
   bool advance_action = false;
@@ -99,6 +121,10 @@ void Platform::PlatformStep() {
     }
   }
 
+  // If conditional actions is enabled then
+  // check the action before executing it
+  this->HandleConditionalActions(current_action);
+
   // Check if we have completed all actions
   if (current_action == actions.end()) {
     if (one_use) {
@@ -117,7 +143,14 @@ void Platform::PlatformStep() {
   // Handle current actions
   Action* current_action_ptr = *current_action;
   current_speed = current_action_ptr->GetSpeed();
-  //printf("platform dir=%d, desp=%d, wait=%d\n", current_action_ptr->GetDirection(), current_action_ptr->GetDesp(), current_action_ptr->GetWait());
+  //printf("platform dir=%d, desp=%d, wait=%d cond=%d desp=%d wait_time=%d\n",
+  //  current_action_ptr->GetDirection(),
+  //  current_action_ptr->GetDesp(),
+  //  current_action_ptr->GetWait(),
+  //  current_action_ptr->GetCondition(),
+  //  current_desp,
+  //  current_wait_time);
+
   switch (current_action_ptr->GetDirection()) {    
     case OBJ_DIR_STOP:
       // only wait time can be used here

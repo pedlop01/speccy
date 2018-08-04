@@ -9,6 +9,7 @@ Hazard::Hazard() {
   always_trigger = true;
   trigger = true;
   completed_trigger = true;
+  cond_actions = false;
 }
 
 Hazard::Hazard(const char* file,
@@ -32,6 +33,7 @@ Hazard::Hazard(const char* file,
   current_action = actions.begin();  // REVISIT
   current_desp = 0;
   current_wait_time = 0;
+  cond_actions = false;
 
   // Initialize animations from parent class
   // Speeds and direction are not really relevant for initialization  
@@ -46,14 +48,33 @@ Hazard::~Hazard() {
   actions.clear();
 }
 
-void Hazard::AddAction(int direction, int desp, int wait, float speed, bool _enabled) {
-  Action* action = new Action(direction, desp, wait, speed);
+void Hazard::AddAction(int direction, int desp, int wait, float speed, bool _enabled, int cond) {
+  Action* action = new Action(direction, desp, wait, speed, cond);
   action->SetEnabled(_enabled);
   actions.push_back(action);
 
   // Initialize current_action if first push
   if (actions.size() == 1) {
     current_action = actions.begin();
+  }
+}
+
+void Hazard::HandleConditionalActions(list<Action*>::iterator& _current_action) {
+  if (_current_action == actions.end()) {
+    return;
+  } else {
+    Action* current_action_ptr = *_current_action;
+    int condition = current_action_ptr->GetCondition();
+    if ((condition == ACTION_COND_ALWAYS) ||
+        (cond_actions && (condition == ACTION_COND_TRIG_ON)) ||
+        (!cond_actions && (condition == ACTION_COND_TRIG_OFF))) {
+      return;
+    } else {
+      // As in any advance action, need to reset the desp and wait time
+      current_desp = 0;
+      current_wait_time = 0;
+      HandleConditionalActions(++_current_action);
+    }
   }
 }
 
@@ -136,6 +157,10 @@ void Hazard::HazardStep(World* map, Character* player) {
 
   // If there are action, check collisions first
   this->ComputeCollisionsPlayer(map, player);
+
+  // If conditional actions is enabled then
+  // check the action before executing it
+  this->HandleConditionalActions(current_action);
 
   // Check if we have completed all actions
   if (current_action == actions.end()) {

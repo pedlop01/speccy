@@ -19,6 +19,31 @@ using namespace std;
 #define ACTION_FACE_RIGHT 1
 #define ACTION_FACE_LEFT  2
 
+class TriggerTarget {
+  private:
+    Object* target;
+
+    int delay;
+    bool set_trigger;
+    bool set_trigger_cond;
+    bool triggered;
+
+  public:
+    TriggerTarget(Object* _target,
+                  int _delay,
+                  bool _set_trigger,
+                  bool _set_trigger_cond);
+    ~TriggerTarget();
+
+    Object* GetTarget()      { return target;           }
+    int GetDelay()           { return delay;            }
+    bool GetSetTrigger()     { return set_trigger;      }
+    bool GetSetTriggerCond() { return set_trigger_cond; }
+    bool GetTriggered()      { return triggered;        }
+
+    void SetTriggered(bool _triggered) { triggered = _triggered; }
+};
+
 class Trigger {
   private:
     int id;
@@ -34,16 +59,16 @@ class Trigger {
 
     bool recursive;
 
-    // List of next checkpoints from the current one
-    vector<Object*> targets;
     // Associated delays for target
-    vector<int> targets_delay;
-    vector<bool> targets_triggered;
-    vector<bool> targets_trigger;
+    vector<TriggerTarget*> targets;
 
     bool player_was_in_trigger;
     bool already_triggered;
     bool trigger_targets;
+
+    // Previous state is used for triggers which may depend on player state to
+    // avoid sending multiple triggers in a row
+    int  player_prev_state;
 
     int steps;
 
@@ -55,7 +80,7 @@ class Trigger {
 
     void Reset();
 
-    void AddTarget(Object* _object, int _delay, bool _trigger);
+    void AddTarget(Object* _object, int _delay, bool _trigger, bool _trigger_cond);
 
     // Read methods
     int GetId()     { return id;     }
@@ -66,9 +91,6 @@ class Trigger {
 
     int GetActionEvent() { return action_event; }
     int GetActionFace()  { return action_face;  }
-
-    vector<Object*>* GetTargets()      { return &targets;       }
-    vector<int>*     GetTargetsDelay() { return &targets_delay; }
 
     bool InTrigger(int x, int y, int width, int height);
 

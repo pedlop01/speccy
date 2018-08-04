@@ -42,22 +42,24 @@ class Enemy;
 // REVISIT: should we define this in a different file?
 class Action {
   private:
-   int direction;
-   int desp;
-   int wait;
+   int   direction;
+   int   desp;
+   int   wait;
    float speed;
-   bool enabled;
+   bool  enabled;
+   int   condition;
 
   public:
     Action();
     ~Action();
 
-    Action(int _direction, int _desp, int _wait, float _speed);
+    Action(int _direction, int _desp, int _wait, float _speed, int _cond);
 
     int   GetDirection() { return direction; }
     int   GetDesp()      { return desp;      }
     int   GetWait()      { return wait;      }
     float GetSpeed()     { return speed;     }
+    int   GetCondition() { return condition; }
 
     // It is possible to make an object inactive through an action,
     // however, actions by default set enbaled to true
@@ -177,6 +179,9 @@ class Object {
 
     virtual void SetTrigger() {;};
     virtual void UnsetTrigger() {;};
+
+    virtual bool GetCondActions() {;}
+    virtual void SetCondActions(bool _cond_action) {;};
 
     void SetX(int _x)              { x = _x;              };
     void SetY(int _y)              { y = _y;              };

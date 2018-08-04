@@ -1,5 +1,20 @@
 #include "trigger.h"
 
+TriggerTarget::TriggerTarget(Object* _target,
+                              int _delay,
+                              bool _set_trigger,
+                              bool _set_trigger_cond) {
+  target = _target;
+  delay = _delay;
+  set_trigger = _set_trigger;
+  set_trigger_cond = _set_trigger_cond;
+  triggered = false;
+}
+
+TriggerTarget::~TriggerTarget() {
+
+}
+
 Trigger::Trigger(
   int _id,
   int _x, int _y, int _width, int _height,
@@ -20,11 +35,15 @@ Trigger::Trigger(
   already_triggered = false;
   trigger_targets = false;
 
+  player_prev_state = CHAR_STATE_STOP;
+
   steps = 0;
 }
 
 Trigger::~Trigger() {
-
+  for (vector<TriggerTarget*>::iterator it = targets.begin(); it != targets.end(); it++) {
+    delete *it;
+  }
 }
 
 void Trigger::Reset() {
@@ -32,18 +51,20 @@ void Trigger::Reset() {
   already_triggered = false;
   trigger_targets = false;
 
-  for (vector<bool>::iterator it = targets_triggered.begin(); it != targets_triggered.end(); it++) {
-    *it = false;
+  for (vector<TriggerTarget*>::iterator it = targets.begin(); it != targets.end(); it++) {
+    TriggerTarget* trigger_target = *it;
+    trigger_target->SetTriggered(false);
   }
 
   steps = 0;
 }
 
-void Trigger::AddTarget(Object* _object, int _delay, bool _trigger) {
-  targets.push_back(_object);
-  targets_delay.push_back(_delay);
-  targets_triggered.push_back(false);
-  targets_trigger.push_back(_trigger);
+void Trigger::AddTarget(Object* _object, int _delay, bool _trigger, bool _trigger_cond) {
+  TriggerTarget* trigger_target = new TriggerTarget(_object,
+                                                   _delay,
+                                                   _trigger,
+                                                   _trigger_cond);
+  targets.push_back(trigger_target);
 }
 
 bool Trigger::InTrigger(int _x, int _y, int _width, int _height) {
@@ -100,10 +121,13 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
     expected_event = ((action_event == ACTION_EVENT_ENTERS) ? player_enters :
                       (action_event == ACTION_EVENT_STAYS)  ? player_stays  :
                       (action_event == ACTION_EVENT_EXITS)  ? player_exits  :
-                      (action_event == ACTION_EVENT_HITS)   ? player_stays && (_state == CHAR_STATE_HITTING) :
+                      (action_event == ACTION_EVENT_HITS)   ? (player_stays &&
+                                                               (player_prev_state != CHAR_STATE_HITTING) &&
+                                                               (_state == CHAR_STATE_HITTING)) :
                                                               false);
 
     player_was_in_trigger = player_in_trigger;
+    player_prev_state = _state;
 
     if (expected_event && expected_face) {
       steps = 0;
@@ -112,34 +136,41 @@ void Trigger::TriggerStep(int _x, int _y, int _width, int _height,
     }
   } else {
     int num_target = 0;
-    for (vector<Object*>::iterator it = targets.begin(); it != targets.end(); it++) {
-      Object* object = *it;
-      if ((steps >= targets_delay[num_target]) && !targets_triggered[num_target]) {
+    for (vector<TriggerTarget*>::iterator it = targets.begin(); it != targets.end(); it++) {
+      Object* object = (*it)->GetTarget();
+      if ((steps >= targets[num_target]->GetDelay()) && !targets[num_target]->GetTriggered()) {
         // Set trigger on for object. Objects shall put trigger to false once
         // the action has been taken. Note that, recursive triggers may keep setting
         // object trigger continously.
-        if (targets_trigger[num_target])
+        if (targets[num_target]->GetSetTrigger()) {
           object->SetTrigger();
-        else
+        } else {
           object->UnsetTrigger();
-        targets_triggered[num_target] = true;
+        }
+
+        // Enable or disable conditional actions on object
+        object->SetCondActions(targets[num_target]->GetSetTriggerCond() && !object->GetCondActions());
+
+
+        targets[num_target]->SetTriggered(true);
       }
       num_target++;
-
     }
 
     // Check if all triggers have been set.
     bool all_completed = true;
-    for (vector<bool>::iterator it = targets_triggered.begin(); (it != targets_triggered.end()) && all_completed; it++) {
-      if (!(*it)) {
+    for (vector<TriggerTarget*>::iterator it = targets.begin(); (it != targets.end()) && all_completed; it++) {
+      TriggerTarget* trigger_target = *it;
+      if (!(trigger_target->GetTriggered())) {
         all_completed = false;
       }
     }
     if (all_completed) {
       already_triggered = true;
       //printf("[Trigger %d] Completed targets for this trigger!\n", id);
-      for (vector<bool>::iterator it = targets_triggered.begin(); it != targets_triggered.end(); it++) {
-        *it = false;
+      for (vector<TriggerTarget*>::iterator it = targets.begin(); it != targets.end(); it++) {
+        TriggerTarget* trigger_target = *it;
+        trigger_target->SetTriggered(false);
       }
       trigger_targets = false;
       steps = 0;

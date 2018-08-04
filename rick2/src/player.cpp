@@ -25,8 +25,8 @@ Player::Player() : Character() {
 Player::Player(const char* file) : Character(file) {
   type = CHARACTER_PLAYER;
 
-  pos_x = 264;  // REVISIT: should be 0
-  pos_y = 2000; // REVISIT: should be 0
+  pos_x = 296;  // REVISIT: should be 0
+  pos_y = 856; // REVISIT: should be 0
 
   using_bb = true;
   height = 21;  // REVISIT: should be 0

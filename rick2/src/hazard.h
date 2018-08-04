@@ -23,6 +23,8 @@ class Hazard : public Object {
     bool stop_inactive;
     bool completed_trigger;
 
+    bool cond_actions;
+
     // List of actions
     list<Action*> actions;
     list<Action*>::iterator current_action;
@@ -40,16 +42,22 @@ class Hazard : public Object {
     ~Hazard();
 
     // Add new action
-    void AddAction(int direction, int desp, int wait, float speed, bool enabled);
+    void AddAction(int direction, int desp, int wait, float speed, bool enabled, int cond);
 
     // Set the onehot trigger
     void SetTrigger() { trigger = true; }
+
+    // Enable or disable conditional action execution
+    void SetCondActions(bool _cond_actions) { cond_actions = _cond_actions; }
+    bool GetCondActions()                   { return cond_actions; }
 
     int  GetID()      { return obj_id;    }
     int  GetTypeId()  { return hazard_id; };
 
     void ComputeCollisionsPlayer(World* map, Character* player);
     void HazardStep(World* map, Character* player);
+
+    void HandleConditionalActions(list<Action*>::iterator &_current_action);
 };
 
 #endif // HAZARD_H
