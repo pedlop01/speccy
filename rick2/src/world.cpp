@@ -110,11 +110,11 @@ World::World(const char *file, bool tileExtractedOption)
   // Read platforms
   this->InitializePlatforms("../levels/level1/platforms.xml");
   // Read items
-  //this->InitializeItems("../levels/level1/items.xml");
+  this->InitializeItems("../levels/level1/items.xml");
   // Read dynamic background objects
-  //this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
+  this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
   // Read blocks
-  //this->InitializeBlocks("../levels/level1/blocks.xml");
+  this->InitializeBlocks("../levels/level1/blocks.xml");
   // Read hazards
   this->InitializeHazards("../levels/level1/hazards.xml");
   // Read checkpoints
@@ -124,7 +124,7 @@ World::World(const char *file, bool tileExtractedOption)
   // Read triggers
   this->InitializeTriggers("../levels/level1/triggers.xml");
   // Read enemies
-  //this->InitializeEnemies("../levels/level1/enemies.xml");
+  this->InitializeEnemies("../levels/level1/enemies.xml");
   // Read camera views
   this->InitializeCameraViews("../levels/level1/camera_views.xml");
 

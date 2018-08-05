@@ -214,6 +214,7 @@ void Camera::DrawBackObjects(World* world, Character* player, ALLEGRO_FONT *font
                        object->GetX() - GetPosX(),
                        object->GetY() - GetPosY(),
                        object->GetCurrentAnimationBitmapAttributes());
+#ifdef SHOW_BOUNDING_BOXES
         char buffer[30];
         sprintf(buffer, "%d", object->GetId());
         al_draw_text(font,
@@ -222,6 +223,7 @@ void Camera::DrawBackObjects(World* world, Character* player, ALLEGRO_FONT *font
                      object->GetY() - GetPosY(),
                      ALLEGRO_ALIGN_LEFT,
                      buffer);
+#endif
       }
     }
   }
@@ -327,6 +329,7 @@ void Camera::DrawPlatforms(World* world, Character* player, ALLEGRO_FONT *font) 
                    platform->GetX() - GetPosX(),
                    platform->GetY() - GetPosY(),
                    platform->GetCurrentAnimationBitmapAttributes());
+#ifdef SHOW_BOUNDING_BOXES
     char buffer[30];
     sprintf(buffer, "%d", platform->GetTypeId());
     al_draw_text(font,
@@ -335,7 +338,7 @@ void Camera::DrawPlatforms(World* world, Character* player, ALLEGRO_FONT *font) 
                  platform->GetY() - GetPosY(),
                  ALLEGRO_ALIGN_LEFT,
                  buffer);
-
+#endif
   }
 }
 
@@ -486,9 +489,10 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
 
   // Move camera to screen
   al_set_target_bitmap(screen);
+
   al_draw_scaled_bitmap(camera_bitmap,
                         0, 0, pixels_width, pixels_height,
-                        0, 0, 320, 240, 0);
+                        0, 0, SCREEN_X, SCREEN_Y, 0);
 }
 
 void Camera::SetCameraView(CameraView* camera_view) {

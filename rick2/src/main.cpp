@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  bitmap = al_create_bitmap(320, 240);
+  bitmap = al_create_bitmap(SCREEN_X, SCREEN_Y);
   if(!bitmap) {
     printf("Error: failed to create bitmap!\n");
     al_destroy_display(display);
@@ -152,7 +152,8 @@ int main(int argc, char *argv[]) {
 
     // Move bitmap into display
     al_set_target_bitmap(al_get_backbuffer(display));
-    al_draw_scaled_bitmap(bitmap, 0, 0, 320, 240, 0, 0, 640, 480, 0);
+    al_draw_bitmap(bitmap, 0, 0, 0);
+    //al_draw_scaled_bitmap(bitmap, 0, 0, CAMERA_X, CAMERA_Y, 0, 0, SCREEN_X, SCREEN_Y, 0);
     al_flip_display();
 
     // Start counter again for next iteration
