@@ -44,7 +44,9 @@ class Camera
     World*          map;
 
     int prev_camera_view;
-    int current_camera_view;    
+    int current_camera_view;
+
+    int steps_drawing;
 
   public:
     Camera();

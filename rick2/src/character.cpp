@@ -667,10 +667,10 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
         break;
 
       case CHAR_STATE_HITTING:
-        if (keyboard.PressedSpace() && keyboard.PressedLeft()) {
+        if (keyboard.PressedSpace() && keyboard.PressedLeft() && (stepsInState < 20)) {  // REVISIT: this value should be a param
           state = CHAR_STATE_HITTING;
           direction = CHAR_DIR_LEFT;
-        } else if (keyboard.PressedSpace() && keyboard.PressedRight()) {
+        } else if (keyboard.PressedSpace() && keyboard.PressedRight() && (stepsInState < 20)) {
           state = CHAR_STATE_HITTING;
           direction = CHAR_DIR_RIGHT;
         } else {

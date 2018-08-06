@@ -18,6 +18,7 @@ Camera::Camera() {
   screen = 0;
   current_camera_view = 0;
   prev_camera_view = 0;
+  steps_drawing = 0;
 }
 
 Camera::~Camera() {
@@ -405,10 +406,18 @@ void Camera::DrawEnemies(World* world, Character* player, ALLEGRO_FONT *font) {
     if (enemy->GetState() != CHAR_STATE_DEAD) {
 
       ALLEGRO_BITMAP* enemy_bitmap = enemy->GetCurrentAnimationBitmap();
-      al_draw_bitmap(enemy_bitmap,
-                     enemy->GetPosX() - GetPosX(),
-                     enemy->GetPosY() - GetPosY(),
-                     enemy->GetCurrentAnimationBitmapAttributes());
+      if(!enemy->GetFreezed() || ((steps_drawing % 4) == 0)) {
+        al_draw_bitmap(enemy_bitmap,                       
+                       enemy->GetPosX() - GetPosX(),
+                       enemy->GetPosY() - GetPosY(),
+                       enemy->GetCurrentAnimationBitmapAttributes());
+      } else {
+        al_draw_tinted_bitmap(enemy_bitmap,
+                              al_map_rgba_f(1, 0, 0, 1),
+                              enemy->GetPosX() - GetPosX(),
+                              enemy->GetPosY() - GetPosY(),
+                              enemy->GetCurrentAnimationBitmapAttributes());
+      }
 #ifdef SHOW_BOUNDING_BOXES
       // Draw the enemy in front of back tiles
       al_draw_rectangle(enemy->GetPosX() - GetPosX() + 1,
@@ -493,6 +502,8 @@ void Camera::DrawScreen(World* world, Character* player, ALLEGRO_FONT *font) {
   al_draw_scaled_bitmap(camera_bitmap,
                         0, 0, pixels_width, pixels_height,
                         0, 0, SCREEN_X, SCREEN_Y, 0);
+
+  steps_drawing++;
 }
 
 void Camera::SetCameraView(CameraView* camera_view) {

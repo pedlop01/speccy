@@ -5,6 +5,8 @@
 // class constructor
 Enemy::Enemy() : Character() {
   type = CHARACTER_ENEMY;
+  freezed = false;
+  steps_freezed = 0;
 }
 
 Enemy::Enemy(const char* file,
@@ -38,6 +40,9 @@ Enemy::Enemy(const char* file,
   speed_x_max = _speed_x;
   speed_y_max = _speed_y;
 
+  freezed = false;
+  steps_freezed = 0;
+
   ia = new EnemyIA(_ia_type, _ia_random, _ia_randomness, _ia_block_steps, pos_x, pos_y, _ia_orig_x, _ia_orig_y, _ia_limit_x, _ia_limit_y);
 }
 
@@ -54,15 +59,23 @@ void Enemy::CharacterStep(World* map, Character* player) {
 
   keyboard_enemy.SetKeys(0);
 
-  if (state != CHAR_STATE_DYING) {
+  if (!freezed) {
+    if (state != CHAR_STATE_DYING) {
 
-    this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
+      this->GetCollisionsInternalWeightBoxExt(map, weightColExt);
 
-    // Check if there is a collision with the player
-    this->CheckCollisionPlayer(map, player);
+      // Check if there is a collision with the player
+      this->CheckCollisionPlayer(map, player);
 
-    ia->IAStep(keyboard_enemy,
-               (Player*)player, this);
+      ia->IAStep(keyboard_enemy,
+                 (Player*)player, this);
+    }
+  } else {
+    steps_freezed++;
+    if (steps_freezed > 100) {
+      steps_freezed = 0;
+      freezed = false;
+    }
   }
 
   Character::CharacterStep(map, keyboard_enemy);
@@ -128,7 +141,17 @@ bool Enemy::CheckCollisionPlayer(World* map, Character* player) {
                             player->GetBBHeight()));
 
   if (playerCol) {
-    player->SetKilled(map);
+    if ((player->GetState() == CHAR_STATE_HITTING) &&
+        (player->GetDirection() == CHAR_DIR_RIGHT) &&
+        (player->GetPosX() < pos_x)) {
+      freezed = true;
+    } else if ((player->GetState() == CHAR_STATE_HITTING) &&
+               (player->GetDirection() == CHAR_DIR_LEFT) &&
+               (player->GetPosX() > pos_x)) {
+      freezed = true;
+    } else {
+      player->SetKilled(map);
+    }
   }
 }
 

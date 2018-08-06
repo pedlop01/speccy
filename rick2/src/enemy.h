@@ -18,6 +18,9 @@ class Enemy : public Character {
     EnemyIA* ia;
     Colbox weightColExt;
 
+    int  steps_freezed;
+    bool freezed;
+
   private:
     bool BoxWithinBox(int a_x, int a_y, int a_width, int a_height,
                       int b_x, int b_y, int b_width, int b_height);
@@ -44,6 +47,7 @@ class Enemy : public Character {
     bool GetOverStairs();
     bool GetInFloor();
     Colbox* GetWeightColExt();
+    bool GetFreezed() { return freezed; }
 
     EnemyIA* GetEnemyIA();
 };
