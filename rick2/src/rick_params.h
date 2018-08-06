@@ -1,8 +1,8 @@
 #define SCREEN_X 1280
 #define SCREEN_Y 960
 
-#define CAMERA_X 320
-#define CAMERA_Y 240
+#define CAMERA_X 256
+#define CAMERA_Y 200
 
 #define TILE_COL        308
 #define TILE_COL_DOWN   309

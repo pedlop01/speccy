@@ -22,6 +22,7 @@
 #include "colbox.h"
 #include "object.h"
 #include "platform.h"
+#include "sound_handler.h"
 
 using namespace std;
 
@@ -37,6 +38,8 @@ int main(int argc, char *argv[]) {
   Keyboard               keyboard;
   Camera                 camera;
   Timer                  timer;
+  SoundHandler           sound_handler;
+
 
   // Check arguments
   if(argc != 1) {
@@ -94,6 +97,21 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  if(!al_install_audio()) {
+    printf("Error: failed to initialize audio!\n");
+    return -1;
+  }
+
+  if(!al_init_acodec_addon()) {
+    printf("Error: failed to initialize audio codecs!\n");
+    return -1;
+  }
+
+  if(!al_reserve_samples(16)) {  // REVISIT: define this as a param?
+    printf("Error: failed to reserve samples!\n");
+    return -1;
+  }
+
   al_set_target_bitmap(bitmap);
   al_clear_to_color(al_map_rgb(0, 0, 0));
   al_set_target_bitmap(al_get_backbuffer(display));
@@ -109,13 +127,18 @@ int main(int argc, char *argv[]) {
   al_register_event_source(event_queue, al_get_keyboard_event_source());
 
   // Game initializations
-  map_level1 = new World("../maps/level1/Map1_prueba.tmx", false);
+  map_level1 = new World("../maps/level1/Map1_prueba.tmx", &sound_handler, false);
   camera.InitCamera(0, 0, CAMERA_X, CAMERA_Y, map_level1, bitmap);
   player = new Player("../characters/rick.xml");
   player->RegisterCamera(&camera);
+  player->RegisterSoundHandler(&sound_handler);
 
   // Start counter for first iteration
   timer.StartCounter();
+
+  // Initialize sounds and start playing music for level 1 (the only implemented at this moment)
+  sound_handler.InitializeSounds();
+  sound_handler.PlayMusic(0);
 
   // Main loop
   do {
@@ -152,8 +175,7 @@ int main(int argc, char *argv[]) {
 
     // Move bitmap into display
     al_set_target_bitmap(al_get_backbuffer(display));
-    al_draw_bitmap(bitmap, 0, 0, 0);
-    //al_draw_scaled_bitmap(bitmap, 0, 0, CAMERA_X, CAMERA_Y, 0, 0, SCREEN_X, SCREEN_Y, 0);
+    al_draw_bitmap(bitmap, 0, 0, 0);    
     al_flip_display();
 
     // Start counter again for next iteration

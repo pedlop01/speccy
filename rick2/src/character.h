@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include "colbox.h"
 #include "animation.h"
+#include "sound_handler.h"
 
 #define CHARACTER_PLAYER 0
 #define CHARACTER_ENEMY  1
@@ -107,6 +108,8 @@ class Character {
     // - Needed to localize rick in the screen. Used for some animations.
     Camera* camera;
 
+    SoundHandler* sound_handler;
+
   public:    
 	  Character();    // class constructor
     Character(const char* file);    
@@ -152,6 +155,7 @@ class Character {
     void ComputeNextPosition(World* map);
     void ComputeNextPositionBasedOnBlocks(World* map, Keyboard& keyboard);   // REVISIT: using keyboard to test block destruction
     void ComputeNextSpeed();
+    void ComputeNextSound();
 
     void CharacterStep(World* map, Keyboard& keyboard);
 
@@ -170,6 +174,8 @@ class Character {
 
     int GetStepsInDirectionX() { return stepsInDirectionX; }
     int GetStepsInDirectionY() { return stepsInDirectionY; }
+
+    void RegisterSoundHandler(SoundHandler* handler) { sound_handler = handler; }
 
   protected:
     void FixHorizontalDirection(Keyboard& keyboard);

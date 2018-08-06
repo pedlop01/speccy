@@ -472,7 +472,8 @@ void Character::FixHorizontalDirection(Keyboard& keyboard) {
   }
 }
 
-void Character::ComputeNextState(World* map, Keyboard& keyboard) {  
+void Character::ComputeNextState(World* map, Keyboard& keyboard) {
+  bool created = false;
   int prevDirection;
   
   // Save current state before computing next state
@@ -633,9 +634,12 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
 
       case CHAR_STATE_SHOOTING:
         if (face == CHAR_DIR_RIGHT) {
-          map->CreateNewShoot(pos_x + 23, pos_y + 8, OBJ_DIR_RIGHT);
+          created = map->CreateNewShoot(pos_x + 23, pos_y + 8, OBJ_DIR_RIGHT);
         } else {
-          map->CreateNewShoot(pos_x - 10, pos_y + 8, OBJ_DIR_LEFT);
+          created = map->CreateNewShoot(pos_x - 10, pos_y + 8, OBJ_DIR_LEFT);
+        }
+        if (created) {
+          sound_handler->PlaySound(FX_SHOT, false);
         }
         if (!(keyboard.PressedSpace() && keyboard.PressedUp())) {
           state = CHAR_STATE_STOP;
@@ -645,15 +649,18 @@ void Character::ComputeNextState(World* map, Keyboard& keyboard) {
       case CHAR_STATE_BOMBING:
         if (keyboard.PressedLeft()) {              
           direction = CHAR_DIR_LEFT;
-          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_LEFT);
+          created = map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_LEFT);
         } else if (keyboard.PressedRight()) {
           direction = CHAR_DIR_RIGHT;
-          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_RIGHT);
+          created = map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_RIGHT);
         } else {
           direction = CHAR_DIR_STOP;
-          map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_STOP);
+          created = map->CreateNewBomb(pos_x, pos_y, OBJ_DIR_STOP);
         }
 
+        if (created) {
+          sound_handler->PlaySound(FX_BOMB, false);
+        }
         if (!(keyboard.PressedSpace() && keyboard.PressedDown())) {
           state = CHAR_STATE_STOP;
         }
@@ -912,6 +919,23 @@ void Character::ComputeNextSpeed() {
   //printf("speed_y = %f\n", speed_y);
 }
 
+void Character::ComputeNextSound() {
+  if (type != CHARACTER_PLAYER)
+    return;
+
+  if (prevState != state) {
+    //if (state == CHAR_STATE_RUNNING) {      
+    //  sound_handler->PlaySound(FX_WALK, true);
+    //} else if (prevState == CHAR_STATE_RUNNING) {
+    //  sound_handler->StopSound(FX_WALK);
+    //}
+
+    if (state == CHAR_STATE_DYING) {
+      sound_handler->PlaySound(FX_SCREAM, false);
+    }
+  }
+}
+
 void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Collisions with world and platforms
   //printf("[CharacterStep] ComputeCollisions\n");
@@ -923,7 +947,9 @@ void Character::CharacterStep(World* map, Keyboard& keyboard) {
   // Compute next position 
   //printf("[CharacterStep] ComputeNextPosition\n");
   this->ComputeNextPositionBasedOnBlocks(map, keyboard);
-  this->ComputeNextPosition(map);  
+  this->ComputeNextPosition(map);
+  // Compute sound based on state
+  this->ComputeNextSound();
   // Re-calulate speed
   //printf("[CharacterStep] ComputeNextSpeed\n");
   this->ComputeNextSpeed();

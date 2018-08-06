@@ -526,8 +526,8 @@ bool Camera::CoordsWithinCamera(int x, int y) {
 void Camera::CameraStep(World* world, Character *player, ALLEGRO_FONT *font) {
   // Check in which camera view the player is
   //printf("[CameraStep] Calling to set camera view\n");
-  //CameraView* camera_view = world->GetCurrentCameraView(player);
-  //this->SetCameraView(camera_view);
+  CameraView* camera_view = world->GetCurrentCameraView(player);
+  this->SetCameraView(camera_view);
 
   this->PositionBasedOnPlayer(player);
   //printf("[CameraStep] Camera draw screen\n");

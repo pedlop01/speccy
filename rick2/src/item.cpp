@@ -29,13 +29,16 @@ void Item::UpdateFSMState(World* map) {
       if (playerCol) {
         if(strcmp(name, "bonus") != 0) {
           state = OBJ_STATE_DEAD;
+          sound_handler->PlaySound(FX_RING, false);
         } else {
           state = OBJ_STATE_DYING;
+          sound_handler->PlaySound(FX_BONUS, false);
         }
       } else if (killed) {
         if(strcmp(name, "bonus") != 0) {
           state = OBJ_STATE_DYING;
           direction = OBJ_DIR_STOP;
+          sound_handler->PlaySound(FX_EXPLOSION, false);
         } else {
           state = OBJ_STATE_DEAD;
         }

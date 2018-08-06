@@ -8,6 +8,7 @@
 #include "pugixml.hpp"
 #include "animation.h"
 #include "colbox.h"
+#include "sound_handler.h"
 
 // Object types
 #define OBJ_NONE         0
@@ -150,6 +151,8 @@ class Object {
 
     pugi::xml_document obj_file;
 
+    SoundHandler* sound_handler;
+
   public:
 
     Object();
@@ -252,6 +255,8 @@ class Object {
     void SetKilled()   { killed = true;  }
     void UnsetKilled() { killed = false; }
 
+    void RegisterSoundHandler(SoundHandler* _sound_handler) { sound_handler = _sound_handler; }
+    
   protected:
     virtual void UpdateFSMState(World* map);
 

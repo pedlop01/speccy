@@ -26,6 +26,7 @@
 #include "shoot.h"
 #include "bomb.h"
 #include "character.h"
+#include "sound_handler.h"
 
 using namespace std;
 
@@ -113,7 +114,7 @@ class World
         
 	public:		
 		World();                          // class constructor		
-    World(const char *file, bool b);  // class constructor		
+    World(const char *file, SoundHandler* sound_handler, bool b);  // class constructor		
 		~World();                         // class destructor
 		
         int   GetMapWidth();
@@ -152,7 +153,7 @@ class World
         void  WorldStep(Character* player);
 
         void  InitializePlatforms(const char* file);
-        void  InitializeItems(const char* file);
+        void  InitializeItems(const char* file, SoundHandler* sound_handler);
         void  InitializeDynamicBackObjects(const char* file);
         void  InitializeBlocks(const char* file);
         void  InitializeHazards(const char* file);
@@ -162,8 +163,8 @@ class World
         void  InitializeEnemies(const char* file);
         void  InitializeCameraViews(const char* file);
 
-        void  CreateNewShoot(int x, int y, int direction);
-        void  CreateNewBomb(int x, int y, int direction);
+        bool  CreateNewShoot(int x, int y, int direction);
+        bool  CreateNewBomb(int x, int y, int direction);
 
     private:
 

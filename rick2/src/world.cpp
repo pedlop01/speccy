@@ -9,7 +9,7 @@ World::World()
 {
 }
 
-World::World(const char *file, bool tileExtractedOption)
+World::World(const char *file, SoundHandler* sound_handler, bool tileExtractedOption)
 {
   // REVISIT: need to read collision map
   char aux_file[100];
@@ -110,7 +110,7 @@ World::World(const char *file, bool tileExtractedOption)
   // Read platforms
   this->InitializePlatforms("../levels/level1/platforms.xml");
   // Read items
-  this->InitializeItems("../levels/level1/items.xml");
+  this->InitializeItems("../levels/level1/items.xml", sound_handler);
   // Read dynamic background objects
   this->InitializeDynamicBackObjects("../levels/level1/anim_tiles.xml");
   // Read blocks
@@ -385,7 +385,7 @@ void World::InitializeHazards(const char* file) {
   printf("---------------------------\n");
 }
 
-void World::InitializeItems(const char* file) {
+void World::InitializeItems(const char* file, SoundHandler* sound_handler) {
   int item_id;
   int item_ini_x;
   int item_ini_y;
@@ -431,6 +431,7 @@ void World::InitializeItems(const char* file) {
                      OBJ_STATE_STOP, OBJ_DIR_STOP,
                      0.1, 3.0, 1.0,
                      0.1, 3.0, 1.0);
+    world_item->RegisterSoundHandler(sound_handler);
 
     objects.push_back(world_item);
   }  
@@ -1238,16 +1239,21 @@ void World::WorldStep(Character* player) {
   //printf("[WorldStep] Completed!\n");  
 }
 
-void World::CreateNewShoot(int x, int y, int direction) {
+bool World::CreateNewShoot(int x, int y, int direction) {
+  bool created = false;
   // Allow only one shoot to be created right now
   if (!shoot_exists) {
     Shoot* shoot = new Shoot("../designs/shoot/shoot.xml", x, y, 12, 6, direction);
     objects.push_back(shoot);
     shoot_exists = true;
+    created = true;
   }
+
+  return created;
 }
 
-void World::CreateNewBomb(int x, int y, int direction) {
+bool World::CreateNewBomb(int x, int y, int direction) {
+  bool created = false;
   // Allow only one bomb to be created right now
   if (!bomb_exists) {    
     printf("CreateNewBomb x=%d, y=%d\n", x, y);
@@ -1256,7 +1262,10 @@ void World::CreateNewBomb(int x, int y, int direction) {
     shoot->SetBoundingBox(8, 10, 10, 13);
     objects.push_back(shoot);
     bomb_exists = true;
+    created = true;
   }
+
+  return created;
 }
 
 Platform* World::GetPlatform(int id) {
