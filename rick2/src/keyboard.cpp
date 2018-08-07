@@ -16,6 +16,8 @@ int Keyboard::ReadKeyboard(ALLEGRO_EVENT_QUEUE *event_queue) {
   while(!al_is_event_queue_empty(event_queue)) {
 
     al_wait_for_event(event_queue, &ev);
+    keyEvent = false;
+    keyDown = false;
 
     if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
       keyEvent = true;
