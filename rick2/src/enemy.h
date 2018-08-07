@@ -43,10 +43,12 @@ class Enemy : public Character {
 
     void CharacterStep(World* map, Character* player);
 
+    Colbox* GetWeightColExt();
+    Colbox* GetHeightColExt();
+
     void SetKilled();
     bool GetOverStairs();
     bool GetInFloor();
-    Colbox* GetWeightColExt();
     bool GetFreezed() { return freezed; }
 
     EnemyIA* GetEnemyIA();

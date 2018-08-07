@@ -71,14 +71,19 @@ bool EnemyIA::RandomDecision(Keyboard& keyboard, int direction, int steps_in_x) 
   return false;
 }
 
-bool EnemyIA::WalkerDecision(Keyboard& keyboard, int direction, bool col_right, bool col_left) {
+bool EnemyIA::WalkerDecision(Keyboard& keyboard,
+                             int direction,
+                             bool col_right,
+                             bool col_left,
+                             bool no_floor_right,
+                             bool no_floor_left) {
   if (direction & CHAR_DIR_RIGHT) {
-    if (col_right) {
+    if (col_right || no_floor_right) {
       keyboard.SetKeys(KEY_LEFT);
       return true;
     }
   } else if (direction & CHAR_DIR_LEFT) {
-    if (col_left) {
+    if (col_left || no_floor_left) {
       keyboard.SetKeys(KEY_RIGHT);
       return true;
     }
@@ -153,11 +158,29 @@ void EnemyIA::SetKeyboardBasedOnDirection(Keyboard& keyboard, int direction) {
 }
 
 void EnemyIA::IAStepWalker(Keyboard &keyboard,
-                           int state, int direction, int x, int y,
-                           bool col_right, bool col_left,
-                           int steps_in_x) {
+                           Player* player, Enemy* enemy) {
 
   bool disable_decisions = (wait_for_decision < block_steps);
+
+  int state = enemy->GetState();
+  int direction = enemy->GetDirection();
+  int x = enemy->GetPosX();
+  int y = enemy->GetPosY();
+  int steps_in_x = enemy->GetStepsInDirectionX();
+
+  bool col_right = (enemy->GetWeightColExt()->GetRightDownCol() == TILE_COL) ||
+                   (enemy->GetWeightColExt()->GetRightUpCol() == TILE_COL);
+
+  bool col_left  = (enemy->GetWeightColExt()->GetLeftDownCol() == TILE_COL) ||
+                   (enemy->GetWeightColExt()->GetLeftUpCol() == TILE_COL);
+
+  bool no_floor_left = (enemy->GetDirection() == CHAR_DIR_LEFT) &&
+                       (enemy->GetHeightColExt()->GetLeftDownCol() == 0) &&
+                       (enemy->GetHeightColExt()->GetRightDownCol() != 0);
+
+  bool no_floor_right = (enemy->GetDirection() == CHAR_DIR_RIGHT) &&
+                        (enemy->GetHeightColExt()->GetRightDownCol() == 0) &&
+                        (enemy->GetHeightColExt()->GetLeftDownCol() != 0);
 
   // No IA actions until enemy is in floor  
   if (state == CHAR_STATE_JUMPING)
@@ -170,7 +193,7 @@ void EnemyIA::IAStepWalker(Keyboard &keyboard,
     wait_for_decision = 0;
   }
 
-  this->WalkerDecision(keyboard, direction, col_right, col_left);
+  this->WalkerDecision(keyboard, direction, col_right, col_left, no_floor_right, no_floor_left);
   wait_for_decision++;
 
   // If crossing limits, then recompute decision
@@ -178,12 +201,33 @@ void EnemyIA::IAStepWalker(Keyboard &keyboard,
 }
 
 void EnemyIA::IAStepChaser(Keyboard &keyboard,
-                           int player_x, int player_y,
-                           int state, int direction, int x, int y,
-                           bool col_right, bool col_left, bool over_stairs, bool in_floor,
-                           int steps_in_x) {
+                           Player* player, Enemy* enemy) {
 
   bool disable_decisions = (wait_for_decision < block_steps);
+  bool in_floor = enemy->GetInFloor();
+
+  int player_x = player->GetPosX();
+  int player_y = player->GetPosY();
+  int state = enemy->GetState();
+  int direction = enemy->GetDirection();
+  int x = enemy->GetPosX();
+  int y = enemy->GetPosY();
+  bool over_stairs = enemy->GetOverStairs();
+  int steps_in_x = enemy->GetStepsInDirectionX();
+
+  bool col_right = (enemy->GetWeightColExt()->GetRightDownCol() == TILE_COL) ||
+                   (enemy->GetWeightColExt()->GetRightUpCol() == TILE_COL);
+
+  bool col_left  = (enemy->GetWeightColExt()->GetLeftDownCol() == TILE_COL) ||
+                   (enemy->GetWeightColExt()->GetLeftUpCol() == TILE_COL);
+
+  bool no_floor_left = (enemy->GetDirection() == CHAR_DIR_LEFT) &&
+                       (enemy->GetHeightColExt()->GetLeftDownCol() == 0) &&
+                       (enemy->GetHeightColExt()->GetRightDownCol() != 0);
+
+  bool no_floor_right = (enemy->GetDirection() == CHAR_DIR_RIGHT) &&
+                        (enemy->GetHeightColExt()->GetRightDownCol() == 0) &&
+                        (enemy->GetHeightColExt()->GetLeftDownCol() != 0);
 
   // No IA actions until enemy is in floor
   if (state == CHAR_STATE_JUMPING)
@@ -196,7 +240,7 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
     wait_for_decision = 0;
   }
 
-  if((state == CHAR_STATE_RUNNING) && this->WalkerDecision(keyboard, direction, col_right, col_left)) {    
+  if((state == CHAR_STATE_RUNNING) && this->WalkerDecision(keyboard, direction, col_right, col_left, no_floor_right, no_floor_left)) {    
     wait_for_decision = 0;
   }
   
@@ -220,33 +264,16 @@ void EnemyIA::IAStepChaser(Keyboard &keyboard,
 
 void EnemyIA::IAStep(Keyboard &keyboard,
                      Player* player, Enemy* enemy) {
-  int player_x = player->GetPosX();
-  int player_y = player->GetPosY();
-  int state = enemy->GetState();
-  int direction = enemy->GetDirection();
-  int x = enemy->GetPosX();
-  int y = enemy->GetPosY();
-  bool over_stairs = enemy->GetOverStairs();
-  bool in_floor = enemy->GetInFloor();
-  int steps_in_x = enemy->GetStepsInDirectionX();
-  bool col_right;
-  bool col_left;  
-
-  col_right = (enemy->GetWeightColExt()->GetRightDownCol() == TILE_COL) ||
-              (enemy->GetWeightColExt()->GetRightUpCol() == TILE_COL);
-
-  col_left  = (enemy->GetWeightColExt()->GetLeftDownCol() == TILE_COL) ||
-              (enemy->GetWeightColExt()->GetLeftUpCol() == TILE_COL);
-
   switch(type) {
     case ENEMY_IA_WALKER:
-      this->IAStepWalker(keyboard, state, direction, x, y, col_right, col_left, steps_in_x);
+      this->IAStepWalker(keyboard, player, enemy);
       break;
     case ENEMY_IA_CHASER:
-      // A chaser only behaves as a chaser if player is on the limits
-      if (this->IsLimited() && this->OnIALimits(player_x, player_y))
-        this->IAStepChaser(keyboard, player_x, player_y, state, direction, x, y, col_right, col_left, over_stairs, in_floor, steps_in_x);
-      // REVISIT: I would rather prefer doing something when no in limits
+      // A chaser only behaves as a chaser if player is on its limits
+      if (this->IsLimited() && this->OnIALimits(player->GetPosX(), player->GetPosY()))
+        this->IAStepChaser(keyboard, player, enemy);
+      else
+        this->IAStepWalker(keyboard, player, enemy);
       break;
     default:
       break;

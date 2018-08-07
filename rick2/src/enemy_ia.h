@@ -38,7 +38,7 @@ class EnemyIA {
 
   private:
     bool RandomDecision(Keyboard& keyboard, int direction, int steps_in_x);
-    bool WalkerDecision(Keyboard& keyboard, int direction, bool col_right, bool col_left);  // Returns true if change of direction
+    bool WalkerDecision(Keyboard& keyboard, int direction, bool col_right, bool col_left, bool no_floor_right, bool no_floor_left);  // Returns true if change of direction
     void ChaserDecision(Keyboard& keyboard, bool block_hor, int player_x, int player_y, int enemy_x, int enemy_y, int _enemy_state, bool over_stairs, bool in_floor);
     bool CorrectDecisionBasedOnLimits(Keyboard& keyboard, int x, int y, int direction);
 
@@ -62,15 +62,10 @@ class EnemyIA {
     void SetKeyboardBasedOnDirection(Keyboard& keyboard, int direction);
 
     void IAStepWalker(Keyboard &keyboard,
-                      int state, int direction, int x, int y,
-                      bool col_right, bool col_left,
-                      int steps_in_x);
+                      Player* player, Enemy* enemy);
 
     void IAStepChaser(Keyboard &keyboard,
-                      int player_x, int player_y,
-                      int state, int direction, int x, int y,
-                      bool col_right, bool col_left, bool over_stairs, bool in_floor,
-                      int steps_in_x);
+                      Player* player, Enemy* enemy);
 
     void IAStep(Keyboard &keyboard,
                 Player* player, Enemy* enemy);

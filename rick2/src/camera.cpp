@@ -437,6 +437,14 @@ void Camera::DrawEnemies(World* world, Character* player, ALLEGRO_FONT *font) {
                         enemy->GetPosX() + enemy->GetBBX() + enemy->GetBBWidth() - 1 - GetPosX() + 1,
                         enemy->GetPosY() + enemy->GetBBY() + enemy->GetBBHeight() - 1 - GetPosY() + 1,
                         al_map_rgb(0xAF, 0xAF, 0xAF), 1.0);
+      char buffer[30];
+      sprintf(buffer, "%d", enemy->GetId());
+      al_draw_text(font,
+                   al_map_rgb(255, 255, 0),
+                   enemy->GetPosX() - GetPosX(),
+                   enemy->GetPosY() - GetPosY(),
+                   ALLEGRO_ALIGN_LEFT,
+                   buffer);
       // If limited area for IA then show the limits
       if (enemy->GetEnemyIA()->IsLimited()) {
         al_draw_rectangle(enemy->GetEnemyIA()->GetOrigX() - GetPosX() + 1,

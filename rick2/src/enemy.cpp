@@ -96,6 +96,10 @@ Colbox* Enemy::GetWeightColExt() {
   return &weightColExt;
 }
 
+Colbox* Enemy::GetHeightColExt() {
+  return &heightColExt;
+}
+
 bool Enemy::CheckCollisionPlayer(World* map, Character* player) {
   int col_x;
   int col_y;
