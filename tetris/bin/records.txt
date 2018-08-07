@@ -1,0 +1,10 @@
+Lna,127,4840
+Pedro,72,2700
+Lna,45,1660
+Lna,20,1530
+Pedro,11,330
+Helena,2,120
+Helena,1,10
+Pedro,1,0
+Pedro,2,1
+Pedro,3,2
