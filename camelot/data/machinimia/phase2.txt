@@ -1,4 +1,0 @@
-total_animations 1 
-animation 1
-sec television2 50 
-end_animation 

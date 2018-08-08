@@ -1,5 +1,0 @@
-NumObjects 4
-0 411 1244 0 explosion explosion.txt
-1 781 290 1 bombilla bombilla.txt
-2 415 1413 0 bombilla2 bombilla.txt  
-3 327 1300 0 rayo rayo.txt 

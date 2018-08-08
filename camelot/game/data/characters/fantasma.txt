@@ -1,0 +1,56 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje fantasma
+
+bitmap  fantasma.bmp
+screenx 320
+screeny 200
+
+animaciones 9
+
+animacion parada 
+num_frames 1 
+velocidad 0 
+frame 1 1 24 32 0 0 
+
+animacion caminar_derecha 
+num_frames 2 
+velocidad 100 
+frame 1 1 24 32 0 0 
+frame 26 1 49 32 1 0 
+
+animacion caminar_saltando
+num_frames 2 
+velocidad 100 
+frame 1 1 24 32 0 0 
+frame 26 1 49 32 1 0 
+
+animacion caminar_cayendo 
+num_frames 2 
+velocidad 100 
+frame 1 1 24 32 0 0 
+frame 26 1 49 32 1 0 
+
+
+animacion coger_espada 
+num_frames 0
+velocidad 100 
+
+animacion golpeando   
+num_frames 0
+velocidad 100 
+
+animacion en_guardia  
+num_frames 0
+velocidad 100 
+
+animacion agachado  
+num_frames 0
+velocidad 100 
+
+animacion muerto  
+num_frames 3
+velocidad 100 
+frame 1 34 24 65 0 0 
+frame 26 34 49 65 1 0 
+frame 51 34 74 65 2 0 

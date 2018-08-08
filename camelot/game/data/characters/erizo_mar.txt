@@ -1,0 +1,15 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje erizo_mar
+
+bitmap  erizo_mar.bmp 
+screenx 320
+screeny 200
+
+animaciones 1
+
+animacion parada 
+num_frames 2 
+velocidad 300 
+frame 1 1 29 17 0 0 
+frame 31 1 60 17 1 0 

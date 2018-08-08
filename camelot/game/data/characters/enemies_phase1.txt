@@ -1,0 +1,17 @@
+NumEnemies 16
+1 1 1 1 0 3020 1049 1984 0 6 bolita.txt 
+2 1 1 1 0 570 665 182 0 2 bolita.txt 
+3 1 1 2 0 1036 1433 1984 0 6 bolita.txt 
+4 2 1 2 0 700 560 242 0 2 mosca.txt 
+5 2 1 2 0 3075 200 460 0 2 mosca.txt 
+6 2 1 2 0 960 200 2030 0 6 mosca.txt 
+7 2 1 2 0 3380 1240 340 0 3 mosca.txt 
+8 3 1 1 0 3743 688 -246 -2 1 hipopotamo.txt 
+9 3 1 2 0 970 336 2020 0 1 hipopotamo.txt 
+10 3 1 2 0 571 1456 360 0 1 hipopotamo.txt 
+11 4 0 2 0 3362 1377 0 0 1 planta.txt 
+12 5 0 2 0 330 1350 0 0 1 bombolles.txt 
+13 6 3 2 0 3800 80 124 240 1 mosca.txt 
+14 6 3 2 0 240 300 184 240 2 buho.txt 
+15 6 3 2 0 120 900 200 310 2 buho.txt 
+16 7 2 0 1 3780 1400 0 400 1 bombolla.txt 

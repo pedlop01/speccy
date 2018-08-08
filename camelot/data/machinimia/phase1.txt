@@ -1,6 +1,0 @@
-total_animations 1 
-animation 1
-par bombilla2 25   
-par rayo 3 
-sec explosion 1 
-end_animation 

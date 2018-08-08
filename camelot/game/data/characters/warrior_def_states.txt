@@ -1,0 +1,192 @@
+#define WARRIOR_PARADO 
+#define WARRIOR_CAMINANDO 
+#define WARRIOR_SALTANDO 
+#define WARRIOR_CAYENDO 
+#define WARRIOR_COGER_ESPADA 
+#define WARRIOR_GOLPEANDO 
+#define WARRIOR_EN_GUARDIA 
+#define WARRIOR_AGACHADO 
+#define WARRIOR_EN_ESCALERAS_LEFT_PARADO
+#define WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+#define WARRIOR_EN_ESCALERAS_RIGHT_PARADO
+#define WARRIOR_EN_ESCALERAS_RIGHT_CAMINANDO
+#define WARRIOR_RANA_PARADO 
+#define WARRIOR_RANA_CAMINANDO 
+#define WARRIOR_RANA_SALTANDO 
+#define WARRIOR_RANA_CAYENDO 
+
+#initial_state WARRIOR_CAMINANDO WARRIOR_CAYENDO  
+
+#transition WARRIOR_PARADO WARRIOR_CAYENDO 
+            1 col ! 1 
+            0
+#transition WARRIOR_PARADO WARRIOR_CAMINANDO 
+            1 key = LEFT 
+            1 SET_DIR_LEFT 
+#transition WARRIOR_PARADO WARRIOR_CAMINANDO 
+            1 key = RIGHT 
+            1 SET_DIR_RIGHT 
+#transition WARRIOR_PARADO WARRIOR_COGER_ESPADA 
+            1 key = FIRE 
+            1 TAKE_MSEG  
+#transition WARRIOR_PARADO WARRIOR_AGACHADO 
+            1 key = UP 
+            1 TAKE_MSEG 
+#transition WARRIOR_PARADO WARRIOR_PARADO 
+            1 key = NO_KEY 
+            0 
+
+#transition WARRIOR_CAMINANDO WARRIOR_AGACHADO 
+            1 key = UP 
+            1 TAKE_MSEG 
+#transition WARRIOR_CAMINANDO WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+            1 stairs_left = 1
+            0 
+#transition WARRIOR_CAMINANDO WARRIOR_CAYENDO 
+            1 col ! 1 
+            0 
+#transition WARRIOR_CAMINANDO WARRIOR_COGER_ESPADA 
+            1 key = FIRE 
+            1 TAKE_MSEG 
+#transition WARRIOR_CAMINANDO WARRIOR_CAMINANDO 
+            1 key = LEFT 
+            2 TAKE_MSEG 
+              SET_DIR_LEFT
+#transition WARRIOR_CAMINANDO WARRIOR_CAMINANDO 
+            1 key = RIGHT 
+            2 TAKE_MSEG 
+              SET_DIR_RIGHT
+#transition WARRIOR_CAMINANDO WARRIOR_PARADO 
+            1 key = NO_KEY 
+            0 
+
+#transition WARRIOR_AGACHADO WARRIOR_SALTANDO 
+            2 time > 100 
+              prev_state ! WARRIOR_CAYENDO 
+            3 TAKE_CHK_PIXEL_X 
+              TAKE_CHK_PIXEL_Y 
+              TAKE_MSEG 
+#transition WARRIOR_AGACHADO WARRIOR_PARADO 
+            2 time > 100 
+              prev_state = WARRIOR_CAYENDO 
+            0 
+
+#transition WARRIOR_CAYENDO WARRIOR_AGACHADO 
+            1 col = 1 
+            1 TAKE_MSEG 
+#transition WARRIOR_CAYENDO WARRIOR_CAYENDO 
+            1 key = LEFT 
+            0 
+#transition WARRIOR_CAYENDO WARRIOR_CAYENDO 
+            1 key = RIGHT 
+            0 
+
+#transition WARRIOR_COGER_ESPADA WARRIOR_GOLPEANDO 
+            2 time > 100 
+              prev_state ! WARRIOR_GOLPEANDO 
+            1 TAKE_MSEG 
+#transition WARRIOR_COGER_ESPADA WARRIOR_PARADO 
+            2 time > 100 
+              prev_state = WARRIOR_GOLPEANDO 
+            0 
+
+#transition WARRIOR_GOLPEANDO WARRIOR_EN_GUARDIA 
+            2 time > 100 
+              prev_state ! WARRIOR_EN_GUARDIA 
+            1 TAKE_MSEG  
+#transition WARRIOR_GOLPEANDO WARRIOR_COGER_ESPADA 
+            2 time > 100 
+              prev_state = WARRIOR_EN_GUARDIA 
+            1 TAKE_MSEG 
+
+#transition WARRIOR_SALTANDO WARRIOR_CAYENDO 
+            1 dist_y > 184 
+            0 
+#transition WARRIOR_SALTANDO WARRIOR_CAYENDO 
+            1 dist_x > 184 
+            0 
+
+#transition WARRIOR_EN_GUARDIA WARRIOR_EN_GUARDIA 
+            1 key = FIRE 
+            0 
+#transition WARRIOR_EN_GUARDIA WARRIOR_GOLPEANDO 
+            1 key ! FIRE 
+            1 TAKE_MSEG 
+
+#transition WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO WARRIOR_PARADO
+            1 col = 1
+            0
+#transition WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+            1 key = LEFT 
+            1 SET_DIR_LEFT           
+#transition WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+            1 key = RIGHT 
+            1 SET_DIR_RIGHT                        
+#transition WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO WARRIOR_EN_ESCALERAS_LEFT_PARADO
+            1 key = NO_KEY  
+            0            
+
+#transition WARRIOR_EN_ESCALERAS_LEFT_PARADO WARRIOR_PARADO
+            1 col = 1
+            0
+#transition WARRIOR_EN_ESCALERAS_LEFT_PARADO WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+            1 key = LEFT 
+            1 SET_DIR_LEFT            
+#transition WARRIOR_EN_ESCALERAS_LEFT_PARADO WARRIOR_EN_ESCALERAS_LEFT_CAMINANDO
+            1 key = RIGHT 
+            1 SET_DIR_RIGHT                      
+
+#transition WARRIOR_RANA_PARADO WARRIOR_RANA_CAYENDO 
+            1 col ! 1 
+            0
+#transition WARRIOR_RANA_PARADO WARRIOR_RANA_CAMINANDO 
+            1 key = LEFT 
+            1 SET_DIR_LEFT 
+#transition WARRIOR_RANA_PARADO WARRIOR_RANA_CAMINANDO 
+            1 key = RIGHT 
+            1 SET_DIR_RIGHT 
+#transition WARRIOR_RANA_PARADO WARRIOR_RANA_SALTANDO 
+            1 key = UP 
+            3 TAKE_CHK_PIXEL_X 
+              TAKE_CHK_PIXEL_Y 
+              TAKE_MSEG  
+#transition WARRIOR_RANA_PARADO WARRIOR_RANA_PARADO 
+            1 key = NO_KEY 
+            0 
+
+#transition WARRIOR_RANA_CAMINANDO WARRIOR_RANA_SALTANDO 
+            1 key = UP 
+            3 TAKE_CHK_PIXEL_X 
+              TAKE_CHK_PIXEL_Y 
+              TAKE_MSEG  
+#transition WARRIOR_RANA_CAMINANDO WARRIOR_RANA_CAYENDO 
+            1 col ! 1 
+            0 
+#transition WARRIOR_RANA_CAMINANDO WARRIOR_RANA_CAMINANDO 
+            1 key = LEFT 
+            2 TAKE_MSEG 
+              SET_DIR_LEFT
+#transition WARRIOR_RANA_CAMINANDO WARRIOR_RANA_CAMINANDO 
+            1 key = RIGHT 
+            2 TAKE_MSEG 
+              SET_DIR_RIGHT
+#transition WARRIOR_RANA_CAMINANDO WARRIOR_RANA_PARADO 
+            1 key = NO_KEY 
+            0 
+
+#transition WARRIOR_RANA_CAYENDO WARRIOR_RANA_PARADO 
+            1 col = 1 
+            0 
+#transition WARRIOR_RANA_CAYENDO WARRIOR_RANA_CAYENDO 
+            1 key = LEFT 
+            0 
+#transition WARRIOR_RANA_CAYENDO WARRIOR_RANA_CAYENDO 
+            1 key = RIGHT 
+            0 
+
+#transition WARRIOR_RANA_SALTANDO WARRIOR_RANA_CAYENDO 
+            1 dist_y > 192 
+            0 
+#transition WARRIOR_RANA_SALTANDO WARRIOR_RANA_CAYENDO 
+            1 dist_x > 192 
+            0 

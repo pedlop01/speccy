@@ -1,0 +1,19 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje muro
+
+bitmap  muro.bmp
+screenx 320
+screeny 200
+
+animaciones 3
+
+animacion parado_derecha
+num_frames 1
+velocidad 0
+frame 1 1 7 63 0 0
+
+animacion caminar_derecha
+num_frames 1
+velocidad 0
+frame 1 1 7 63 0 0

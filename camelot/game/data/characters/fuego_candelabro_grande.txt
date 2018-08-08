@@ -1,0 +1,16 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje fuego candelabro grande
+
+bitmap fuego_candelabro_grande.bmp 
+screenx 320
+screeny 200
+
+animaciones 1 
+
+animacion caminar_derecha 
+num_frames 2
+velocidad 100 
+frame 1 1 32 8 0 0 
+frame 34 1 65 8 1 0 
+

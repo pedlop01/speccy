@@ -1,0 +1,14 @@
+x_ini 320
+y_ini 500 
+warrior_form 0 
+warrior_preivous_state 1 
+warrior_state 3 
+warrior_dir 1 
+song ./data/music/prov4.mid 
+world_description ./data/maps/world1_transparencia.txt 
+enemies_description ./data/characters/enemies_phase1.txt 
+checkpoint_description ./data/checkpoints/checkpoint_fase1.txt 
+scripts ./data/scripts/phase1.txt 
+objects ./data/objects/objects_phase1.txt 
+scrolls ./data/levels/scroll_zones_phase1.txt 
+anims ./data/machinimia/phase1.txt 

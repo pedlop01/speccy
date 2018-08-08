@@ -1,0 +1,57 @@
+# Camelot Warriors remake
+# 
+# Fichero de animaciones del personaje bombolla
+
+bitmap  bombolla.bmp 
+screenx 320
+screeny 200
+
+animaciones 9
+
+animacion parado_derecha
+num_frames 1
+velocidad 0
+frame 1 1 26 23 0 0
+
+animacion caminar_derecha
+num_frames 4
+velocidad 0 
+frame 1 1 26 23 0 0
+frame 28 1 53 23 1 0
+frame 55 1 80 23 2 0
+frame 82 1 107 23 3 0 
+
+animacion saltar_derecha 
+num_frames 4
+velocidad 100
+frame 1 1 26 23 0 0
+frame 28 1 53 23 1 0
+frame 55 1 80 23 2 0
+frame 82 1 107 23 3 0 
+
+animacion caminar_cayendo 
+num_frames 0
+velocidad 100 
+
+animacion coger_espada 
+num_frames 0
+velocidad 100 
+
+animacion golpeando   
+num_frames 0
+velocidad 100 
+
+animacion en_guardia  
+num_frames 0
+velocidad 100 
+
+animacion agachado  
+num_frames 0 
+velocidad 100 
+
+animacion muerto  
+num_frames 3 
+velocidad 100 
+frame 1 25 26 47 0 0 
+frame 28 25 53 47 1 0 
+frame 55 25 80 47 2 0 

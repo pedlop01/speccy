@@ -1,0 +1,4 @@
+total_animations 1 
+animation 1
+sec cocacola2 50 
+end_animation 
