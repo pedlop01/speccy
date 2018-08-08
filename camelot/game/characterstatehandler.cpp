@@ -95,7 +95,7 @@ bool characterStateHandler::readDefineStateFromDefinitionFile(entradaSortida &io
     io.llegirParaula(buffer);
     if( strcmp(buffer, "#define") != 0 )  // check that file starts with #def
     {
-        cout << "#define token found: " << buffer << endl;
+        printf("#define token found: %s\n", buffer);
         return false;
     }    
     do                                   // all #def loops
@@ -104,7 +104,7 @@ bool characterStateHandler::readDefineStateFromDefinitionFile(entradaSortida &io
         string state_name(buffer);
         if( stateNodes.count(state_name) != 0 ) // only one #def per state
         {
-            cout << "state " << state_name << " redefinition " << endl;
+            printf("state %d redefinition %s\n", buffer);
             return false;
         }
         // Reserve memory for state and link it by the map structure
@@ -123,7 +123,7 @@ bool characterStateHandler::readInitialStateFromDefinitionFile(entradaSortida &i
     // Read initial state from defition file
     if( strcmp(buffer, "#initial_state") != 0 )
     {
-        cout << "#initial_state token not found:" << buffer << endl;
+        printf("#initial_state token not found: %s\n", buffer);
         return false;
     }
     // Read previous state
@@ -131,7 +131,7 @@ bool characterStateHandler::readInitialStateFromDefinitionFile(entradaSortida &i
     string previous_state_name(buffer);
     if( stateNodes.count(previous_state_name) == 0 )
     {
-        cout << "Bad previous initial state definition:" << previous_state_name << endl;
+        printf("Bad previous initial state definition: %s\n", buffer);
         return false;
     }
     previousState = stateNodes[previous_state_name];    
@@ -141,7 +141,7 @@ bool characterStateHandler::readInitialStateFromDefinitionFile(entradaSortida &i
     string initial_state_name(buffer);
     if( stateNodes.count(initial_state_name) == 0 )
     {
-        cout << "Bad initial state definition:" << initial_state_name << endl;
+        printf("Bad initial state definition: %s\n", buffer);
         return false;
     }
     currentState  = stateNodes[initial_state_name];     
@@ -164,7 +164,7 @@ bool characterStateHandler::readTransitionStateFromDefinitionFile(entradaSortida
     io.llegirParaula(buffer);
     if( strcmp(buffer, "#transition") != 0 )  // check that file starts with #t
     {
-        cout << "#define token found: " << buffer << endl;
+        printf("#define token found: %s\n", buffer);
         return false;
     }    
     do                                   // all #transition loop
@@ -175,14 +175,14 @@ bool characterStateHandler::readTransitionStateFromDefinitionFile(entradaSortida
         string orig_state_name(buffer);
         if( stateNodes.count(orig_state_name) == 0 ) // only one #def per state
         {
-            cout << "state " << orig_state_name << " not defined in transition " << endl;
+            printf("state %s not defined in transition\n", buffer);
             return false;
         }
         io.llegirParaula(buffer);                     
         string dest_state_name(buffer);
         if( stateNodes.count(dest_state_name) == 0 ) // only one #def per state
         {
-            cout << "state " << dest_state_name << " not defined in transition " << endl;
+            printf("state %s not defined in transition %s\n", buffer);
             return false;
         }        
                 
@@ -225,7 +225,7 @@ bool characterStateHandler::readTransitionStateFromDefinitionFile(entradaSortida
              }                                                                                                             
              else
              {
-                 cout << "no valid condition type in transition: " << buffer << endl;
+                 printf("no valid condition type in transition: %s\n", buffer);
                  return false;
              }
              
@@ -248,7 +248,7 @@ bool characterStateHandler::readTransitionStateFromDefinitionFile(entradaSortida
              }
              else
              {
-                 cout << "no valid operator type in transition: " << buffer << endl;
+                 printf("no valid operator type in transition: %s\n", buffer);
                  return false;
              }
              
@@ -315,7 +315,7 @@ bool characterStateHandler::readTransitionStateFromDefinitionFile(entradaSortida
             }            
             else
             {
-                cout << "no valid action type in transition: " << buffer << endl;
+                printf("no valid action type in transition: %s\n", buffer);
                 return false;                
             }
             stateTransitionAction* actionPtr = new stateTransitionAction();
@@ -337,23 +337,23 @@ bool characterStateHandler::openDefinitionFile(char* file)
     entradaSortida io;
     
     io.obrirFitxer(file, LECTURA);
-    
-    cout << "=============================================="     << endl;
-    cout << " Reading state behaviour definition file "  << file << endl;
+
+    printf("==============================================\n");    
+    printf(" Reading state behaviour definition file %s\n", file);
     
     if( !this->readDefineStateFromDefinitionFile(io, buffer) )
     {
-        cout << "\t Error in definition step " << endl;
+        printf("\t Error in definition step\n");
         return false;
     }
     if( !this->readInitialStateFromDefinitionFile(io, buffer) )
     {
-        cout << "\t Error reading initial state " << endl;
+        printf("\t Error reading initial state\n");
         return false;
     }
     if( !this->readTransitionStateFromDefinitionFile(io, buffer) )
     {
-        cout << "\t Error reading transitions state " << endl;
+        printf("\t Error reading transitions state\n");
         return false;
     }
 
@@ -363,41 +363,38 @@ bool characterStateHandler::openDefinitionFile(char* file)
     {
         characterStateNode* characterStateNodePtr = it->second;
         
-        cout << "\t State " << it->first << " with transitions " << endl;
+        printf("\t State %s with transitions\n", it->first.c_str());
         for( list<stateTransition*>::iterator it = characterStateNodePtr->GetTransitions()->begin() ;
              it != characterStateNodePtr->GetTransitions()->end() ;
              it++ )
         {
              stateTransition* transition = *it;
              
-             cout << "\t\t Conditions: " << endl;
+             printf("\t\t Conditions: \n");
              for( list<stateTransitionCondition*>::iterator it_cond = transition->conditions.begin() ;
                   it_cond != transition->conditions.end() ;
                   it_cond++ )
              {
                   stateTransitionCondition* condition = *it_cond;
                   
-                  cout << "\t\t\t type = " << condition->type
-                       << " operator "     << condition->logicalOp
-                       << " value "        << condition->condValue
-                       << " prev_state "   << condition->prevStateName
-                       << endl;
+                  printf("\t\t\t type = %d operator %d value %d prev_state %s\n",
+                         condition->type, condition->logicalOp, condition->condValue, condition->prevStateName.c_str());
              }
-             cout << "\t\t Actions: " << endl;
+             printf("\t\t Actions:\n");
              for( list<stateTransitionAction*>::iterator it_cond = transition->actions.begin() ;
                   it_cond != transition->actions.end() ;
                   it_cond++ )
              {
                   stateTransitionAction* actionPtr = *it_cond;
                   
-                  cout << "\t\t\t type = " << actionPtr->action << endl;
+                  printf("\t\t\t type = %d ", actionPtr->action);
              }
-             cout << "\t\t To state: " << transition->nextNode->GetName() << endl;
+             printf("\t\t To state: %s\n", transition->nextNode->GetName().c_str());
         }
     }
-    cout << "\t Initial state set to " << currentState->GetName() << endl;
+    printf("\t Initial state set to %s\n", currentState->GetName().c_str());
     
-    cout << "==============================================" << endl;
+    printf("==============================================\n");
     
     io.tancarFitxer();
 }

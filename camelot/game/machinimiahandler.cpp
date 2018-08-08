@@ -81,9 +81,9 @@ void machinimiaHandler :: loadAnimations(char *file)
 
      // leer fichero animaciones del personaje
      fitxerAnimacions.obrirFitxer(file, LECTURA);
-     
-     cout << "==============================================" << endl;       
-     cout << " Reading machinimia from file " << file << endl;
+
+     printf("==============================================\n");     
+     printf(" Reading machinimia from file %s\n", file);
 
      fitxerAnimacions.llegirParaula(buffer);         // total_animations
      fitxerAnimacions.llegirEnter(&numAnimaciones);
@@ -96,7 +96,7 @@ void machinimiaHandler :: loadAnimations(char *file)
          assert( strcmp(buffer, "animation") == 0 );
          fitxerAnimacions.llegirEnter(&animationId);           
          
-         cout << "  Animation " << i << endl;
+         printf("  Animation %d\n", i);
          
          fitxerAnimacions.llegirParaula(buffer);     // animation
          while( strcmp(buffer, "end_animation") != 0 )
@@ -112,10 +112,8 @@ void machinimiaHandler :: loadAnimations(char *file)
                  fitxerAnimacions.llegirParaula(buffer);     // name
                  fitxerAnimacions.llegirEnter(&numRep); 
                  
-                 cout << "\t SEC_SubAnimation = " << buffer 
-                      << " ; reps = " << numRep 
-                      << " ; numSecAnims " << numSecAnims 
-                      << " ; numParAnims " << numParAnims << endl;
+                 printf("\t SEC_SubAnimation = %d; reps = %d; numSecAnims %d; numParAnims %d\n",
+                        buffer, numRep, numSecAnims, numParAnims);
                  
                  animation = new animationDescriptor(buffer, numRep);
                  animations[i][numSecAnims][0] = animation;
@@ -134,10 +132,8 @@ void machinimiaHandler :: loadAnimations(char *file)
                  fitxerAnimacions.llegirParaula(buffer);     // name
                  fitxerAnimacions.llegirEnter(&numRep); 
                  
-                 cout << "\t PAR_SubAnimation = " << buffer 
-                      << " ; reps = " << numRep 
-                      << " ; numSecAnims " << numSecAnims 
-                      << " ; numParAnims " << numParAnims << endl;
+                 printf("\t PAR_SubAnimation = %s; reps = %d; numSecAnims %d; numParAnims %d\n",
+                        buffer, numRep, numSecAnims, numParAnims);
                  
                  animation = new animationDescriptor(buffer, numRep);
                  animations[i][numSecAnims][numParAnims] = animation;                 
@@ -153,8 +149,8 @@ void machinimiaHandler :: loadAnimations(char *file)
              fitxerAnimacions.llegirParaula(buffer);     // animation     
              assert( numSecAnims <= MAX_PARALEL_ANIMS );    
          }
-     }    
-     cout << "==============================================" << endl;             
+     }
+     printf("==============================================\n");      
 }
 
 void machinimiaHandler::processAnimation(unsigned int anim)
@@ -171,11 +167,11 @@ void machinimiaHandler::processAnimation(unsigned int anim)
     for( int i = 0 ; (i < MAX_PARALEL_ANIMS) && (this->animations[anim][numActiveSubAnimation][i] != NULL) ; i++ )
     {        
         animation = this->animations[anim][numActiveSubAnimation][i];
-        
+/*      FIXME: use printf instead of cout
         cout << animation->getName() << " - " << animation->getNumRepeticiones() << " - " 
              << objHandler->getObject(animation->getName())->GetActivated() << " - " 
              << objHandler->getObject(animation->getName())->GetNumRepAnims() << endl;
-    
+*/    
         if( objHandler->getObject(animation->getName())->GetNumRepAnims() < 
             animation->getNumRepeticiones() )
         {

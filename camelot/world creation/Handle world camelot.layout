@@ -7,8 +7,8 @@
 	<Expand folder="/Sources"/>
 </CodeBlocks_layout_file>
 [Editors]
-Focused=-1
-Order=2,-1
+Focused=2
+Order=2
 [Editor_0]
 Open=0
 Top=0
@@ -25,10 +25,10 @@ TopLine=1
 LeftChar=1
 [Editor_2]
 Open=1
-Top=0
-CursorCol=71
-CursorRow=426
-TopLine=438
+Top=1
+CursorCol=8
+CursorRow=1515
+TopLine=1491
 LeftChar=1
 [Editor_3]
 Open=0
@@ -236,7 +236,7 @@ CursorRow=17
 TopLine=1
 LeftChar=1
 [Editor_34]
-Open=1
+Open=0
 Top=0
 CursorCol=1
 CursorRow=1

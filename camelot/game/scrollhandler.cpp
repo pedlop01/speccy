@@ -55,15 +55,15 @@ void ScrollHandler :: init(char *file,
     fitxer.llegirEnter(&numZones);
     fitxer.llegirParaula(buffer);
     fitxer.llegirEnter(&zone);    
-    cout << " ================================= " << endl;
-    cout << " = Reading zones : " << file << endl;
-    cout << " = ------------------------------- " << endl;
-    cout << " = NumZones = " << numZones << endl;
-    cout << " = CurrentZone = " << zone << endl;
+    printf("==============================================\n");    
+    printf(" = Reading zones : %s\n", file);
+    printf(" = ------------------------------- \n");
+    printf(" = NumZones = %d\n", numZones);
+    printf(" = CurrentZone = %d\n", zone);
     
     for( unsigned int i = 0 ; i < numZones ; i++ )
     {
-        cout << " = Info zone " << i << endl;
+        printf(" = Info zone %d\n", i);
         int sstartx = 0;
         int sstarty = 0;
         int wsx = 0;
@@ -78,10 +78,8 @@ void ScrollHandler :: init(char *file,
         fitxer.llegirParaula(buffer);
         fitxer.llegirEnter(&wsy);                         
         
-        cout << " start_x " << sstartx 
-             << " start_y " << sstarty 
-             << " wsx " << wsx << " wsy " << wsy << " ssx " 
-             << ssx << " ssy " << ssy << endl;
+        printf(" start_x %d start_y %d wsx %d wsy %d ssx %d ssy %d\n",
+               sstartx, sstarty, wsx, wsy, ssx, ssy);
              
         scrollLimitsInfo[i].scrollStartX = sstartx;           
         scrollLimitsInfo[i].scrollStartY = sstarty;
@@ -90,7 +88,7 @@ void ScrollHandler :: init(char *file,
         scrollLimitsInfo[i].screenSizeX  = ssx;
         scrollLimitsInfo[i].screenSizeY  = ssy;
     }
-    cout << " ================================= " << endl;    
+    printf("==============================================\n");    
     
     screenCoordX  = scrollLimitsInfo[zone].scrollStartX;
     screenCoordY  = scrollLimitsInfo[zone].scrollStartY;

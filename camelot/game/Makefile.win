@@ -7,11 +7,11 @@ WINDRES = windres.exe
 RES  = CamelotRemake_private.res
 OBJ  = animation.o character.o entradasortida.o main.o mundo.o sprite.o static_image.o enemigo.o enemyhandler.o checkpointhandler.o scripthandler.o script.o symboltable.o objeto.o objecthandler.o fxhandler.o phase_info.o characterstatehandler.o keyboardmap.o graphicsfxpostprocessing.o watergraphicfx.o scrollhandler.o game.o timer.o machinimiahandler.o messageboxhandler.o $(RES)
 LINKOBJ  = animation.o character.o entradasortida.o main.o mundo.o sprite.o static_image.o enemigo.o enemyhandler.o checkpointhandler.o scripthandler.o script.o symboltable.o objeto.o objecthandler.o fxhandler.o phase_info.o characterstatehandler.o keyboardmap.o graphicsfxpostprocessing.o watergraphicfx.o scrollhandler.o game.o timer.o machinimiahandler.o messageboxhandler.o $(RES)
-LIBS =  -L"D:/Util/Prog/Dev-Cpp/lib" -L"D:/Util/Prog/Dev-Cpp/lib" -lalleg_s -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lole32 -ldinput -lddraw -ldxguid -lwinmm -ldsound D:/Util/Prog/Dev-Cpp/lib/libfmodex.a  -g3 
-INCS =  -I"D:/Util/Prog/Dev-Cpp/include" 
-CXXINCS =  -I"D:/Util/Prog/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"D:/Util/Prog/Dev-Cpp/include/c++/3.4.2/backward"  -I"D:/Util/Prog/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"D:/Util/Prog/Dev-Cpp/include/c++/3.4.2"  -I"D:/Util/Prog/Dev-Cpp/include" 
+LIBS =  -L"C:/Dev-Cpp/lib" -L"C:/Dev-Cpp/lib" C:/Dev-Cpp/lib/liballeg.a  -g3 
+INCS =  -I"C:/Dev-Cpp/include"  -I"C:/Dev-Cpp/include" 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"C:/Dev-Cpp/include" 
 BIN  = CamelotRemake.exe
-CXXFLAGS = $(CXXINCS) -DALLEGRO_STATICLINK   -g3
+CXXFLAGS = $(CXXINCS) -DALLEGRO   -g3
 CFLAGS = $(INCS) -DALLEGRO_STATICLINK   -g3
 RM = rm -f
 

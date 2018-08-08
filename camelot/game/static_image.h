@@ -5,7 +5,6 @@
 
 #include <allegro.h>
 #include "defines.h"
-#include <iostream.h>
 
 /*
  * No description

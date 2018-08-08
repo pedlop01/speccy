@@ -4,8 +4,10 @@
 #define CHECKPOINTHANDLER_H
 
 #include "entradaSortida.h"
-#include <vector.h>
-#include <list.h>
+#include <vector>
+#include <list>
+
+using namespace std;
 
 class checkpoint 
 {

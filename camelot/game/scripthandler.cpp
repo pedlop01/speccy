@@ -31,25 +31,25 @@ bool scriptHandler :: ReadScriptsFile(char* file)
    scriptFile.llegirParaula(buffer);
    scriptFile.llegirEnter(&num_scripts);
     
-   cout << "==============================================" << endl;
-   cout << " Reading scripts... num = " << num_scripts << endl;
+   printf("==============================================\n");
+   printf(" Reading scripts... num = %d\n", num_scripts);
    
    for( unsigned int i = 0 ; i < num_scripts ; i++ )
    {       
-       cout << " Script number " << i << endl;
+       printf(" Script number %d\n", i);
        scriptFile.llegirEnter(&x);
        scriptFile.llegirEnter(&y);
        scriptFile.llegirEnter(&size_x);
        scriptFile.llegirEnter(&size_y);
        
-       cout << "\t coord (" << x << ", " << y << ", " << size_x << ", " << size_y << ")" << endl;
+       printf("\t coord (%d, %d, %d, %d)\n", x, y, size_x, size_y);
 
        script *scrpt = new script(smbTable);
        scrpt->addTriggerCoords(x, y, size_x, size_y);
        
        scriptFile.llegirParaula(buffer);
        scriptFile.llegirEnter(&num_input_vars);
-       cout << "\t input vars " << num_input_vars << endl;
+       printf("\t input vars %d\n", num_input_vars);
        for( unsigned int j = 0 ; j < num_input_vars ; j++ )
        {
             int value;
@@ -59,14 +59,14 @@ bool scriptHandler :: ReadScriptsFile(char* file)
             
             string var_name(buffer);
             
-            cout << "\t\t input var " << j << ": name=" << var_name << " value=" << value << endl;
+            printf("\t\t input var %d: name=%s value=%d\n", j, buffer, value);
             
             scrpt->addNewInputVar(var_name, value);
        }       
 
        scriptFile.llegirParaula(buffer);       
        scriptFile.llegirEnter(&num_output_vars);       
-       cout << "\t output vars " << num_output_vars << endl;       
+       printf("\t output vars %d\n", num_output_vars);
        for( unsigned int j = 0 ; j < num_output_vars ; j++ )
        {
             char buffer[200];
@@ -77,14 +77,14 @@ bool scriptHandler :: ReadScriptsFile(char* file)
             
             string var_name(buffer);            
             
-            cout << "\t\t output var " << j << ": name=" << var_name << " value=" << value << endl;
+            printf("\t\t output var %d: name=%s value=%d\n", j, buffer, value);
             
             scrpt->addNewOutputVar(var_name, value);
        }       
        
        scripts.push_back(scrpt);
    }   
-   cout << "==============================================" << endl;   
+   printf("==============================================\n");   
 }
 
 void scriptHandler :: SaveScriptsFile(char* file)
@@ -100,8 +100,8 @@ void scriptHandler :: SaveScriptsFile(char* file)
    scriptFile.escriureEspai();
    scriptFile.escriureSaltDeLinia();
     
-   cout << "==============================================" << endl;
-   cout << " Saving scripts... num = " << scripts.size() << endl;
+   printf("==============================================\n");   
+   printf(" Saving scripts... num = %d\n", scripts.size());
    
    int i = 0;
    for( list<script*>::iterator it = scripts.begin() ; it != scripts.end() ; it++ )
@@ -156,7 +156,7 @@ void scriptHandler :: SaveScriptsFile(char* file)
    }   
    
    scriptFile.tancarFitxer();
-   cout << "==============================================" << endl;   
+   printf("==============================================\n");   
 }
 
 void scriptHandler :: AnalyzeScripts(int x, int y, int xSize, int ySize)

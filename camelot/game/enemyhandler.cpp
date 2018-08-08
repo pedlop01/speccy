@@ -32,8 +32,8 @@ void EnemyHandler :: ReadEnemiesFile(char *file)
 
     sprintf(aux_file, "%s", file);
 
-    cout << "==============================================" << endl;       
-    cout << " Reading enemies file " << aux_file << endl;
+    printf("==============================================\n");
+    printf(" Reading enemies file %s \n", aux_file);
     
     io.obrirFitxer(aux_file, 0);
     
@@ -41,7 +41,7 @@ void EnemyHandler :: ReadEnemiesFile(char *file)
     
     io.llegirParaula(buffer);    // Enemies
     io.llegirEnter(&numEnemies);
-    cout << " Num enemies " << numEnemies << endl;
+    printf(" Num enemies %d", numEnemies);
     
     for( unsigned int i = 0 ; i < numEnemies ; i++ )
     {
@@ -84,18 +84,10 @@ void EnemyHandler :: ReadEnemiesFile(char *file)
           enemy->SetOrigFile(aux);
           enemies.push_back(enemy);
           
-          cout << "\t Enemy " << i 
-               << " tipo " << type
-               << " estado " << estado 
-               << " sentido " << sentido 
-               << " sentido_vertical " << s_vert
-               << " x " << pos_x 
-               << " y " << pos_y 
-               << " desp_x " << desp_x
-               << " desp_y " << desp_y
-               << " animation_file " << afile << endl;
+          printf("\t Enemy %d tipo %d estado %d sentido %d sentido_vertical %d x %d y %d desp_x %d desp_y %d animation_file %s\n", 
+               i, type, estado, sentido, s_vert, pos_x, pos_y, desp_x, desp_y, afile);
     }
-    cout << "==============================================" << endl;    
+    printf("==============================================\n");
 }
 
 void EnemyHandler :: SaveEnemiesFile(char *file)
@@ -104,8 +96,8 @@ void EnemyHandler :: SaveEnemiesFile(char *file)
     enemigo* enemy;
     entradaSortida io;
 
-    cout << "==============================================" << endl;       
-    cout << " Saving enemies file " << file << endl;
+    printf("==============================================\n"); 
+    printf(" Saving enemies file %s\n", file);;
     
     io.obrirFitxer(file, ESCRIPTURA);
     
@@ -145,7 +137,7 @@ void EnemyHandler :: SaveEnemiesFile(char *file)
     }
     
     io.tancarFitxer();
-    cout << "==============================================" << endl;    
+    printf("==============================================\n");
 }
 
 

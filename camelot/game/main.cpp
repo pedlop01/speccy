@@ -1,9 +1,9 @@
-#include <iostream.h>
 #include <allegro.h>
 
 #include "defines.h"
 #include "game.h"
 #include "timer.h"
+
 
 void highcolor_fade_in(BITMAP *bmp_orig, int speed)
 {
@@ -93,20 +93,20 @@ int main()
     final = load_bmp("./data/intro/final.bmp", NULL);  
     if( final == NULL )
     {
-        cout << " Error loading bitmap " << endl;
+        printf(" Error loading bitmap\n");
         exit(-1);
     }    
     
     myfontAndalus = load_font("./data/fonts/andalus.pcx", palette, NULL);
     if( !myfontAndalus )
     {
-        cout << "Couldn't load font!" << endl;
+        printf("Couldn't load font!\n");
         exit(-1);
     }
     myfontCandara = load_font("./data/fonts/candara.pcx", palette, NULL);
     if( !myfontCandara )
     {
-        cout << "Couldn't load font!" << endl;
+        printf("Couldn't load font!\n");
         exit(-1);
     }    
 
@@ -144,7 +144,7 @@ int main()
     buffer = load_bmp("./data/intro/menu0.bmp", NULL);  
     if( buffer == NULL )
     {
-        cout << " Error loading bitmap " << endl;
+        printf(" Error loading bitmap\n");
         exit(-1);
     }
     stretch_blit(buffer, screen, 0, 0, SCREEN_X_ORIG,  SCREEN_Y_ORIG, 0, 0, SCREEN_X, SCREEN_Y);
@@ -158,7 +158,7 @@ int main()
     buffer = load_bmp("./data/intro/menu.bmp", NULL);  
     if( buffer == NULL )
     {
-        cout << " Error loading bitmap " << endl;
+        printf(" Error loading bitmap\n");
         exit(-1);
     }
     highcolor_fade_in(buffer, 10);    

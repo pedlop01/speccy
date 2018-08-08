@@ -4,7 +4,7 @@
 #define OBJETO_H
 
 #include <stdlib.h>
-#include <map.h>
+#include <map>
 #include <math.h>
 #include <string>
 
@@ -82,8 +82,8 @@ class objeto
     inline int GetCurrentY()      { return current_y; }
     inline int SetCurrentY(int y) { current_y = y;    }
     
-    inline int GetCurrentSizeX()  { assert( currentSprite != NULL ); return (*currentSprite)->xSize; }
-    inline int GetCurrentSizeY()  { assert( currentSprite != NULL ); return (*currentSprite)->ySize; }    
+    inline int GetCurrentSizeX()  { assert( (*currentSprite) != NULL ); return (*currentSprite)->xSize; }
+    inline int GetCurrentSizeY()  { assert( (*currentSprite) != NULL ); return (*currentSprite)->ySize; }    
     
     inline void SetActivated(unsigned int a) { activated = a; }
     inline unsigned int GetActivated()       { return activated; }
@@ -98,7 +98,7 @@ class objeto
     void handleState(unsigned int mseg);
     
     // drawing
-	void drawObjectInWorld(mundo* world, BITMAP* world, int posX, int posY, bool drawRect);
+	void drawObjectInWorld(mundo* world, BITMAP* world_bmp, int posX, int posY, bool drawRect);
 	
 	private:
             

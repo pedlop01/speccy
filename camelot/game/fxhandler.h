@@ -5,20 +5,20 @@
 
 #include <string.h>
 #include <allegro.h>
-#include <fmod.h>
-#include <iostream.h>
 #include <vector>
+#include <assert.h>
 
 using namespace std;
 
 class sound
 {
   private:
-    FMOD_SYSTEM *system;
+    //FMOD_SYSTEM *system;
+    char *system;
     bool destroyable;
     char name[100];
-    FMOD_SOUND *fmodSound;         
-    FMOD_CHANNEL *channel;   
+    char *fmodSound;         
+    char *channel;   
     bool enabled;
     bool loop;
   
@@ -26,7 +26,7 @@ class sound
     void destroy();
     
   public:
-    sound(FMOD_SYSTEM *sys, char *n, bool destroy, bool loop);
+    sound(char *sys, char *n, bool destroy, bool loop);
     ~sound();
     
     void play();
@@ -34,7 +34,7 @@ class sound
     inline void setEnabled(bool s) { enabled = s;    }
     inline bool getEnabled()       { return enabled; }
     
-    inline FMOD_CHANNEL* getChannel() { return channel; }
+    inline char* getChannel() { return channel; }
     
     
 };
@@ -43,10 +43,10 @@ class fxHandler
 {
   private:
     int numSounds;
-    FMOD_SYSTEM       *system;
+    char       *system;
     vector<sound*>     sounds;
-    FMOD_CHANNEL      *channel;
-    FMOD_RESULT       result;
+    char      *channel;
+    char       result;
     unsigned int      version;
        
   public:	

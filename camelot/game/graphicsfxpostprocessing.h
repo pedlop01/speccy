@@ -5,7 +5,7 @@
 
 #include <allegro.h>
 #include <stdlib.h>
-#include <map.h>
+#include <map>
 #include <math.h>
 #include <string>
 

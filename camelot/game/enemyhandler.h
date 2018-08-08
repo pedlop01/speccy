@@ -4,7 +4,7 @@
 #define ENEMYHANDLER_H
 
 #include <math.h>
-#include <vector.h>
+#include <vector>
 #include "entradaSortida.h"
 #include "defines.h"
 
@@ -14,6 +14,8 @@
 
 #include "symboltable.h"
 #include "fxhandler.h"
+
+using namespace std;
 
 /*
  * No description

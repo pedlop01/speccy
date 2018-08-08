@@ -4,7 +4,9 @@
 #define ANIMATION_H
 
 #include "sprite.h" // inheriting class's header file
-#include <list.h>
+#include <list>
+
+using namespace std;
 
 /*
  * No description

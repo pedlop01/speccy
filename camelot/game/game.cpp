@@ -126,7 +126,7 @@ void Game::freeScrollHandler(
     if( (personaje_x >= screen_x) && (personaje_x <= (screen_x + screen_x_orig)) &&
         (personaje_y >= screen_y) && (personaje_y <= (screen_y + screen_y_orig)) )
     {
-        cout << " Warrior en pantalla!" << endl;
+        printf(" Warrior en pantalla!\n");
         pers_screen_x = personaje_x - screen_x;
         pers_screen_y = personaje_y - screen_y;    
     }
@@ -522,9 +522,9 @@ int Game::gameMain()
     y = y_ini;
     MIDI *music_phase1 = load_midi(phases[current_phase]->GetSongFile()); 
     if (!music_phase1)
-        cout << "Couldn't load sample!" << endl;
+        printf("Couldn't load sample!\n");
 
-    cout << "Current phase " << current_phase << " with name " << phases[current_phase]->GetWorldDescriptionFile() << endl;
+    printf("Current phase %d with name %s\n", current_phase, phases[current_phase]->GetWorldDescriptionFile());
         
     // Ini Warrior variables
     warrior->ClearImportantVars();

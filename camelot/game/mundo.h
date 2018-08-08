@@ -4,8 +4,8 @@
 #define MUNDO_H
 
 #include <allegro.h>
-#include <iostream.h>
 #include <string>
+#include <assert.h>
 
 #include "defines.h"
 #include "entradasortida.h"

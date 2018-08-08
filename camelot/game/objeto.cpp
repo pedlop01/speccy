@@ -67,7 +67,7 @@ void objeto :: loadAnimations(char *file)
      // leer fichero animaciones del personaje
      fitxerAnimacio.obrirFitxer(aux_file, LECTURA);
      
-     cout << "\t Reading object animation from file " << aux_file << endl;
+     printf("\t Reading object animation from file %s\n");
 
      // cabecera
      fitxerAnimacio.llegirLinea(buffer);

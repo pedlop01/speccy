@@ -210,7 +210,7 @@ int menu_callback()
              delete scrptHandler;
              delete enemyHandler;
          }
-         sprintf(path, "%s", "../../game/data/maps/");
+         sprintf(path, "%s", "../game/data/maps/");
          if( file_select_ex("Abrir mapa", path, "TXT", 480, 400, 200) != 0 )
          {             
              globalSymbolTable.ClearSymbolTable();
@@ -250,7 +250,7 @@ int menu_callback()
          if( mapa_cargado )
          {
              char path[480];
-             sprintf(path, "%s", "../../game/data/objects/");
+             sprintf(path, "%s", "../game/data/objects/");
              if( file_select_ex("Abrir objetos", path, "TXT", 480, 400, 200) != 0 )
              {             
                  delete objHandler;
@@ -268,7 +268,7 @@ int menu_callback()
          if( mapa_cargado )
          {
              char path[480];
-             sprintf(path, "%s", "../../game/data/checkpoints/");
+             sprintf(path, "%s", "../game/data/checkpoints/");
              if( file_select_ex("Abrir checkpoints", path, "TXT", 480, 400, 200) != 0 )
              {             
                  delete checkHandler;
@@ -286,7 +286,7 @@ int menu_callback()
          if( mapa_cargado )
          {
              char path[480];
-             sprintf(path, "%s", "../../game/data/scripts/");
+             sprintf(path, "%s", "../game/data/scripts/");
              if( file_select_ex("Abrir scripts", path, "TXT", 480, 400, 200) != 0 )
              {             
                  delete scrptHandler;
@@ -304,7 +304,7 @@ int menu_callback()
          if( mapa_cargado )
          {
              char path[480];
-             sprintf(path, "%s", "../../game/data/characters/");
+             sprintf(path, "%s", "../game/data/characters/");
              if( file_select_ex("Abrir enemigos", path, "TXT", 480, 400, 200) != 0 )
              {             
                  delete enemyHandler;
@@ -391,7 +391,7 @@ int menu_callback()
           else
           {
               char path[480]; 
-              sprintf(path, "%s", "../../game/data/objects/");          
+              sprintf(path, "%s", "../game/data/objects/");          
               
               if( file_select_ex("Abrir objeto", path, "TXT", 480, 400, 200) != 0 )
               {
@@ -415,7 +415,7 @@ int menu_callback()
           else
           {
               char path[480]; 
-              sprintf(path, "%s", "../../game/data/characters/");          
+              sprintf(path, "%s", "../game/data/characters/");          
               
               if( file_select_ex("Abrir enemigo", path, "TXT", 480, 400, 200) != 0 )
               {

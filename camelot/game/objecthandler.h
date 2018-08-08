@@ -4,7 +4,7 @@
 #define OBJECTHANDLER_H
 
 #include <math.h>
-#include <vector.h>
+#include <vector>
 #include "entradaSortida.h"
 #include "defines.h"
 
@@ -12,6 +12,8 @@
 #include "mundo.h"
 
 #include "symboltable.h"
+
+using namespace std;
 
 /*
  * No description

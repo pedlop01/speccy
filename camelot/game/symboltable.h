@@ -4,8 +4,11 @@
 #define SYMBOLTABLE_H
 
 #include <conio.h>
-#include <map.h>
+#include <map>
 #include <string>
+#include <assert.h>
+#include <stdio.h>
+
 
 using namespace std;
 

@@ -6,7 +6,6 @@
 #include <allegro.h>
 #include <string>
 #include "defines.h"
-#include <iostream>
 
 #include "symboltable.h"
 /*

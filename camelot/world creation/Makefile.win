@@ -5,11 +5,11 @@ CPP  = g++.exe
 CC   = gcc.exe
 WINDRES = windres.exe
 RES  = Handle_world_camelot_private.res
-OBJ  = entradasortida.o main.o ../../game/mundo.o ../../game/objecthandler.o ../../game/objeto.o ../../game/animation.o ../../game/character.o ../../game/checkpointhandler.o ../../game/enemigo.o ../../game/enemyhandler.o ../../game/phase_info.o ../../game/script.o ../../game/scripthandler.o ../../game/sprite.o ../../game/static_image.o ../../game/symboltable.o ../../game/fxhandler.o utils.o ../../game/characterstatehandler.o ../../game/keyboardmap.o $(RES)
-LINKOBJ  = entradasortida.o main.o ../../game/mundo.o ../../game/objecthandler.o ../../game/objeto.o ../../game/animation.o ../../game/character.o ../../game/checkpointhandler.o ../../game/enemigo.o ../../game/enemyhandler.o ../../game/phase_info.o ../../game/script.o ../../game/scripthandler.o ../../game/sprite.o ../../game/static_image.o ../../game/symboltable.o ../../game/fxhandler.o utils.o ../../game/characterstatehandler.o ../../game/keyboardmap.o $(RES)
+OBJ  = entradasortida.o main.o ../game/mundo.o ../game/objecthandler.o ../game/objeto.o ../game/animation.o ../game/character.o ../game/checkpointhandler.o ../game/enemigo.o ../game/enemyhandler.o ../game/phase_info.o ../game/script.o ../game/scripthandler.o ../game/sprite.o ../game/static_image.o ../game/symboltable.o ../game/fxhandler.o utils.o ../game/characterstatehandler.o ../game/keyboardmap.o $(RES)
+LINKOBJ  = entradasortida.o main.o ../game/mundo.o ../game/objecthandler.o ../game/objeto.o ../game/animation.o ../game/character.o ../game/checkpointhandler.o ../game/enemigo.o ../game/enemyhandler.o ../game/phase_info.o ../game/script.o ../game/scripthandler.o ../game/sprite.o ../game/static_image.o ../game/symboltable.o ../game/fxhandler.o utils.o ../game/characterstatehandler.o ../game/keyboardmap.o $(RES)
 LIBS =  -L"C:/Dev-Cpp/lib" -lalleg -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lole32  
-INCS =  -I"C:/Dev-Cpp/include"  -I"../../game" 
-CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"../../game" 
+INCS =  -I"C:/Dev-Cpp/include"  -I"../game" 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"../game" 
 BIN  = "Handle world camelot.exe"
 CXXFLAGS = $(CXXINCS)    -fexpensive-optimizations -O3
 CFLAGS = $(INCS) -DALLEGRO_STATICLINK   -fexpensive-optimizations -O3
@@ -32,59 +32,59 @@ entradasortida.o: entradasortida.cpp
 main.o: main.cpp
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)
 
-../../game/mundo.o: ../../game/mundo.cpp
-	$(CPP) -c ../../game/mundo.cpp -o ../../game/mundo.o $(CXXFLAGS)
+../game/mundo.o: ../game/mundo.cpp
+	$(CPP) -c ../game/mundo.cpp -o ../game/mundo.o $(CXXFLAGS)
 
-../../game/objecthandler.o: ../../game/objecthandler.cpp
-	$(CPP) -c ../../game/objecthandler.cpp -o ../../game/objecthandler.o $(CXXFLAGS)
+../game/objecthandler.o: ../game/objecthandler.cpp
+	$(CPP) -c ../game/objecthandler.cpp -o ../game/objecthandler.o $(CXXFLAGS)
 
-../../game/objeto.o: ../../game/objeto.cpp
-	$(CPP) -c ../../game/objeto.cpp -o ../../game/objeto.o $(CXXFLAGS)
+../game/objeto.o: ../game/objeto.cpp
+	$(CPP) -c ../game/objeto.cpp -o ../game/objeto.o $(CXXFLAGS)
 
-../../game/animation.o: ../../game/animation.cpp
-	$(CPP) -c ../../game/animation.cpp -o ../../game/animation.o $(CXXFLAGS)
+../game/animation.o: ../game/animation.cpp
+	$(CPP) -c ../game/animation.cpp -o ../game/animation.o $(CXXFLAGS)
 
-../../game/character.o: ../../game/character.cpp
-	$(CPP) -c ../../game/character.cpp -o ../../game/character.o $(CXXFLAGS)
+../game/character.o: ../game/character.cpp
+	$(CPP) -c ../game/character.cpp -o ../game/character.o $(CXXFLAGS)
 
-../../game/checkpointhandler.o: ../../game/checkpointhandler.cpp
-	$(CPP) -c ../../game/checkpointhandler.cpp -o ../../game/checkpointhandler.o $(CXXFLAGS)
+../game/checkpointhandler.o: ../game/checkpointhandler.cpp
+	$(CPP) -c ../game/checkpointhandler.cpp -o ../game/checkpointhandler.o $(CXXFLAGS)
 
-../../game/enemigo.o: ../../game/enemigo.cpp
-	$(CPP) -c ../../game/enemigo.cpp -o ../../game/enemigo.o $(CXXFLAGS)
+../game/enemigo.o: ../game/enemigo.cpp
+	$(CPP) -c ../game/enemigo.cpp -o ../game/enemigo.o $(CXXFLAGS)
 
-../../game/enemyhandler.o: ../../game/enemyhandler.cpp
-	$(CPP) -c ../../game/enemyhandler.cpp -o ../../game/enemyhandler.o $(CXXFLAGS)
+../game/enemyhandler.o: ../game/enemyhandler.cpp
+	$(CPP) -c ../game/enemyhandler.cpp -o ../game/enemyhandler.o $(CXXFLAGS)
 
-../../game/phase_info.o: ../../game/phase_info.cpp
-	$(CPP) -c ../../game/phase_info.cpp -o ../../game/phase_info.o $(CXXFLAGS)
+../game/phase_info.o: ../game/phase_info.cpp
+	$(CPP) -c ../game/phase_info.cpp -o ../game/phase_info.o $(CXXFLAGS)
 
-../../game/script.o: ../../game/script.cpp
-	$(CPP) -c ../../game/script.cpp -o ../../game/script.o $(CXXFLAGS)
+../game/script.o: ../game/script.cpp
+	$(CPP) -c ../game/script.cpp -o ../game/script.o $(CXXFLAGS)
 
-../../game/scripthandler.o: ../../game/scripthandler.cpp
-	$(CPP) -c ../../game/scripthandler.cpp -o ../../game/scripthandler.o $(CXXFLAGS)
+../game/scripthandler.o: ../game/scripthandler.cpp
+	$(CPP) -c ../game/scripthandler.cpp -o ../game/scripthandler.o $(CXXFLAGS)
 
-../../game/sprite.o: ../../game/sprite.cpp
-	$(CPP) -c ../../game/sprite.cpp -o ../../game/sprite.o $(CXXFLAGS)
+../game/sprite.o: ../game/sprite.cpp
+	$(CPP) -c ../game/sprite.cpp -o ../game/sprite.o $(CXXFLAGS)
 
-../../game/static_image.o: ../../game/static_image.cpp
-	$(CPP) -c ../../game/static_image.cpp -o ../../game/static_image.o $(CXXFLAGS)
+../game/static_image.o: ../game/static_image.cpp
+	$(CPP) -c ../game/static_image.cpp -o ../game/static_image.o $(CXXFLAGS)
 
-../../game/symboltable.o: ../../game/symboltable.cpp
-	$(CPP) -c ../../game/symboltable.cpp -o ../../game/symboltable.o $(CXXFLAGS)
+../game/symboltable.o: ../game/symboltable.cpp
+	$(CPP) -c ../game/symboltable.cpp -o ../game/symboltable.o $(CXXFLAGS)
 
-../../game/fxhandler.o: ../../game/fxhandler.cpp
-	$(CPP) -c ../../game/fxhandler.cpp -o ../../game/fxhandler.o $(CXXFLAGS)
+../game/fxhandler.o: ../game/fxhandler.cpp
+	$(CPP) -c ../game/fxhandler.cpp -o ../game/fxhandler.o $(CXXFLAGS)
 
 utils.o: utils.c
 	$(CPP) -c utils.c -o utils.o $(CXXFLAGS)
 
-../../game/characterstatehandler.o: ../../game/characterstatehandler.cpp
-	$(CPP) -c ../../game/characterstatehandler.cpp -o ../../game/characterstatehandler.o $(CXXFLAGS)
+../game/characterstatehandler.o: ../game/characterstatehandler.cpp
+	$(CPP) -c ../game/characterstatehandler.cpp -o ../game/characterstatehandler.o $(CXXFLAGS)
 
-../../game/keyboardmap.o: ../../game/keyboardmap.cpp
-	$(CPP) -c ../../game/keyboardmap.cpp -o ../../game/keyboardmap.o $(CXXFLAGS)
+../game/keyboardmap.o: ../game/keyboardmap.cpp
+	$(CPP) -c ../game/keyboardmap.cpp -o ../game/keyboardmap.o $(CXXFLAGS)
 
 Handle_world_camelot_private.res: Handle_world_camelot_private.rc 
 	$(WINDRES) -i Handle_world_camelot_private.rc --input-format=rc -o Handle_world_camelot_private.res -O coff 

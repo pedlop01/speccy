@@ -23,14 +23,14 @@ void checkpointHandler :: loadCheckpointFile(char* file)
     char     buffer[200];        
     entradaSortida io;
     
-    cout << "==============================================" << endl;
-    cout << " Reading checkpoint file " << file << endl;
+    printf("==============================================\n");
+    printf(" Reading checkpoint file %s\n", file);
     
     io.obrirFitxer(file, 0);
     
     io.llegirParaula(buffer);    // numCheckpoints
     io.llegirEnter(&numCheckpoints);
-    cout << "\t Num checkpoints " << numCheckpoints << endl;
+    printf("\t Num checkpoints %d\n", numCheckpoints);
     
     for( unsigned int i = 0 ; i < numCheckpoints ; i++ )
     {
@@ -52,20 +52,14 @@ void checkpointHandler :: loadCheckpointFile(char* file)
                 io.llegirEnter(&nextCheckpoint);
          }
          
-         cout << "\t\t NumCheck " << numCheck 
-              << " i_x " << check->x_izq 
-              << " i_y " << check->y_izq 
-              << " d_x " << check->x_der 
-              << " d_x " << check->y_der 
-              << " w_x " << check->warrior_ini_x 
-              << " w_y " << check->warrior_ini_y 
-              << " next_checks ";
+         printf("\t\t NumCheck %d i_x %d i_y %d d_x %d w_x %d w_y %d next_checks ", 
+              numCheck, check->x_izq, check->y_izq, check->x_der, check->y_der, check->warrior_ini_x, check->warrior_ini_y);
               
          for( list<int>::iterator it = check->nextCheckpoint.begin() ; it != check->nextCheckpoint.end() ; it++ )
          {
-              cout << *it << " ";
+              printf("%d ", *it);
          }
-         cout << endl;
+         printf("\n");
          checkpoints.push_back(check);
     }
     
@@ -75,16 +69,16 @@ void checkpointHandler :: loadCheckpointFile(char* file)
     {
          currentCheckpoints.push_back(*it);
     }
-    cout << "==============================================" << endl;
+    printf("==============================================\n");
 }
 
 void checkpointHandler :: saveCheckpointFile(char* file)
 {
     char     buffer[200];        
     entradaSortida io;
-    
-    cout << "==============================================" << endl;
-    cout << " Saving checkpoint file " << file << endl;
+ 
+    printf("==============================================\n");
+    printf(" Saving checkpoint file %s\n", file);
     
     io.obrirFitxer(file, ESCRIPTURA);
     
@@ -126,7 +120,7 @@ void checkpointHandler :: saveCheckpointFile(char* file)
     }
     
     io.tancarFitxer();
-    cout << "==============================================" << endl;
+    printf("==============================================\n");
 }
 
 

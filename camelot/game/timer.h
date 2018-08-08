@@ -4,7 +4,6 @@
 #define TIMER_H
 
 #include <allegro.h>
-#include <iostream.h>
 
 /*
  * No description

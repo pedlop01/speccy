@@ -4,10 +4,6 @@
 #define GAME_H
 
 #include <allegro.h>
-#include <iostream.h>
-#include <fmod.h>
-#include <fmod_dsp.h>
-#include <fmod_errors.h>
 
 #include <vector>
 

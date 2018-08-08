@@ -19,7 +19,7 @@ messageBoxHandler::messageBoxHandler(symbolTablePtr symb, char* file)
     myfont = load_font("./data/fonts/andalus.pcx", palette, NULL);
     if( !myfont )
     {
-        cout << "Couldn't load font!" << endl;
+        printf("Couldn't load font!\n");
         exit(-1);
     }
 }
@@ -83,7 +83,7 @@ void messageBoxHandler::drawMessageBox(
                      i++;
                      if( i == 3 )
                      {
-                         cout << " ERROR: text too large! " << endl;
+                         printf(" ERROR: text too large!\n");
                          system("pause");
                          exit(-1);   
                      }   

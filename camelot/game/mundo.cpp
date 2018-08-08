@@ -2,6 +2,8 @@
 
 #include "mundo.h" // class's header file
 
+using namespace std;
+
 // class constructor
 mundo::mundo()
 {
@@ -14,8 +16,8 @@ mundo::mundo(char *file, bool tileExtractedOption)
                   
     sprintf(aux_file, "%s", file);
     
-    cout << "==============================================" << endl;                  
-    cout << " Reading world file " << aux_file << endl;
+    printf("==============================================\n");
+    printf(" Reading world file %s\n");
     screen_orig_x = 0;
     screen_orig_y = 0;
     screen_tiles_x = 0;
@@ -53,8 +55,8 @@ mundo::mundo(char *file, bool tileExtractedOption)
     io.llegirEnter(&num_scroll_planes);  // num_scroll_planes value
       
     tileSizeRatio = tiles_size_x / tiles_orig_x;  // FIXME: assuming x is equal to y
-    cout << "\t Not explicit info of world" << endl;
-    cout << "\t Tile size ratio = " << tileSizeRatio << endl; 
+    printf("\t Not explicit info of world\n");
+    printf("\t Tile size ratio = %d\n"); 
 
     string directory = chopToDirectory(aux_file);                  
     
@@ -68,7 +70,7 @@ mundo::mundo(char *file, bool tileExtractedOption)
         io.llegirParaula(buffer);        // scroll
         io.llegirParaula(buffer);        // scroll_path  
         sprintf(path, "%s%s", directory.c_str(), buffer);              
-        cout << path << endl;
+        printf("%s\n", path);
         scroll_planes[i] = load_bmp(path, NULL);
         assert(scroll_planes[i] != NULL);
         io.llegirParaula(buffer);             // scroll_size_x
@@ -114,8 +116,8 @@ mundo::mundo(char *file, bool tileExtractedOption)
      
     tiles_m_x = screen_orig_x / tiles_orig_x;
     tiles_m_y = screen_orig_y / tiles_orig_y;
-    cout << "\t Tiles in screen x = " << tiles_m_x << endl;
-    cout << "\t Tiles in screen y = " << tiles_m_x << endl;
+    printf("\t Tiles in screen x = %d", tiles_m_x);
+    printf("\t Tiles in screen y = %d", tiles_m_x);
          
     tiles_mundo = new tile**[tiles_m_y];
     for( int i = 0 ; i < tiles_m_y ; i++ )
@@ -149,10 +151,10 @@ mundo::mundo(char *file, bool tileExtractedOption)
     
     screen_new_x = tiles_m_x * tiles_size_x;
     screen_new_y = tiles_m_y * tiles_size_y;
-    cout << "\t World size x = " << screen_new_x << endl;
-    cout << "\t World size y = " << screen_new_y << endl;
+    printf("\t World size x = %d\n", screen_new_x);
+    printf("\t World size y = %d\n", screen_new_y);
         
-    cout << "==============================================" << endl;
+    printf("==============================================\n");
 }
 
 // class destructor

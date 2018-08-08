@@ -4,7 +4,6 @@
 #define CHARACTER_H
 
 #include <stdlib.h>
-#include <map.h>
 #include <math.h>
 #include "entradasortida.h"
 
@@ -99,7 +98,7 @@ class character
 		void   loadAnimations(char* file);
 		
 		// drawing
-		void drawCharacterInWorld(mundo* world, BITMAP* world, int posX, int posY);
+		void drawCharacterInWorld(mundo* world, BITMAP* world_bmp, int posX, int posY);
 
 		void SetCurrentState(int s)   { current_state = s; }
 		void SetCurrentX(float x)     { current_x = x;     }
@@ -116,7 +115,7 @@ class character
 		int GetSentido()      { return warrior_sentido; }
 		
 		bool SwordCollision(mundo* world, int x, int y, int xSize, int ySize);
-		bool EnemyCollision(BITMAP* buffer, mundo* world, int x, int y, int xSize, int ySize, int x, int y);		
+		bool EnemyCollision(BITMAP* buffer, mundo* world, int x, int y, int xSize, int ySize, int x_, int y_);		
 		
 		void AddInternalVarsToSymbTable();
 };

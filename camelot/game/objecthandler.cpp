@@ -27,14 +27,14 @@ void objectHandler :: ReadObjectsFromFile(char *file)
 
     sprintf(aux_file, "%s", file);
 
-    cout << "==============================================" << endl;       
-    cout << " Reading object handler file " << aux_file << endl;
+    printf("==============================================\n");
+    printf(" Reading object handler file %s\n", aux_file);
     
     io.obrirFitxer(aux_file, 0);
     
     io.llegirParaula(buffer);    // Objects
     io.llegirEnter(&numObjects);
-    cout << " Num objects " << numObjects << endl;
+    printf(" Num objects %d\n", numObjects);
     
     string directory = chopToDirectory(aux_file);
     
@@ -63,13 +63,10 @@ void objectHandler :: ReadObjectsFromFile(char *file)
           object->SetOrigFile(aux);
           objects.push_back(object);
           
-          cout << "\t Object " << i 
-               << " sentido " << sentido 
-               << " x " << pos_x 
-               << " y " << pos_y 
-               << " animation_file " << file << endl;
+          printf("\t Object %d sentido %d x %d y %d animation_file %s\n",
+                 i, sentido, pos_x, pos_y, file);
     }
-    cout << "==============================================" << endl;    
+    printf("==============================================\n");
 }
 
 void objectHandler :: SaveObjectsToFile(char *file)
@@ -77,8 +74,8 @@ void objectHandler :: SaveObjectsToFile(char *file)
     char           buffer[200];    
     entradaSortida io;
 
-    cout << "==============================================" << endl;       
-    cout << " Saving object handler file " << file << endl;
+    printf("==============================================\n");
+    printf(" Saving object handler file %s\n", file);
     
     io.obrirFitxer(file, ESCRIPTURA);     
     
@@ -107,7 +104,7 @@ void objectHandler :: SaveObjectsToFile(char *file)
     }
     
     io.tancarFitxer();
-    cout << "==============================================" << endl;    
+    printf("==============================================\n");    
 }
 
 void objectHandler :: DrawObjectsInScreen(

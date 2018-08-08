@@ -402,7 +402,7 @@ void enemigo :: loadAnimations(const char *file)
 
      string directory = chopToDirectory(auxfile);
 
-     cout << "\t Reading enemy animation info from file " << auxfile << endl;
+     printf("\t Reading enemy animation info from file %s\n", auxfile);
 
      // cabecera
      fitxerAnimacio.llegirLinea(buffer);

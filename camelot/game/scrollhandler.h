@@ -3,7 +3,8 @@
 #ifndef SCROLLHANDLER_H
 #define SCROLLHANDLER_H
 
-#include <iostream.h>
+#include <assert.h>
+
 #include "defines.h"
 #include "entradasortida.h"
 

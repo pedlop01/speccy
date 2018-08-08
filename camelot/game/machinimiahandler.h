@@ -4,7 +4,6 @@
 #define MACHINIMIAHANDLER_H
 
 #include <allegro.h>
-#include <iostream.h>
 #include <string.h>
 
 #include "entradasortida.h"

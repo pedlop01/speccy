@@ -4,7 +4,7 @@
 #define ENEMIGO_H
 
 #include <stdlib.h>
-#include <map.h>
+#include <map>
 #include <math.h>
 #include <string>
 
@@ -137,7 +137,7 @@ class enemigo
 		void loadAnimations(const char* file);
 		
 		// drawing
-		void drawCharacterInWorld(mundo* world, BITMAP* world, int posX, int posY);
+		void drawCharacterInWorld(mundo* world, BITMAP* world_bmp, int posX, int posY);
 				
         inline int GetEnemyType()    { return enemyType; }
 				

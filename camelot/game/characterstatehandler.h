@@ -6,8 +6,8 @@
 #include <allegro.h>
 #include <list>
 #include <map>
-#include <iostream>
 #include <string>
+#include <assert.h>
 
 #include "entradaSortida.h"
 #include "keyboardmap.h"

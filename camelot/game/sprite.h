@@ -3,9 +3,13 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
-#include<vector.h>
+#include <vector>
+#include <assert.h>
 #include <allegro.h>
+
 #include "static_image.h"
+
+using namespace std;
 
 /*
  * No description
