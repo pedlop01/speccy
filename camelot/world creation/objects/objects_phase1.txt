@@ -1,0 +1,5 @@
+NumObjects 4 
+0 411 1244 explosion explosion.txt 
+1 781 290 bombilla bombilla.txt 
+2 415 1413 bombilla2 bombilla.txt 
+3 327 1300 rayo  

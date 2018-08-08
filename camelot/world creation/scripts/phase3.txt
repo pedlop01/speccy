@@ -1,0 +1,48 @@
+num_scripts 6 
+1860 
+188 
+127 
+168 
+input_vars 0 
+output_vars 2 
+carrying_object 1 
+cocacola_picked 1 
+7250 
+479 
+299 
+279 
+input_vars 0 
+output_vars 1 
+external_kill 1 
+7014 
+534 
+123 
+168 
+input_vars 2 
+carrying_object 1 
+cocacola_picked 1 
+output_vars 1 
+to_next_level 1 
+4168 
+581 
+152 
+153 
+input_vars 0 
+output_vars 1 
+external_kill 1 
+6357 
+514 
+88 
+213 
+input_vars 0 
+output_vars 2 
+enemy_reset_16 1 
+enemy_reset_7 1 
+6449 
+512 
+85 
+214 
+input_vars 0 
+output_vars 2 
+enemy_activated_16 1 
+enemy_activated_7 1 

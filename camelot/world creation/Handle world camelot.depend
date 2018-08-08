@@ -1,0 +1,28 @@
+# depslib dependency file v1.0
+1188752424 c:\temp\camelot remake\handle world\mundo.cpp
+	"mundo.h"
+
+1188505736 c:\temp\camelot remake\handle world\mundo.h
+	<allegro.h>
+	<iostream.h>
+	"entradasortida.h"
+
+1074077160 c:\temp\camelot remake\handle world\entradasortida.h
+	<allegro.h>
+	<string.h>
+	<fcntl.h>
+	<stdio.h>
+	<unistd.h>
+
+1074078240 c:\temp\camelot remake\handle world\entradasortida.cpp
+	"entradasortida.h"
+
+1206527844 c:\temp\camelot remake\handle world\main.cpp
+	<allegro.h>
+	<iostream.h>
+	"defines.h"
+	"entradaSortida.h"
+	"mundo.h"
+
+1188503494 c:\temp\camelot remake\handle world\defines.h
+

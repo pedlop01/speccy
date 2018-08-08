@@ -1,0 +1,71 @@
+num_scripts 9 
+744 
+224 
+112 
+100 
+input_vars 0 
+output_vars 2 
+bombilla_picked 1 
+carrying_object 1 
+408 
+1344 
+100 
+100 
+input_vars 2 
+am_i_a_frog 0 
+carrying_object 1 
+output_vars 2 
+am_i_a_frog 1 
+current_state 8 
+3744 
+1400 
+3932 
+1532 
+input_vars 1 
+am_i_a_frog 1 
+output_vars 1 
+to_next_level 1 
+3744 
+1350 
+3932 
+1532 
+input_vars 1 
+am_i_a_frog 0 
+output_vars 1 
+external_kill 1 
+719 
+751 
+336 
+16 
+input_vars 0 
+output_vars 3 
+current_state 3 
+forceStateUpdate 1 
+previous_state 1 
+960 
+960 
+74 
+64 
+input_vars 0 
+output_vars 3 
+current_state 1 
+forceStateUpdate 1 
+previous_state 1 
+952 
+268 
+74 
+62 
+input_vars 0 
+output_vars 0 
+3003 
+977 
+62 
+63 
+input_vars 0 
+output_vars 0 
+3003 
+243 
+69 
+65 
+input_vars 0 
+output_vars 0 
