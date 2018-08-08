@@ -253,7 +253,7 @@ bool pressed_s() {
 }
 
 bool pressed_p() {
-  return keys & KEY_P;
+  return (keys & KEY_P) && (keys_pressed_down & KEY_P);
 }
 
 // --- End helper functions
@@ -452,6 +452,7 @@ int mirar_lineas() {
     if(!trobat) {
       lineas++;
       visualizar_tablero();
+      visualizar_ficha(todas_las_fichas[sig - 1].posicion[0].casilla);
       blit(objetos, 0, 22, j*10 + 111, i*10  - 34, 99, 9);
       draw_screen();
       Sleep(50);
@@ -521,7 +522,7 @@ void muerte() {
   printed_dead = true;
 }
 
-void draw_muerte_completa(bool pausa) {
+void draw_muerte_completa(bool pausa, bool record) {
   int i;
 
   al_set_target_bitmap(bitmap_aux);
@@ -532,7 +533,7 @@ void draw_muerte_completa(bool pausa) {
 
   if (pausa) {
     blit(objetos, 85, 42, 132, 80, 62, 24);
-  } else {
+  } else if (!record) {
     blit(objetos, 85, 66, 132, 70, 62, 37);
   }
 
@@ -646,7 +647,7 @@ void populate_records() {
     free(line);
 }
 
-void check_record() {
+bool check_record() {
   int puntos = tetris.puntos;
   int lineas = tetris.lineas;
   bool trobat = false;
@@ -663,18 +664,18 @@ void check_record() {
     }
   }
 
-  // new record!
+  // no new record!
   if (!trobat) {
-    return;
+    return false;
   }
 
-  inicializar();
+  // new record!
 
   al_set_target_bitmap(bitmap);
-  al_draw_bitmap(fondo[(tetris.lineas /10) % 10], 0, 0, 0);
+  al_draw_bitmap(fondo[(tetris.lineas/10) % 10], 0, 0, 0);
+  draw_muerte_completa(false, true);
   blit(objetos, 146, 128, 90, 43, 146, 43);
   draw_screen();
-
 
   ALLEGRO_EVENT ev;
   int num_chars = 0;
@@ -683,8 +684,9 @@ void check_record() {
     while(!al_is_event_queue_empty(event_queue)) {
 
       al_wait_for_event(event_queue, &ev);
-            
-      visualizar_tablero();
+
+      // draw screen makes bitmap to be ready for drawing
+      draw_muerte_completa(false, true);
       blit(objetos, 146, 128, 90, 43, 146, 43);
 
       if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
@@ -728,6 +730,8 @@ void check_record() {
     fprintf(file,"%s,%d,%d\n", records[j].nombre, records[j].lineas, records[j].puntos);
   }
   fclose(file);
+
+  return true;
 }
 
 /*************************** Programa principal ***************************/
@@ -753,6 +757,7 @@ void juego() {
   already_drawn = false;
   printed_dead = false;
   pressing_dir = false;
+  keys = 0;
 
   al_play_sample_instance(the_music_instance[0]);
   last_music_instance = the_music_instance[0];
@@ -817,14 +822,18 @@ void juego() {
 
       if (pressed_up() || pressed_n()) {
         aux = rotar_izquierda(aux);
-        if(hay_colision(aux, aux.x, aux.y - 1))
+        if(hay_colision(aux, aux.x, aux.y - 1)) {
           aux = rotar_derecha(aux);
-        al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+        } else {
+          al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+        }
       } else if (pressed_m()) {
         aux = rotar_derecha(aux);
-        if(hay_colision(aux, aux.x, aux.y - 1))
+        if(hay_colision(aux, aux.x, aux.y - 1)) {
           aux = rotar_izquierda(aux);
-        al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+        } else {
+          al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+        }
       }
       posicionar_ficha(aux, aux.x, aux.y, 1);
     }
@@ -844,10 +853,10 @@ void juego() {
 
     if (pausa) {
       muerte();
-      draw_muerte_completa(true);      
+      draw_muerte_completa(true, false);
     } else if (salir) {
       muerte();
-      draw_muerte_completa(false);
+      draw_muerte_completa(false, false);
       if (pressed_s()) {
         final = true;
         printed_dead = false;
