@@ -2,128 +2,64 @@
 
 #include "fxhandler.h" // class's header file
 
-sound :: sound(char *sys, char *n, bool destroy, bool _loop)
-{
-    assert(sys != NULL );
-    
+sound :: sound(char *n, bool _loop)
+{  
     enabled = false;
     
-    system = sys;
-    channel = 0;
     strcpy(name, n);
-    destroyable = destroy;
     loop = _loop;
-    if( !destroyable )
-    {
-        this->init(); 
-    }
-    else
-    {
-        fmodSound = false;
-    }
+    printf("Loaded sound %s\n", name);
+    sample = load_sample(name);
+    assert(sample);
 }
-sound :: ~sound() 
-{
-    if( !destroyable )
-    {
-        this->destroy();     
-    }
+sound :: ~sound() {
+    destroy_sample(sample);
 }
 
-void sound :: init()
-{   
-/*    
-    if( !loop )
-    {
-        if( FMOD_System_CreateStream(system, name, FMOD_HARDWARE | FMOD_IGNORETAGS | FMOD_CREATESAMPLE | FMOD_2D, 0, &fmodSound) )
-            allegro_message(name);    //FIXME 
-    }
-    else
-    {
-        if( FMOD_System_CreateStream(system, name, FMOD_HARDWARE | FMOD_IGNORETAGS | FMOD_LOOP_NORMAL | FMOD_CREATESAMPLE | FMOD_2D, 0, &fmodSound) )
-            allegro_message(name);    //FIXME         
-    }
-    */
+void sound :: play() {
+  assert(play_sample(sample, 255, 128, 1000, loop) >= 0);
 }
 
-void sound :: destroy()
-{
-     /*
-    if( FMOD_Sound_Release(fmodSound) )
-        allegro_message(name);   // FIXME   */
-}
-
-void sound :: play()
-{   /*
-    FMOD_BOOL is_playing = false;
-    if( destroyable )
-    { 
-        this->init();
-    }
-    if( FMOD_System_PlaySound(system, FMOD_CHANNEL_FREE, fmodSound, 0, &channel) )    
-            allegro_message(" Error playing sound ");
-
-    if( destroyable )
-    {
-        this->destroy();
-    }*/
+void sound :: stop() {
+  stop_sample(sample);
 }
 
 // class constructor
-fxHandler::fxHandler()
-{/*
-    system = NULL;
-    channel = NULL;       
-
-    if( (result = FMOD_System_Create(&system)) )
-        allegro_message(" Error creating sound system ");
-
-    if( (result = FMOD_System_GetVersion(system, &version)) )
-        allegro_message(" Error getting sound system version ");
-
-    if( (result = FMOD_System_Init(system, 1, FMOD_INIT_NORMAL, NULL)) )
-         allegro_message(" Error initializing sound system ");
-
-    numSounds = 0;*/
+fxHandler::fxHandler() {
+    // Sound is initialized in the main
+    numSounds = 0;
 }
 
 // class destructor
-fxHandler::~fxHandler()
-{/*
-    if( (result = FMOD_System_Close(system)) )
-        allegro_message(" Error closing sound system ");
-    if( (result = FMOD_System_Release(system)) )
-        allegro_message(" Error realising sound system ");
-   */                    
+fxHandler::~fxHandler() {
 }
 
-int fxHandler :: addSound(char *name, bool destroyable, bool loop)
-{/*
-    sound* newSound = new sound(system, name, destroyable, loop);
-    assert( newSound != NULL );
+int fxHandler :: addSound(char *name, bool loop)
+{
+    sound* newSound = new sound(name, loop);
+    assert( newSound != NULL);
     sounds.push_back(newSound);
     numSounds++;
-    
-    return numSounds - 1;*/
+
+    return numSounds - 1;
 }
 
 void fxHandler :: playSound(int numSound)
-{/*
-    FMOD_Channel_SetPaused(sounds[numSound]->getChannel(), false);     
-    sounds[numSound]->play();*/
+{
+    sounds[numSound]->play();
 }
 
 void fxHandler :: stopSound(int numSound)
-{/*
-    FMOD_Channel_SetPaused(sounds[numSound]->getChannel(), true);*/
+{
+    sounds[numSound]->stop();
 }
 
 bool fxHandler :: getEnabled(int numSound)
-{     /*
-    sounds[numSound]->getEnabled();*/
+{
+    sounds[numSound]->getEnabled();
 }
 
 void fxHandler :: setEnabled(int numSound, bool s)
-{/*
-    sounds[numSound]->setEnabled(s);*/
+{
+    sounds[numSound]->setEnabled(s);
 }

@@ -559,7 +559,7 @@ int Game::gameMain()
     {
         ///////////////////////////////////////////////////////////////////////
         // ENTRADA
-//        timer->setMseg(0);                  // sincronizacion del bucle principal
+        timer->setMseg(0);                  // sincronizacion del bucle principal
         warriorKilled = false;
         acquire_bitmap(buffer[buffer_num]);
         clear_bitmap(buffer[buffer_num]);
@@ -636,7 +636,10 @@ int Game::gameMain()
             msgBoxHandler->drawMessageBox(buffer[buffer_num], world, timer->getMsegGlobal(), entrada_teclado);
         }            
         
-        stretch_blit(buffer[buffer_num], screen_buffer[buffer_num], 0, 0, screen_x_orig,  screen_y_orig, 0, 0, screen_x_size, screen_y_size);   // adaptamos la pantalla      
+        stretch_blit(buffer[buffer_num], screen_buffer[buffer_num], 0, 0, screen_x_orig,  screen_y_orig, 0, 0, screen_x_size, screen_y_size);   // adaptamos la pantalla
+        // Aplicamos los efectos de post-procesado si estan presentes
+        if( current_phase == 1 )        // FIXME
+          waterFx.handler(buffer[buffer_num], screen_buffer[buffer_num], screen_x_size, screen_y_size, timer->getMsegGlobal());
         release_bitmap(buffer[buffer_num]);
         release_bitmap(screen_buffer[buffer_num]);
         show_video_bitmap(buffer[buffer_num]);
@@ -644,18 +647,15 @@ int Game::gameMain()
         buffer_num = 1 - buffer_num;        
         ///////////////////////////////////////////////////////////////////////
         // SINCRONIZACIÓN
-        while( timer->getMseg() < 10 );            
+        while( timer->getMseg() < 10 );
         vsync();                
         
         //sprintf(text, "%f", (float)1000/(timer->getMseg()));
         //textout_ex(screen_buffer[buffer_num], font, text, 8, 24, 0xABCDE, -1);  
             
         ///////////////////////////////////////////////////////////////////////
-        // Pintado final en pantalla + efectos de post procesado
-        if( current_phase == 1 )        // FIXME
-            waterFx.handler(screen_buffer[buffer_num], screen, screen_x_size, screen_y_size, timer->getMsegGlobal());            
-        else            
-            blit(screen_buffer[buffer_num], screen, 0, 0, 0, 0, screen_x_size, screen_y_size);                               
+        // Pintado final en pantalla
+        blit(screen_buffer[buffer_num], screen, 0, 0, 0, 0, screen_x_size, screen_y_size);                               
    	}
     
     // Destroy all
@@ -695,16 +695,16 @@ void Game::init()
 	}
     
     soundHandler = new fxHandler(); // Init fx sounds
-    soundHandler->addSound("./data/fx/hit.wav", false, false);            // 0
-    soundHandler->addSound("./data/fx/sword.mp3", false, false);          // 1
-    soundHandler->addSound("./data/fx/player_walk.ogg", false, true);     // 2
-    soundHandler->addSound("./data/fx/rockfall.ogg", false, false);       // 3
-    soundHandler->addSound("./data/fx/skeleton_dead.ogg", false, false);  // 4    
-    soundHandler->addSound("./data/fx/mort.wav", false, false);           // 5 
-    soundHandler->addSound("./data/fx/caldero.wav", false, false);        // 6     
-    soundHandler->addSound("./data/fx/fire.wav", false, false);           // 7      
-    soundHandler->addSound("./data/fx/granota.wav", false, false);        // 8   
-    soundHandler->addSound("./data/fx/item_appear.ogg", false, false);    // 9      
+    soundHandler->addSound("./data/fx/hit.wav", false);            // 0
+    soundHandler->addSound("./data/fx/sword.wav", false);          // 1
+    soundHandler->addSound("./data/fx/player_walk.wav", true);     // 2
+    soundHandler->addSound("./data/fx/rockfall.wav", false);       // 3
+    soundHandler->addSound("./data/fx/skeleton_dead.wav", false);  // 4    
+    soundHandler->addSound("./data/fx/mort.wav", false);           // 5 
+    soundHandler->addSound("./data/fx/caldero.wav", false);        // 6     
+    soundHandler->addSound("./data/fx/fire.wav", false);           // 7      
+    soundHandler->addSound("./data/fx/granota.wav", false);        // 8   
+    soundHandler->addSound("./data/fx/item_appear.wav", false);    // 9      
 
     waterFx.initialize(FRAMES_AGUA, DIST_DESP_AGUA, 25);     
     

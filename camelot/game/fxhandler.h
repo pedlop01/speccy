@@ -13,47 +13,40 @@ using namespace std;
 class sound
 {
   private:
-    //FMOD_SYSTEM *system;
-    char *system;
     bool destroyable;
     char name[100];
-    char *fmodSound;         
-    char *channel;   
+    SAMPLE* sample;
     bool enabled;
     bool loop;
-  
-    void init();
-    void destroy();
-    
+     
   public:
-    sound(char *sys, char *n, bool destroy, bool loop);
+    sound(char *n, bool loop);
     ~sound();
     
     void play();
+    void stop();
     
     inline void setEnabled(bool s) { enabled = s;    }
-    inline bool getEnabled()       { return enabled; }
-    
-    inline char* getChannel() { return channel; }
-    
+    inline bool getEnabled()       { return enabled; }   
     
 };
 
 class fxHandler
 {
   private:
-    int numSounds;
-    char       *system;
-    vector<sound*>     sounds;
-    char      *channel;
-    char       result;
-    unsigned int      version;
+    int            numSounds;
+    char           *system;
+    vector<sound*> sounds;
+    char           *channel;
+    char           result;
+    unsigned int   version;
        
   public:	
     fxHandler();  	// class constructor
     ~fxHandler();   // class destructor    
     
-    int addSound(char *name, bool destroyable, bool loop);
+    int addSound(char *name, bool loop);
+
     void playSound(int numSound);
     void stopSound(int numSound);
     

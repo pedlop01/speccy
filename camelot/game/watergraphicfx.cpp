@@ -46,9 +46,11 @@ void waterGraphicFx :: initialize(unsigned int wf, unsigned int mwd, unsigned in
 
 void waterGraphicFx :: handler(BITMAP* input_buffer, BITMAP* output_buffer, unsigned int output_bitmap_size_x, unsigned int output_bitmap_size_y, unsigned int time)
 {
+    int frameSizeY_aux = 0;
     for( int i = 0 ; i < waterFrames ; i++ )
     {
-        blit(input_buffer, output_buffer, 0, i*frameSizeY, waterFramePosition[i], i*frameSizeY, output_bitmap_size_x, frameSizeY);
+        blit(input_buffer, output_buffer, 0, frameSizeY_aux, waterFramePosition[i], frameSizeY_aux, output_bitmap_size_x, frameSizeY);
+        frameSizeY_aux += frameSizeY;
     } 
     if( time - savedTime > transitionTime )
     {

@@ -64,12 +64,11 @@ void allegroInit()
 	install_timer();
 	install_keyboard();
 	install_mouse();
-    install_sound(DIGI_NONE, MIDI_AUTODETECT, "./CamelotRemake.exe");    
+    install_sound(DIGI_AUTODETECT, MIDI_AUTODETECT, "./CamelotRemake.exe");
 }
 
 int main()
 {
-    Timer *timer;
     FONT *myfontAndalus;
     FONT *myfontCandara;    
     PALETTE palette;    
