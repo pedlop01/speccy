@@ -137,6 +137,7 @@ int pasos_dir;
 bool already_drawn;
 bool printed_dead;
 int state = IN_GAME;
+float fx_volumen = 0.4;
 
 // Timer
 double PCFreq;
@@ -430,9 +431,9 @@ void puntuacion(int lineas) {
   if(combo > 1) {
     tetris.puntos = (50*lineas*combo) + tetris.puntos;
     if(combo < 4) {
-      al_play_sample(s_combo, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+      al_play_sample(s_combo, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
     } else {
-      al_play_sample(mega, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+      al_play_sample(mega, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
     }
   }
 }
@@ -458,7 +459,7 @@ int mirar_lineas() {
       Sleep(50);
       already_drawn = true;
 
-      al_play_sample(linea, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+      al_play_sample(linea, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
       hay_linea = TRUE;
       for(j = MAX_X_TABLERO - 1; j >= 1; j--) {
         tetris.matriz[i][j] = 0;
@@ -510,7 +511,7 @@ void muerte() {
   if (printed_dead) return;
 
   for(i = MAX_Y_TABLERO - 4; i >= 4; i--) {
-    al_play_sample(linea, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+    al_play_sample(linea, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
 
     visualizar_tablero();
     for (j = MAX_Y_TABLERO - 4; j >= i; j--)
@@ -592,7 +593,7 @@ void inicializar() {
   the_music[3] = al_load_sample("../music/prov3.ogg");  // (sonic)
   the_music[4] = al_load_sample("../music/prov4.ogg");  // (prince)
   the_music[5] = al_load_sample("../music/monk.ogg");
-  the_music[6] = al_load_sample("../music/indy.ogg");
+  the_music[6] = al_load_sample("../music/indi.ogg");
   the_music[7] = al_load_sample("../music/riu.ogg");
   the_music[8] = al_load_sample("../music/progre.ogg");  // (doom)
   the_music[9] = al_load_sample("../music/gprix.ogg");
@@ -618,7 +619,7 @@ void populate_records() {
   size_t len = 0;
   ssize_t read;
   char* line = NULL;
-  char seps[] = ",\t\n";
+  char seps[] = ",";
   char* token;
   char buf[20];
 
@@ -631,7 +632,7 @@ void populate_records() {
   int num_record = 0;
   while ((read = getline(&line, &len, file)) != -1) {
     token = strtok(line, seps);
-    sscanf(token, "%s", buf);
+    sscanf(token, "%[^\t\n]", buf);
     sprintf(records[num_record].nombre, "%s", buf);
     token = strtok(NULL, seps);
     sscanf(token, "%s", buf);
@@ -699,13 +700,10 @@ bool check_record() {
           for (int i = 0; i < num_chars; i++) {
             sprintf(buf, "%s%c", buf, new_name[i]);
           }
-        } else {
+        } else if (num_chars < 12) {
           sprintf(buf, "%s%c", new_name, c);
           num_chars++;
         }
-
-        if (num_chars > 10)
-          exit = true;
       }
       sprintf(new_name, "%s", buf);
       al_draw_text(font, al_map_rgb(255, 255, 255),
@@ -713,7 +711,7 @@ bool check_record() {
       draw_screen();
     }
   }
-  
+  new_name[num_chars] = '\0';
 
   // Now we have the new_name
   for(int j = 8; j >= new_record_position; j--) {
@@ -727,7 +725,8 @@ bool check_record() {
 
   FILE* file = fopen("records.txt", "w"); 
   for (int j=0; j < 10; j++){
-    fprintf(file,"%s,%d,%d\n", records[j].nombre, records[j].lineas, records[j].puntos);
+    fputs(records[j].nombre, file);
+    fprintf(file,",%d,%d\n", records[j].lineas, records[j].puntos);
   }
   fclose(file);
 
@@ -771,7 +770,7 @@ void juego() {
     read_keyboard(event_queue);
 
     if (!salir && !pausa) {
-      if (pasos_ficha*100 > dif) {
+      if (pasos_ficha*128 > dif) {
         baja = true;
         pasos_ficha = 0;
       }
@@ -779,7 +778,7 @@ void juego() {
       posicionar_ficha(aux, aux.x, aux.y, 0);
       if (baja || pressed_down()) {
         if (hay_colision(aux, aux.x, aux.y)) {
-          al_play_sample(colision, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+          al_play_sample(colision, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
           posicionar_ficha(aux, aux.x, aux.y, 1);
 		      mirar_lineas();
 
@@ -825,14 +824,14 @@ void juego() {
         if(hay_colision(aux, aux.x, aux.y - 1)) {
           aux = rotar_derecha(aux);
         } else {
-          al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+          al_play_sample(rotar, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
         }
       } else if (pressed_m()) {
         aux = rotar_derecha(aux);
         if(hay_colision(aux, aux.x, aux.y - 1)) {
           aux = rotar_izquierda(aux);
         } else {
-          al_play_sample(rotar, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+          al_play_sample(rotar, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
         }
       }
       posicionar_ficha(aux, aux.x, aux.y, 1);

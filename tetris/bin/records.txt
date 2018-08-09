@@ -1,10 +1,10 @@
-Lna,127,4840
-Pedro,72,2700
-Pedrito,62,2540
-Pedrito,69,2280
-Lna,45,1660
-Lna,20,1530
-Pedro,2,120
-Pedro,20,50
-Pedro,11,30
-Pedro,11,30
+tontadelculo,96,4260
+Pedro,62,2650
+pedro feo,1,10
+No reco,1,10
+No record,1,10
+Any,0,0
+Any,0,0
+Any,0,0
+Any,0,0
+Any,0,0
