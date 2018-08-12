@@ -26,7 +26,7 @@ animation.o: ../src/animation.cpp
 	g++ -c ../src/animation.cpp
 
 character.o: ../src/character.cpp
-	g++ -c ../src/character.cpp
+	g++ -std=c++11 -c ../src/character.cpp
 
 player.o: ../src/player.cpp
 	g++ -c ../src/player.cpp

@@ -1,10 +1,10 @@
 tontadelculo,96,4260
 Pedro,62,2650
-pedro feo,1,10
-No reco,1,10
-No record,1,10
-Any,0,0
-Any,0,0
-Any,0,0
-Any,0,0
-Any,0,0
+pp,13,800
+parlamento,22,650
+tontin,20,530
+H,10,510
+nooooo,14,490
+polo,9,440
+pedrin,17,410
+pedro,9,390
