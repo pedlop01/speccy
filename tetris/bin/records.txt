@@ -1,10 +1,10 @@
+ptr beats l,168,7640
+mutant_girl,131,5540
 mutant_girl,93,5040
+mutant_girl,115,5030
 Pedrito,106,4630
 Lna,88,4370
 tontadelculo,96,4260
-Lna,90,3410
-Pedrito2,62,2870
-Pedro,62,2650
-Lna,70,2370
-Lna,61,2240
-mutant_girl,34,1750
+Pedro,84,4060
+mutant_girl,92,3880
+mutant_girl,80,3740

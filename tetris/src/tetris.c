@@ -826,9 +826,18 @@ void juego() {
       }
 
       if (pressed_up() || pressed_n()) {
-        aux = rotar_izquierda(aux);
-        if(hay_colision(aux, aux.x, aux.y - 1)) {
-          aux = rotar_derecha(aux);
+        aux = rotar_izquierda(aux);        
+        if(hay_colision(aux, aux.x, aux.y)) {
+          bool valid = false;
+          int pos_x = 0;
+          for (; (pos_x < 4) && !valid; pos_x++) {
+             valid = !hay_colision(aux, aux.x - pos_x, aux.y);
+          }
+          if (!valid) {
+            aux = rotar_derecha(aux);
+          } else {
+            aux.x = aux.x - pos_x + 1;
+          }
         } else {
           al_play_sample(rotar, fx_volumen, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
         }
