@@ -711,7 +711,13 @@ bool check_record() {
       draw_screen();
     }
   }
-  new_name[num_chars] = '\0';
+
+  if (num_chars == 0) {
+    sprintf(new_name, "any\0");
+  } else {
+    new_name[num_chars] = '\0';
+  }
+
 
   // Now we have the new_name
   for(int j = 8; j >= new_record_position; j--) {
