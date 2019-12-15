@@ -5,7 +5,7 @@
 
 #include <allegro.h>
 
-#include "entradaSortida.h"
+#include "entradasortida.h"
 #include "defines.h"
 
 #include "objeto.h"

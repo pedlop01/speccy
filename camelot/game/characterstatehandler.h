@@ -9,7 +9,7 @@
 #include <string>
 #include <assert.h>
 
-#include "entradaSortida.h"
+#include "entradasortida.h"
 #include "keyboardmap.h"
 
 #include "defines.h"

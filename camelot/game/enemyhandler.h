@@ -5,7 +5,7 @@
 
 #include <math.h>
 #include <vector>
-#include "entradaSortida.h"
+#include "entradasortida.h"
 #include "defines.h"
 
 #include "enemigo.h"

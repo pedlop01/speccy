@@ -5,9 +5,9 @@
 
 #include <list>
 
-#include "symbolTable.h"
+#include "symboltable.h"
 #include "script.h"
-#include "entradaSortida.h"
+#include "entradasortida.h"
 
 
 class scriptHandler

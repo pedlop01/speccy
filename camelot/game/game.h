@@ -9,7 +9,7 @@
 
 #include "defines.h"
 #include "common-defines.h"
-#include "entradaSortida.h"
+#include "entradasortida.h"
 
 #include "character.h"
 #include "enemyhandler.h"
@@ -18,7 +18,7 @@
 #include "symboltable.h"
 #include "scripthandler.h"
 #include "objecthandler.h"
-#include "fxHandler.h"
+#include "fxhandler.h"
 #include "phase_info.h"
 #include "watergraphicfx.h"
 #include "scrollhandler.h"

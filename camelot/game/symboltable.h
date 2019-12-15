@@ -3,7 +3,9 @@
 #ifndef SYMBOLTABLE_H
 #define SYMBOLTABLE_H
 
+#ifdef __WIN32
 #include <conio.h>
+#endif
 #include <map>
 #include <string>
 #include <assert.h>
