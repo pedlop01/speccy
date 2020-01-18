@@ -4,3 +4,6 @@ gomas: ../src/main.cpp ../src/z80.cpp ula.o
 
 ula.o: ../src/ula.cpp
 	g++ -c ../src/ula.cpp -O3
+
+clean:
+	rm -f *.o gomas
