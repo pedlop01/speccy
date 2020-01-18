@@ -1,3 +1,0 @@
-NumObjects 2 
-0 1892 191 cocacola cocacola.txt 
-1 7107 575 object_n_2  

@@ -1,5 +1,0 @@
-num_enemies 4 
-4 0 0 0 247 607 0 158 128 c:/Documents and Settings/Pedro/Escritorio/camelot/game/data/characters/planta.txt 
-2 1 2 0 290 500 0 397 2 c:/Documents and Settings/Pedro/Escritorio/camelot/game/data/characters/buho.txt 
-1 1 2 1 1198 304 1 -186 2 c:/Documents and Settings/Pedro/Escritorio/camelot/game/data/characters/hipopotamo.txt 
-1 1 2 0 2088 632 1983 0 4 c:/Documents and Settings/Pedro/Escritorio/camelot/game/data/characters/bolita.txt 

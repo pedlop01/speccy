@@ -1,6 +1,0 @@
-numZones 1 
-startZone 0 
-zone1_start_x 0 
-zone1_start_y 0 
-zone1_world_size_x 2944
-zone1_world_size_y 1536   

@@ -1,3 +1,0 @@
-NumObjects 2 
-1 1054 608 1 television television.txt 
-1 2495 1408 0 television2 television.txt 
