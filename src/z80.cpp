@@ -2067,7 +2067,7 @@ void Z80::EmulateOne() {
 			break;			
 
 		default:
-			printf("Unimplemented opcode (XXCB) 0x%0.x\n", op);
+			printf("Unimplemented opcode (XXCB) 0x%.4x\n", op);
 			break;
 	}
 }

@@ -141,7 +141,10 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
   printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
 
   // DE should contain the tota number of bytes
-  assert(totalNBytes = cpu.regs.DE);
+  if (totalNBytes > cpu.regs.DE) {
+     printf("WARNING: totalNBytes in TAP file does not match register DE. Forcing totalNBytes to DE value\n");
+     totalNBytes = cpu.regs.DE;
+  }
 
   // We must place data read from tape at IX base address onwards
   // DE is the number of bytes to read, IX increments with each byte read
