@@ -15,24 +15,133 @@
 
 using namespace std;
 
+void PrintRegisters(Z80 &cpu) {
+    printf("--------------------------------\n");
+    printf("PC: 0x%.8x SP : 0x%.8x\n", cpu.regs.PC, cpu.regs.SP);
+    printf("AF: 0x%.8x AF': 0x%.8x\n", cpu.regs.AF, cpu.regs.altAF);
+    printf("BC: 0x%.8x BC': 0x%.8x\n", cpu.regs.BC, cpu.regs.altBC);
+    printf("DE: 0x%.8x DE': 0x%.8x\n", cpu.regs.DE, cpu.regs.altDE);
+    printf("HL: 0x%.8x HL': 0x%.8x\n", cpu.regs.HL, cpu.regs.altHL);
+    printf("IX: 0x%.8x IY : 0x%.8x\n", cpu.regs.IX, cpu.regs.IY);
+    printf("I : 0x%.8x R  : 0x%.8x\n", cpu.regs.I,  cpu.regs.R);
+    printf("--------------------------------\n");
+}
+
+void ReadTapFile(vector<unsigned char> &data, vector<unsigned char>::iterator &block) {
+
+    if (block == data.end()) {
+        printf("Not enough data to read a block\n");
+        return;
+    }
+
+    // Assuming block points to a valid block
+
+    printf("Reading a TAP block\n");
+
+    // First two bytes are the size of the block
+    unsigned short nBytesLSB = *block++;
+    unsigned short nBytesMSB = *block++;
+    unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
+
+    // Remove the flag + the checksum to compute the total number of bytes
+    unsigned short totalNBytes = nBytes - 2;
+
+    // Type of block (A reg, 00 for headers, ff for data blocks)
+    unsigned short blockType = *block++;
+
+    printf(" - block size = %d\n", totalNBytes);
+
+    // flag (00 for header, ff for data)
+    if (blockType == 0x00) {
+        printf(" - block type = header\n");
+
+        // first block of header
+        unsigned short headerType = *block++;
+
+        // filename
+        char filename[11];
+        for (unsigned int i = 0; i < 10; i++) {
+            filename[i] = *block++;
+        }
+        filename[10] = '\0';
+        printf(" - filename = %s\n", filename);
+
+        // Based on header type read the next bytes
+        unsigned short lengthDataBlockLSB;
+        unsigned short lengthDataBlockMSB;
+        unsigned short lengthDataBlock;
+        unsigned short parameter1[2];
+        unsigned short parameter2[2];
+        switch (headerType) {
+            case 0x00: printf(" - header program block\n");
+                       lengthDataBlockLSB = *block++;
+                       lengthDataBlockMSB = *block++;
+                       lengthDataBlock = (lengthDataBlockLSB << 8) | lengthDataBlockMSB;
+                       printf(" - length of data block = %d\n", lengthDataBlock);
+                       parameter1[1] = *block++;
+                       parameter1[0] = *block++;
+                       printf(" - autostart line number = %.2x %.2x\n", parameter1[0], parameter1[1]);
+                       parameter2[1] = *block++;
+                       parameter2[0] = *block++;
+                       printf(" - start of the variable area relative to the start of the program = %.2x %.2x\n", parameter2[0], parameter2[1]);
+                       break;
+            case 0x01: printf(" - header number array block\n");
+                       break;
+            case 0x02: printf(" - header character array block\n");
+                       break;
+            case 0x03: printf(" - header code block\n");
+                       lengthDataBlockLSB = *block++;
+                       lengthDataBlockMSB = *block++;
+                       lengthDataBlock = (lengthDataBlockLSB << 8) | lengthDataBlockMSB;
+                       printf(" - length of data block = %d\n", lengthDataBlock);
+                       parameter1[1] = *block++;
+                       parameter1[0] = *block++;
+                       printf(" - start of code block = %.2x %.2x\n", parameter1[0], parameter1[1]);
+                       parameter2[1] = *block++;
+                       parameter2[0] = *block++;
+                       printf(" - should be 32768 = %.2x %.2x\n", parameter2[0], parameter2[1]);
+                       break;
+            default  : printf(" - header unknown block\n");
+                       break;
+        }
+
+        // checksum
+        printf(" - checksum = 0x%.2x\n", *block++);
+
+    } else if (blockType == 0xff) {
+        printf(" - block type = data\n");
+        block = block + totalNBytes + 1; // skip checksum
+    } else {
+        printf(" - block type = unknown\n");
+        block = block + totalNBytes + 1; // skip checksum
+    }
+
+    // Recursively, call again to ReadTapFile to read
+    // more blocks from the tap file
+    ReadTapFile(data, block);
+}
+
 int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::iterator &block) {
 
+  printf("Calling to LoadTrap\n");
+  printf(" DE = 0x%x (%d)\n", cpu.regs.DE, cpu.regs.DE);
+  printf(" IX = 0x%x (%d)\n", cpu.regs.IX, cpu.regs.IX);
+
   // First byte of data contains value for the A register on return.
-  // Last byte is blocks checksum (not using it).  
+  // Last byte is block checksum (not using it).  
   unsigned short nBytesLSB = *block;  
   block++;
   unsigned short nBytesMSB = *block;  
-  block++;
-  unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
+  block++;  unsigned short nBytes = (nBytesMSB << 8) | nBytesLSB;
   unsigned short totalNBytes = nBytes - 2;
 
   // Advance pointerto skip value for A
   block++;
 
-  if (cpu.regs.DE < totalNBytes)
-    totalNBytes = cpu.regs.DE;
+  printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
 
-  //printf("Num Bytes = %d, DE=%d\n", nBytes, cpu.regs.DE);
+  // DE should contain the tota number of bytes
+  assert(totalNBytes = cpu.regs.DE);
 
   // We must place data read from tape at IX base address onwards
   // DE is the number of bytes to read, IX increments with each byte read
@@ -43,6 +152,8 @@ int LoadTrap(Z80& cpu, vector<unsigned char>& data, vector<unsigned char>::itera
     totalNBytes--;
     cpu.regs.DE--;
   }
+
+  // Read checksum
   block++;
   return 0;
 }
@@ -245,6 +356,9 @@ int main(int argc, char *argv[]) {
 
   block = data.begin();
 
+  vector<unsigned char>::iterator block_copy = block;
+  ReadTapFile(data, block_copy);
+
   // Main loop
   do {
     // Keyboard routine. Needs to be moved elsewhere
@@ -256,7 +370,7 @@ int main(int argc, char *argv[]) {
     
     if ((cpu.regs.PC == 0x056B)) {      
       if (LoadTrap(cpu, data, block) == 0) {
-          //printf("LoadTrap successful\n");
+          printf("LoadTrap successful\n");
           // set up register for success
           cpu.regs.BC = 0xB001;
           cpu.regs.altAF = 0x0145;
@@ -271,6 +385,8 @@ int main(int argc, char *argv[]) {
 
     // Emulate instructions
     cpu.EmulateOne();
+
+    //PrintRegisters(cpu);
 
     bool irq = false;
     ula.AddCycles(cpu.tStates, irq);
