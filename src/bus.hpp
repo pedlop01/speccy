@@ -59,12 +59,12 @@ public:
     void Write(unsigned int address, unsigned char value) {
       BusComponentBase *pComp = m_pagedComponents[(address & 0xFFFF)/1024];
       if (pComp)
-          pComp->Write(address, value);
+          pComp->Write(address & 0xFFFF, value);
       };
 
     unsigned char Read(unsigned int address) {
       BusComponentBase *pComp = m_pagedComponents[(address & 0xFFFF)/1024];
-      return pComp ? pComp->Read(address) : 0xFF;
+      return pComp ? pComp->Read(address & 0xFFFF) : 0xFF;
     };
 
 protected:
