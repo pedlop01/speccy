@@ -53,7 +53,34 @@ Pruebas
 No requieren ventana ni dispositivo de audio. Comprueban colores, BRIGHT, FLASH,
 la distribución de VRAM, límites del borde, ciclos exactos y sobrantes, muestreo
 independiente del reparto en instrucciones, eliminación de continua, separación
-de búferes y arranque de la ROM incluida durante 500 frames.
+de búferes y arranque de la ROM incluida durante 500 frames. También se comprueban
+los bytes de bitmap/atributos del bus flotante en las 192 líneas, los intervalos
+inactivos y el bucle de sincronización usado por Cobra.
+
+Bloqueo de Cobra al comenzar la partida
+---------------------------------------
+Cobra espera al bus flotante en 0x95FE-0x9607:
+
+  LD BC,0x3F28
+  LD A,C
+  IN A,(0xFF)
+  CP B
+  JR NC,0x9601
+
+Con una respuesta constante de 0xFF el salto se repite indefinidamente. El menú
+puede funcionar y reproducir música porque no ejecuta todavía esta espera.
+ULA::IORead ahora devuelve los bytes que lee la ULA durante la zona de pantalla:
+bitmap, atributo, bitmap siguiente, atributo siguiente y cuatro ciclos inactivos.
+Fuera de esos accesos devuelve 0xFF. La primera lectura es en el t-state 14338,
+con líneas de 224 t-states. Referencia de temporización:
+https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
+
+Se reprodujo cargando bin/cobra.tap mediante LOAD "", contestando N al trainer y
+eligiendo 1 (teclado). Antes la imagen permanecía idéntica y el PC se quedaba en
+0x9601-0x9605. Después la partida actualiza la pantalla y avanza. No se ha cambiado
+el TAP ni parcheado el código del juego. El acceso de E/S sigue resolviéndose con
+la fase de la ULA al inicio de la instrucción; no es todavía un modelo de ciclos
+de bus con contención completa.
 
 Límites actuales
 ----------------

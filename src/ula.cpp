@@ -224,7 +224,23 @@ unsigned char ULA::IORead(unsigned int address) {
     }
     return kData;
   }
-  return 0xFF; // pull up on bus
+  // Unattached ports expose the ULA video fetches (48K floating bus).
+  // First bitmap fetch: t-state 14338; four fetches then four idle cycles.
+  // See https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
+  const unsigned int firstFetch = 14338;
+  if (dwFrameTStates < firstFetch) return 0xFF;
+  unsigned int elapsed = dwFrameTStates - firstFetch;
+  unsigned int y = elapsed / TSTATES_PER_SCANLINE;
+  unsigned int x = elapsed % TSTATES_PER_SCANLINE;
+  if (y >= 192 || x >= 128 || (x & 7) >= 4) return 0xFF;
+  unsigned int column = (x / 8) * 2 + ((x & 2) >> 1);
+  unsigned int offset;
+  if (x & 1)
+    offset = 0x1800 + (y / 8) * 32 + column;
+  else
+    offset = ((y & 0xC0) << 5) | ((y & 7) << 8) |
+             ((y & 0x38) << 2) | column;
+  return data[offset];
 }
 
 void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
