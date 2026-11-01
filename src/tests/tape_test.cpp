@@ -80,8 +80,8 @@ int main() {
   int fd = mkstemp(path); assert(fd >= 0);
   assert(write(fd, tap.data(), tap.size()) == static_cast<ssize_t>(tap.size())); close(fd);
   SpectrumMachine machine;
-  assert(machine.rom.Load("48.rom") == 0);
   std::string error;
+  assert(machine.LoadROM(FindROM("48.rom"), error));
   assert(machine.Open(path, error)); unlink(path);
   assert(machine.fastLoad && !machine.PlayTape());
   machine.SetFastLoad(false);

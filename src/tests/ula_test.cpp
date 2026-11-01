@@ -87,7 +87,7 @@ int main() {
 
   // Boot the included ROM through the same CPU/ULA timing path as the application.
   ROM<0, 16384> rom;
-  assert(rom.Load("../yass/ROM/48.rom") == 0);
+  assert(rom.Load("../roms/48.rom") == 0);
   RAM<32768, 32768> ram;
   TestULA boot;
   Bus16 bus;

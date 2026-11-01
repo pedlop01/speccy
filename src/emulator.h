@@ -9,6 +9,7 @@
 #include "bus.hpp"
 #include "ram.hpp"
 #include "rom.hpp"
+#include "rom_loader.h"
 #include "ula.h"
 #include "tape.h"
 
@@ -50,6 +51,7 @@ public:
   TapeDeck deck;
   bool fastLoad = true;
   std::string tapePath;
+  ROMSet systemROM;
 
   SpectrumMachine() {
     bus.AddBusComponent(&rom);
@@ -68,6 +70,23 @@ public:
     deck.Rewind();
     AttachCPU();
   }
+
+  bool LoadROM(const std::string &path, std::string &error, bool custom48 = false) {
+    ROMSet candidate;
+    if (!LoadROMSet(path, candidate, error, custom48)) return false;
+    if (candidate.model != MachineModel::Spectrum48) {
+      error = "Detected " + candidate.name + " (" + std::to_string(candidate.pages.size()) +
+          " ROM pages). This model needs memory paging and other hardware not implemented yet. The current machine is unchanged.";
+      return false;
+    }
+    rom.LoadBytes(candidate.pages.front());
+    systemROM = std::move(candidate);
+    if (!CanFastLoad()) fastLoad = false;
+    Reset();
+    error.clear();
+    return true;
+  }
+  bool CanFastLoad() const { return systemROM.fastLoadCompatible; }
 
   bool Open(const std::string &path, std::string &error) {
     std::ifstream input(path, std::ios::binary);
@@ -93,6 +112,7 @@ public:
   }
 
   void SetFastLoad(bool enabled) {
+    if (enabled && !CanFastLoad()) return;
     if (fastLoad == enabled) return;
     deck.Stop();
     tapePos = deck.Offset();
@@ -111,7 +131,7 @@ public:
   void Frame() {
     bool irq = false;
     while (!irq) {
-      if (fastLoad && cpu.regs.PC == 0x056B) {
+      if (fastLoad && CanFastLoad() && cpu.regs.PC == 0x056B) {
         const bool loaded = LoadTrap(cpu, tape, tapePos);
         deck.CueOffset(tapePos);
         if (loaded) { cpu.regs.BC = 0xB001; cpu.regs.altAF = 0x0145; }

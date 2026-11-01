@@ -8,7 +8,7 @@
 static void Cobra(bool fast) {
   SpectrumMachine machine;
   std::string error;
-  assert(machine.rom.Load("48.rom") == 0);
+  assert(machine.LoadROM(FindROM("48.rom"), error));
   assert(machine.Open("cobra.tap", error));
   machine.SetFastLoad(fast);
   int finished = -1;

@@ -4,6 +4,7 @@
 #undef main
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/keysym.h>
 #include <X11/extensions/XTest.h>
 #include <chrono>
 #include <thread>
@@ -69,18 +70,58 @@ static void Check(bool condition, const char *message) {
 
 int main() {
   XInitThreads();
+  // Never read or overwrite the user's actual last-ROM preference.
+  char configPath[] = "/tmp/gomas-ui-settings-XXXXXX";
+  int configFd = mkstemp(configPath);
+  if (configFd < 0) return 1;
+  close(configFd);
+  unlink(configPath);
+  const char *oldConfig = getenv("GOMAS_CONFIG");
+  bool hadConfig = oldConfig != nullptr;
+  std::string savedConfig = oldConfig ? oldConfig : "";
+  setenv("GOMAS_CONFIG", configPath, 1);
   bool passed = false;
   std::string failure;
   std::thread input([&]() {
     Display *x = XOpenDisplay(nullptr);
     if (!x) { failure = "test-ui requires an X11 display"; return; }
+    Window mainWindow = 0, deck = 0;
     try {
-      Window mainWindow = 0, deck = 0;
       Check(Until([&]() {
         mainWindow = FindWindow(x, DefaultRootWindow(x), "Gomas - ZX Spectrum 48K - cobra.tap");
         return mainWindow != 0;
       }, 5000), "Main window did not open");
       // The title is set immediately before the event loop starts.
+      Wait(100);
+      // Exercise the ROM selector through its real native file dialog.
+      Menu(MENU_LOAD_ROM);
+      Window chooser = 0;
+      Check(Until([&]() {
+        chooser = FindWindow(x, DefaultRootWindow(x), "Load system ROM");
+        return chooser != 0;
+      }, 5000), "ROM selector did not open");
+      XSetInputFocus(x, chooser, RevertToParent, CurrentTime);
+      auto key = [&](KeySym symbol, bool down) { XTestFakeKeyEvent(x, XKeysymToKeycode(x, symbol), down, 0); };
+      key(XK_Control_L, true); key('l', true); key('l', false); key(XK_Control_L, false);
+      XFlush(x); Wait(100);
+      key(XK_Control_L, true); key('a', true); key('a', false); key(XK_Control_L, false);
+      char absoluteROM[4096];
+      Check(realpath("../roms/48.rom", absoluteROM) != nullptr, "Cannot locate ROM fixture");
+      for (const char *c = absoluteROM; *c; ++c) { key(*c, true); key(*c, false); }
+      key(XK_Return, true); key(XK_Return, false); XFlush(x);
+      Check(Until([&]() { return FindWindow(x, DefaultRootWindow(x), "Load system ROM") == 0; }, 5000),
+          "ROM selection did not complete");
+      Wait(100);
+      Check(FindWindow(x, DefaultRootWindow(x), "Gomas - ZX Spectrum 48K - cobra.tap") != 0,
+          "ROM selection lost the mounted tape or selected the wrong model");
+      Menu(MENU_START_48);
+      Check(Until([&]() { return !ROMPreferences::Read(configPath).restoreLast; }, 750),
+          "The 48K startup preference was not saved");
+      Menu(MENU_START_LAST);
+      Check(Until([&]() { return ROMPreferences::Read(configPath).restoreLast; }, 750),
+          "The last-ROM startup preference was not saved");
+      Check(!ROMPreferences::Read(configPath).lastROM.empty(), "The chosen ROM was not remembered");
+      Menu(MENU_ROM_48);
       Wait(100);
       Menu(MENU_FAST_LOAD);
       Check(Until([&]() {
@@ -143,18 +184,34 @@ int main() {
         XDestroyImage(image);
         return accent;
       }, 750), "Cue selected did not move the current-block marker");
-      printf("Mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection and Cue passed\n", latency);
+      printf("Mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what();
+      for (const char *title : {"Load system ROM", "Gomas"}) {
+        Window modal = FindWindow(x, DefaultRootWindow(x), title), parent = 0;
+        if (modal && mainWindow && XGetTransientForHint(x, modal, &parent) && parent == mainWindow) {
+          XEvent close = {};
+          close.xclient.type = ClientMessage;
+          close.xclient.window = modal;
+          close.xclient.message_type = XInternAtom(x, "WM_PROTOCOLS", False);
+          close.xclient.format = 32;
+          close.xclient.data.l[0] = XInternAtom(x, "WM_DELETE_WINDOW", False);
+          close.xclient.data.l[1] = CurrentTime;
+          XSendEvent(x, modal, False, NoEventMask, &close);
+        }
+      }
+      XFlush(x);
     }
     Menu(MENU_EXIT);
     XCloseDisplay(x);
   });
-  char app[] = "gomas", tape[] = "cobra.tap", rom[] = "48.rom";
-  char *arguments[] = {app, tape, rom, nullptr};
-  int result = GomasApplicationMain(3, arguments);
+  char app[] = "gomas", tape[] = "cobra.tap";
+  char *arguments[] = {app, tape, nullptr};
+  int result = GomasApplicationMain(2, arguments);
   input.join();
+  unlink(configPath);
+  if (hadConfig) setenv("GOMAS_CONFIG", savedConfig.c_str(), 1); else unsetenv("GOMAS_CONFIG");
   if (!passed || result != 0) {
     fprintf(stderr, "Tape UI test failed: %s\n", failure.c_str());
     return 1;

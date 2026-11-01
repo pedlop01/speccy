@@ -9,7 +9,8 @@ int main() {
   ALLEGRO_BITMAP *bitmap = al_create_bitmap(320, 240);
   assert(bitmap);
   SpectrumMachine machine;
-  assert(machine.rom.Load("48.rom") == 0);
+  string romError;
+  assert(machine.LoadROM(FindROM("48.rom"), romError));
   machine.ula.SetBitmap(bitmap);
   assert(machine.ula.Present());
   string error;

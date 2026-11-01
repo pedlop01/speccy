@@ -11,11 +11,16 @@ No necesita acodec.
   make -C bin
   ./bin/gomas
 
-La ROM 48.rom se busca en el directorio de trabajo y junto al ejecutable.
+Al arrancar se restaura por defecto la última ROM abierta correctamente. Si no
+hay una guardada o ya no está disponible, se usa roms/48.rom (o roms/48k.rom),
+buscada respecto al ejecutable o al directorio de trabajo. También funciona al
+ejecutar bin/gomas desde fuera del proyecto. Un --rom explícito tiene prioridad.
 También se conserva la apertura por línea de comandos:
 
   ./bin/gomas bin/manic.tap
-  ./bin/gomas bin/manic.tap yass/ROM/48.rom
+  ./bin/gomas bin/manic.tap roms/48.rom
+  ./bin/gomas --rom roms/48.rom
+  ./bin/gomas bin/manic.tap --rom roms/48.rom
 
 Menús
 -----
@@ -30,7 +35,13 @@ Tape > Fast load está activado por defecto y mantiene la carga instantánea.
 Al desactivarlo se abre el reproductor y se habilitan Play, Pause y Stop.
 Tape > Show tape deck... permite abrir el panel en cualquiera de los dos modos.
 Tape > Rewind vuelve al primer bloque, sin reiniciar el Spectrum.
-View y Settings se muestran deshabilitados, sin opciones todavía.
+Settings > ROM > Open ROM... identifica el modelo por el contenido de la ROM elegida.
+Settings > ROM > Open custom 48K ROM... permite una ROM alternativa de 16 KB, asociada
+explícitamente a hardware 48K. La carga rápida se deshabilita si la ROM no tiene
+una rutina reconocida; usar Fast load OFF y Play para cargar cintas.
+Settings > ROM > Information... muestra el perfil activo, archivo y compatibilidad
+con carga rápida. El modelo aparece también en el título de la ventana.
+View sigue deshabilitado, sin opciones todavía.
 Help > About / Help muestra instrucciones y los créditos de YASS.
 
 Los diálogos de archivo y ayuda pausan el audio y la emulación. Tras Open, Close
@@ -45,6 +56,41 @@ escritorio. Referencia: https://liballeg.org/a5docs/trunk/native_dialog.html
 La ventana se puede redimensionar; la imagen conserva su proporción y usa escala
 entera cuando cabe, sin suavizado. LSHIFT corresponde a CAPS SHIFT y RSHIFT a
 SYMBOL SHIFT. Al perder el foco se liberan las teclas.
+
+ROMs y perfiles
+---------------
+El directorio roms/ es la ubicación centralizada. Los perfiles conocidos son:
+48.rom; 128-0/128-1; 128-spanish-0/128-spanish-1; plus2-0/plus2-1 y plus3-0..3.
+Se identifican por huellas FNV-1a del contenido, no por el nombre del archivo.
+Estas huellas identifican versiones; no son una firma de autenticidad.
+
+Se puede elegir cualquier página de un conjunto. Las restantes se buscan en el
+mismo directorio con sus nombres conocidos y se validan antes de cambiar nada.
+También se admiten archivos combinados de 32 KB (128K/+2) o 64 KB (+3), ordenados
+por página 0, 1, etc. Una ROM desconocida no se asigna a un modelo automáticamente;
+para una alternativa de 48K usar la opción explícita de Settings o:
+
+  ./bin/gomas --custom-48-rom /ruta/alternativa.rom
+
+Actualmente solo se ejecuta el perfil 48K. Los conjuntos 128K, +2 y +3 se reconocen
+y validan, pero su activación informa de que falta implementar su hardware y
+conserva la máquina actual. if1-2.rom pertenece a Interface 1 y no sirve como ROM
+de sistema. Una selección inválida o cancelada conserva ROM, CPU, RAM y cinta.
+Una selección correcta reinicia la máquina y rebobina la cinta montada, igual que
+CPU > Reset. La última selección válida se guarda entre ejecuciones, incluyendo si era una
+ROM alternativa de 48K. En Settings > ROM > On startup se elige Last opened ROM
+o Spectrum 48K. Esto cambia el próximo arranque, sin reiniciar la sesión actual.
+Settings > ROM > ZX Spectrum 48K permite cargar directamente la ROM de 48K.
+Los perfiles 128K/+2/+3 aparecen deshabilitados hasta implementar su hardware.
+
+Las preferencias se guardan en el directorio de configuración de usuario de
+Gomas (normalmente ~/.config/gomas/settings.ini en Linux). Las rutas de las ROMs
+se guardan absolutas para poder restaurarlas desde otro directorio. Un archivo
+inválido o una selección cancelada no sustituye la preferencia anterior. Si una
+ROM guardada desaparece, se arranca con 48K y se conserva su ruta por si vuelve
+a estar disponible. Un --rom inválido produce un error, sin sustituirse por otra
+ROM silenciosamente. GOMAS_CONFIG permite indicar otro archivo de preferencias;
+un valor vacío desactiva su lectura y guardado, por ejemplo para pruebas.
 
 Reproductor de cinta y multicarga
 --------------------------------
@@ -124,6 +170,12 @@ comprueban pulsos, pausa/reanudación, fin de cinta, selección de bloques sin r
 y dos cargas a través de la ROM real. La prueba completa carga Cobra desde BASIC
 en ambos modos, contesta al trainer y comprueba que la partida actualiza la
 pantalla. La reproducción lenta se prueba sin esperar al reloj de pared.
+Las pruebas de ROM validan perfiles, páginas sueltas/combinadas, orden de páginas,
+archivos renombrados, tamaños, fallos transaccionales, ROMs personalizadas y
+resolución de rutas desde otros directorios. Las pruebas de preferencias
+comprueban restauración de la última ROM, arranque fijo 48K, prioridad de --rom,
+ROMs alternativas, rutas absolutas, guardado y fallback si falta una ROM. La prueba
+de interfaz utiliza un archivo temporal aislado y verifica las opciones de arranque.
 
 Prueba opcional de interfaz con ratón real (requiere X11, audio y las bibliotecas
 de desarrollo x11/xtst):
@@ -133,6 +185,7 @@ de desarrollo x11/xtst):
 Abre la aplicación, desactiva Fast load, envía 1000 movimientos de ratón mediante
 XTest y comprueba que Play responde en menos de 750 ms. También pulsa Pause,
 Stop, selecciona un bloque y hace Cue selected por coordenadas de la ventana.
+También abre el selector nativo de ROMs y cambia la ROM conservando la cinta.
 Esta prueba abre ventanas y mueve el puntero; no forma parte de `make test`.
 
 Respuesta del reproductor

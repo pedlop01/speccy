@@ -6,3 +6,5 @@ machine-tests
 tape-tests
 tape-game-tests
 tape-ui-tests
+rom-loader-tests
+rom-settings-tests

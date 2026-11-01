@@ -10,6 +10,7 @@
 #include <allegro5/allegro_native_dialog.h>
 #include "emulator.h"
 #include "tape_view.h"
+#include "rom_settings.h"
 
 #include "z80.h"
 #include "bus.hpp"
@@ -85,7 +86,10 @@ enum MenuId {
   MENU_FILE = 100, MENU_OPEN, MENU_CLOSE, MENU_EXIT,
   MENU_CPU, MENU_RESET, MENU_VIEW, MENU_SETTINGS, MENU_HELP, MENU_ABOUT,
   MENU_TAPE = 200, MENU_FAST_LOAD, MENU_TAPE_PLAY, MENU_TAPE_PAUSE,
-  MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK
+  MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK,
+  MENU_LOAD_ROM = 300, MENU_CUSTOM_ROM, MENU_ROM_INFO, MENU_ROM,
+  MENU_ROM_48, MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2, MENU_ROM_PLUS3,
+  MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48
 };
 
 // Allegro owns an attached menu. Detach/destroy it before its display goes away.
@@ -122,8 +126,23 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
     {"&View->", MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
     ALLEGRO_END_OF_MENU,
-    {"&Settings->", MENU_SETTINGS, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
-      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+    ALLEGRO_START_OF_MENU("&Settings", MENU_SETTINGS),
+      ALLEGRO_START_OF_MENU("&ROM", MENU_ROM),
+        {"&Open ROM...", MENU_LOAD_ROM, 0, nullptr},
+        {"Open &custom 48K ROM...", MENU_CUSTOM_ROM, 0, nullptr},
+        {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+        {"ZX Spectrum &48K", MENU_ROM_48, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"ZX Spectrum 128K (English)", MENU_ROM_128_EN, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum 128K (Spanish)", MENU_ROM_128_ES, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum +2", MENU_ROM_PLUS2, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum +3", MENU_ROM_PLUS3, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+        ALLEGRO_START_OF_MENU("On &startup", MENU_ROM_STARTUP),
+          {"&Last opened ROM", MENU_START_LAST, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Spectrum &48K", MENU_START_48, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        ALLEGRO_END_OF_MENU,
+        {"&Information...", MENU_ROM_INFO, 0, nullptr},
+      ALLEGRO_END_OF_MENU,
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&Help", MENU_HELP),
       {"&About / Help", MENU_ABOUT, 0, nullptr},
@@ -134,7 +153,6 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       al_build_menu(items), al_destroy_menu);
   if (!menu) return false;
   al_set_menu_item_flags(menu.get(), MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED);
-  al_set_menu_item_flags(menu.get(), MENU_SETTINGS, ALLEGRO_MENU_ITEM_DISABLED);
   if (!al_set_display_menu(display, menu.get())) return false;
   menu.release();
   return true;
@@ -146,29 +164,40 @@ void ReleaseKeys(ULA &ula) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc > 3) {
-    fprintf(stderr, "Usage: %s [tape.tap [48.rom]]\n", argv[0]);
-    return 1;
+  const char *usage = "Usage: gomas [tape.tap [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
+  string tapePath, romPath;
+  bool customROM = false;
+  for (int i = 1; i < argc; ++i) {
+    string arg = argv[i];
+    if (arg == "--help" || arg == "-h") { puts(usage); return 0; }
+    if (arg == "--rom" || arg == "--custom-48-rom") {
+      if (i + 1 >= argc || !romPath.empty()) { fprintf(stderr, "%s\n", usage); return 1; }
+      customROM = arg == "--custom-48-rom";
+      romPath = argv[++i];
+    } else if (!arg.empty() && arg[0] == '-') {
+      fprintf(stderr, "Unknown option: %s\n%s\n", arg.c_str(), usage); return 1;
+    } else if (tapePath.empty()) tapePath = arg;
+    else if (romPath.empty()) romPath = arg;
+    else { fprintf(stderr, "%s\n", usage); return 1; }
   }
   if (!al_init()) { fprintf(stderr, "Cannot initialize Allegro\n"); return 1; }
   SpectrumMachine machine;
   ULA &ula = machine.ula;
-  // Preserve the existing working-directory ROM path, then try beside the exe.
-  bool romLoaded = machine.rom.Load(argc == 3 ? argv[2] : "48.rom") == 0;
-  if (!romLoaded && argc != 3) {
-    unique_ptr<ALLEGRO_PATH, decltype(&al_destroy_path)> path(
-        al_get_standard_path(ALLEGRO_EXENAME_PATH), al_destroy_path);
-    if (path) {
-      al_set_path_filename(path.get(), "48.rom");
-      romLoaded = machine.rom.Load(al_path_cstr(path.get(), ALLEGRO_NATIVE_PATH_SEP)) == 0;
-    }
-  }
-  if (!romLoaded) {
-    fprintf(stderr, "Cannot load 16 KB Spectrum ROM (expected 48.rom beside executable)\n");
+  al_set_org_name("gomas");
+  al_set_app_name("gomas");
+  const string settingsPath = ROMSettingsPath();
+  ROMPreferences preferences = ROMPreferences::Read(settingsPath);
+  const bool explicitROM = !romPath.empty();
+  unique_ptr<ALLEGRO_PATH, decltype(&al_destroy_path)> executable(
+      al_get_standard_path(ALLEGRO_EXENAME_PATH), al_destroy_path);
+  const string executablePath = executable ? al_path_cstr(executable.get(), ALLEGRO_NATIVE_PATH_SEP) : "";
+  string error, notice;
+  if (!LoadStartupROM(machine, preferences, romPath, customROM, executablePath, error, notice)) {
+    fprintf(stderr, "%s\n", error.c_str());
     return 1;
   }
-  string error;
-  if (argc >= 2 && !machine.Open(argv[1], error)) {
+  if (!notice.empty()) fprintf(stderr, "%s\n", notice.c_str());
+  if (!tapePath.empty() && !machine.Open(tapePath, error)) {
     fprintf(stderr, "%s\n", error.c_str());
     return 1;
   }
@@ -223,7 +252,7 @@ int main(int argc, char *argv[]) {
   al_register_event_source(events.get(), al_get_timer_event_source(refreshTimer.get()));
 
   auto updateUI = [&]() {
-    string title = "Gomas - ZX Spectrum 48K";
+    string title = "Gomas - " + machine.systemROM.name;
     if (!machine.tapePath.empty()) {
       size_t slash = machine.tapePath.find_last_of("/\\");
       title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
@@ -234,14 +263,34 @@ int main(int argc, char *argv[]) {
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
+    flags(MENU_ROM_48, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.CanFastLoad() ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_START_LAST, ALLEGRO_MENU_ITEM_CHECKBOX | (preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_START_48, ALLEGRO_MENU_ITEM_CHECKBOX | (!preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     const bool loaded = !machine.tape.empty();
     const bool available = machine.deck.CurrentBlock() < machine.deck.Blocks().size();
     flags(MENU_CLOSE, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
-    flags(MENU_FAST_LOAD, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.fastLoad ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_FAST_LOAD, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.fastLoad ? ALLEGRO_MENU_ITEM_CHECKED : 0) |
+        (machine.CanFastLoad() ? 0 : ALLEGRO_MENU_ITEM_DISABLED));
     flags(MENU_TAPE_PLAY, !machine.fastLoad && available && !machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_TAPE_PAUSE, !machine.fastLoad && machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_TAPE_STOP, !machine.fastLoad && available ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_TAPE_REWIND, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+  };
+  auto savePreferences = [&]() {
+    string settingsError;
+    if (!preferences.Save(settingsPath, settingsError)) {
+      bool playing = al_get_audio_stream_playing(stream.get());
+      al_set_audio_stream_playing(stream.get(), false);
+      al_show_native_message_box(display.get(), "Gomas", "Settings could not be saved",
+          settingsError.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+      if (playing) al_set_audio_stream_playing(stream.get(), true);
+      return false;
+    }
+    return true;
+  };
+  auto rememberROM = [&](bool custom) {
+    preferences.Remember(machine.systemROM.source, custom);
+    savePreferences();
   };
   auto fillAudio = [&]() {
     // Bound catch-up work so UI events cannot starve on slower machines.
@@ -269,6 +318,7 @@ int main(int argc, char *argv[]) {
   updateUI();
   if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
 
+  if (explicitROM || preferences.lastROM.empty()) rememberROM(customROM);
   al_start_timer(refreshTimer.get());
   bool running = true;
   while (running) {
@@ -325,6 +375,59 @@ int main(int argc, char *argv[]) {
               al_show_native_message_box(display.get(), "Gomas", "Cannot open tape deck", "No tape deck window could be created.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             break;
           case MENU_EXIT: running = false; break;
+          case MENU_LOAD_ROM:
+          case MENU_CUSTOM_ROM: {
+            al_set_audio_stream_playing(stream.get(), false);
+            ReleaseKeys(ula);
+            bool custom = event.user.data1 == MENU_CUSTOM_ROM;
+            unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
+                al_create_native_file_dialog(machine.systemROM.source.c_str(),
+                    custom ? "Load custom 48K ROM" : "Load system ROM", "*.rom;*.ROM;*.bin;*.BIN",
+                    ALLEGRO_FILECHOOSER_FILE_MUST_EXIST), al_destroy_native_file_dialog);
+            if (!chooser || !al_show_native_file_dialog(display.get(), chooser.get())) {
+              al_show_native_message_box(display.get(), "Gomas", "Cannot open ROM dialog", "Please try again.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            } else if (al_get_native_file_dialog_count(chooser.get()) > 0) {
+              const char *path = al_get_native_file_dialog_path(chooser.get(), 0);
+              if (path && machine.LoadROM(path, error, custom)) {
+                resetAudio = true; tapeView.NewTape(); rememberROM(custom);
+              }
+              else al_show_native_message_box(display.get(), "Gomas", "Cannot activate ROM", error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            }
+            ReleaseKeys(ula);
+            if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
+            break;
+          }
+          case MENU_ROM_48: {
+            al_set_audio_stream_playing(stream.get(), false);
+            ReleaseKeys(ula);
+            string path = Default48ROM(executablePath);
+            if (!path.empty() && machine.LoadROM(path, error)) {
+              resetAudio = true; tapeView.NewTape(); rememberROM(false);
+            } else {
+              if (path.empty()) error = "Cannot find the default 48K ROM in roms/.";
+              al_show_native_message_box(display.get(), "Gomas", "Cannot activate ROM", error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+              al_set_audio_stream_playing(stream.get(), true);
+            }
+            break;
+          }
+          case MENU_START_LAST:
+          case MENU_START_48: {
+            bool previous = preferences.restoreLast;
+            preferences.restoreLast = event.user.data1 == MENU_START_LAST;
+            if (!savePreferences()) preferences.restoreLast = previous;
+            break;
+          }
+          case MENU_ROM_INFO: {
+            al_set_audio_stream_playing(stream.get(), false);
+            ReleaseKeys(ula);
+            string information = machine.systemROM.name + "\n" + machine.systemROM.source +
+                "\n\nFast load: " + (machine.CanFastLoad() ? "supported" : "not available for this ROM; use tape playback") +
+                "\n\nOn startup: " + (preferences.restoreLast ? "last opened ROM (48K fallback)" : "Spectrum 48K") +
+                "\n\nSelecting a recognized ROM determines its machine model.\n128K, +2 and +3 hardware support is still pending.";
+            al_show_native_message_box(display.get(), "Gomas", "Machine ROM", information.c_str(), nullptr, 0);
+            al_set_audio_stream_playing(stream.get(), true);
+            break;
+          }
           case MENU_ABOUT:
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
@@ -334,6 +437,7 @@ int main(int argc, char *argv[]) {
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
                 "File > Close: eject the tape and restart.\n"
                 "CPU > Reset: restart and rewind the current tape.\n"
+                "Settings > ROM: choose a ROM and the startup default.\n"
                 "Tape > Fast load: instant loading (default).\n"
                 "Turn it off, enter LOAD \"\" and press Tape > Play for real-time loading.\n"
                 "Tape > Show tape deck: browse blocks and cue a multi-load part.\n"
