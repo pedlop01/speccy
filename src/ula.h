@@ -81,6 +81,7 @@ class ULA : public ULAMemory, public ULAIO {
 
     unsigned char   keyMatrix[8];
 
+    bool earInput, tapeMonitor;
     unsigned char ULAIOData;
     unsigned char pixels[240][320][4];
     short pendingAudio[SAMPLES_PER_FRAME];
@@ -94,6 +95,7 @@ class ULA : public ULAMemory, public ULAIO {
     ULA();
     ~ULA();
     void Reset();
+    void SetTapeInput(bool high, bool active) { earInput = high; tapeMonitor = active; }
 
     void SetBitmap(ALLEGRO_BITMAP *_bitmap);
     void UpdateChar(unsigned int nChar);

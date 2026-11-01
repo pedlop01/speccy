@@ -10,19 +10,7 @@
 #include "ram.hpp"
 #include "rom.hpp"
 #include "ula.h"
-
-// Validate TAP framing before starting; malformed files must not overrun memory.
-inline bool ValidateTape(const vector<unsigned char> &data) {
-  size_t pos = 0;
-  while (pos < data.size()) {
-    if (data.size() - pos < 2) return false;
-    size_t length = data[pos] | (data[pos + 1] << 8);
-    pos += 2;
-    if (length < 2 || length > data.size() - pos) return false;
-    pos += length;
-  }
-  return true;
-}
+#include "tape.h"
 
 inline bool LoadTrap(Z80 &cpu, const vector<unsigned char> &data, size_t &pos) {
   if (pos == data.size()) return false;
@@ -49,30 +37,6 @@ inline bool LoadTrap(Z80 &cpu, const vector<unsigned char> &data, size_t &pos) {
   return success;
 }
 
-// One emulated frame produces one immutable audio fragment. Instruction
-// overshoot is retained in the ULA, including interrupt acknowledge cycles.
-inline void EmulateFrame(Z80 &cpu, ULA &ula, const vector<unsigned char> &tape, size_t &pos) {
-  bool irq = false;
-  while (!irq) {
-    if (cpu.regs.PC == 0x056B) {
-      const bool loaded = LoadTrap(cpu, tape, pos);
-      if (loaded) {
-        cpu.regs.BC = 0xB001;
-        cpu.regs.altAF = 0x0145;
-      }
-      cpu.regs.CF = loaded;
-      cpu.regs.PC = 0x05E2;
-    }
-    cpu.tStates = 0;
-    cpu.EmulateOne();
-    ula.AddCycles(cpu.tStates, irq);
-  }
-  cpu.tStates = 0;
-  cpu.INT();
-  bool unused = false;
-  ula.AddCycles(cpu.tStates, unused);
-}
-
 // Addresses of bus components remain stable across reset/open/close.
 class SpectrumMachine {
 public:
@@ -83,6 +47,8 @@ public:
   Bus16 bus;
   vector<unsigned char> tape;
   size_t tapePos = 0;
+  TapeDeck deck;
+  bool fastLoad = true;
   std::string tapePath;
 
   SpectrumMachine() {
@@ -99,6 +65,7 @@ public:
     ram.Clear();
     ula.Reset();
     tapePos = 0;
+    deck.Rewind();
     AttachCPU();
   }
 
@@ -112,6 +79,7 @@ public:
     }
     tape.swap(candidate);
     tapePath = path;
+    deck.Mount(tape);
     Reset();
     error.clear();
     return true;
@@ -120,12 +88,66 @@ public:
   void Close() {
     tape.clear();
     tapePath.clear();
+    deck.Mount(tape);
     Reset();
   }
 
-  void Frame() { EmulateFrame(cpu, ula, tape, tapePos); }
+  void SetFastLoad(bool enabled) {
+    if (fastLoad == enabled) return;
+    deck.Stop();
+    tapePos = deck.Offset();
+    fastLoad = enabled;
+    UpdateTapeInput();
+  }
+  bool PlayTape() { return !fastLoad && deck.Play(); }
+  void PauseTape() { deck.Pause(); UpdateTapeInput(); }
+  void StopTape() { deck.Stop(); tapePos = deck.Offset(); UpdateTapeInput(); }
+  bool CueTape(size_t block) {
+    if (!deck.Cue(block)) return false;
+    tapePos = deck.Offset();
+    UpdateTapeInput();
+    return true;
+  }
+  void Frame() {
+    bool irq = false;
+    while (!irq) {
+      if (fastLoad && cpu.regs.PC == 0x056B) {
+        const bool loaded = LoadTrap(cpu, tape, tapePos);
+        deck.CueOffset(tapePos);
+        if (loaded) { cpu.regs.BC = 0xB001; cpu.regs.altAF = 0x0145; }
+        cpu.regs.CF = loaded;
+        cpu.regs.PC = 0x05E2;
+      }
+      cpu.tStates = 0;
+      cpu.EmulateOne();
+      Advance(cpu.tStates, irq);
+    }
+    cpu.tStates = 0;
+    cpu.INT();
+    bool unused = false;
+    Advance(cpu.tStates, unused);
+  }
+
+  // Split audio integration at tape edges; playback also runs while CPU is HALTed.
+  void Advance(unsigned cycles, bool &irq) {
+    irq = false;
+    while (cycles) {
+      UpdateTapeInput();
+      unsigned step = cycles;
+      if (!fastLoad && deck.IsPlaying()) step = std::min(step, deck.UntilEdge());
+      bool frame = false;
+      ula.AddCycles(step, frame);
+      irq = irq || frame;
+      if (!fastLoad) { deck.Advance(step); tapePos = deck.Offset(); }
+      cycles -= step;
+    }
+    UpdateTapeInput();
+  }
 
 private:
+  void UpdateTapeInput() {
+    ula.SetTapeInput(fastLoad || deck.Level(), !fastLoad && deck.HasSignal());
+  }
   void AttachCPU() {
     cpu.DataBus = &bus;
     cpu.IOBus = static_cast<ULAIO *>(&ula);

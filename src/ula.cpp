@@ -24,6 +24,8 @@ void ULA::Reset() {
   memset(pixels, 0, sizeof(pixels));
   for (auto &row : pixels)
     for (auto &pixel : row) pixel[3] = 255;
+  earInput = true;
+  tapeMonitor = false;
   ULAIOData = 0;
   audioPhase = audioIndex = 0;
   audioSum = 0;
@@ -77,7 +79,8 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
     unsigned int step = std::min(cycles,
         static_cast<unsigned int>(TSTATES_PER_SCANLINE - dwScanLineTStates));
     unsigned int units = step * SAMPLES_PER_FRAME;
-    const int signal = (ULAIOData & 0x10) ? 16384 : 0;
+    const int signal = ((ULAIOData & 0x10) ? 16384 : 0) +
+                       ((tapeMonitor && earInput) ? 8192 : 0);
     // Integrate each level over time, including transitions within a sample.
     while (units) {
       unsigned int part = std::min(units, TSTATES_PER_FRAME - audioPhase);
@@ -227,6 +230,7 @@ unsigned char ULA::IORead(unsigned int address) {
         kData &= ~keyMatrix[i];   // pull down bits representing pressed key
       }
     }
+    if (!earInput) kData &= ~0x40;
     return kData;
   }
   // Unattached ports expose the ULA video fetches (48K floating bus).

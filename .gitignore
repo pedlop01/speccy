@@ -3,3 +3,6 @@ gomas
 ula-tests
 floating-bus-tests
 machine-tests
+tape-tests
+tape-game-tests
+tape-ui-tests

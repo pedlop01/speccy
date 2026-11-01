@@ -9,6 +9,7 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_native_dialog.h>
 #include "emulator.h"
+#include "tape_view.h"
 
 #include "z80.h"
 #include "bus.hpp"
@@ -82,7 +83,9 @@ void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
 
 enum MenuId {
   MENU_FILE = 100, MENU_OPEN, MENU_CLOSE, MENU_EXIT,
-  MENU_CPU, MENU_RESET, MENU_VIEW, MENU_SETTINGS, MENU_HELP, MENU_ABOUT
+  MENU_CPU, MENU_RESET, MENU_VIEW, MENU_SETTINGS, MENU_HELP, MENU_ABOUT,
+  MENU_TAPE = 200, MENU_FAST_LOAD, MENU_TAPE_PLAY, MENU_TAPE_PAUSE,
+  MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK
 };
 
 // Allegro owns an attached menu. Detach/destroy it before its display goes away.
@@ -100,6 +103,16 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       {"&Close", MENU_CLOSE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"E&xit", MENU_EXIT, 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_START_OF_MENU("&Tape", MENU_TAPE),
+      {"&Fast load", MENU_FAST_LOAD, ALLEGRO_MENU_ITEM_CHECKBOX | ALLEGRO_MENU_ITEM_CHECKED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      {"&Play", MENU_TAPE_PLAY, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Pa&use", MENU_TAPE_PAUSE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"&Stop", MENU_TAPE_STOP, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"&Rewind", MENU_TAPE_REWIND, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      {"Show tape &deck...", MENU_TAPE_DECK, 0, nullptr},
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&CPU", MENU_CPU),
       {"&Reset", MENU_RESET, 0, nullptr},
@@ -164,8 +177,9 @@ int main(int argc, char *argv[]) {
   // when the desktop exports GDK_BACKEND=wayland (e.g. Steam Deck).
   setenv("GDK_BACKEND", "x11", 1);
 #endif
-  if (!al_install_keyboard() || !al_install_audio() || !al_init_native_dialog_addon()) {
-    fprintf(stderr, "Cannot initialize keyboard, audio or native dialogs\n");
+  if (!al_install_keyboard() || !al_install_mouse() || !al_install_audio() ||
+      !al_init_native_dialog_addon() || !al_init_primitives_addon()) {
+    fprintf(stderr, "Cannot initialize keyboard, mouse, audio or native dialogs\n");
     return 1;
   }
   int displayFlags = ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE;
@@ -184,6 +198,8 @@ int main(int argc, char *argv[]) {
       al_create_bitmap(320, 240), al_destroy_bitmap);
   unique_ptr<ALLEGRO_EVENT_QUEUE, decltype(&al_destroy_event_queue)> events(
       al_create_event_queue(), al_destroy_event_queue);
+  unique_ptr<ALLEGRO_TIMER, decltype(&al_destroy_timer)> refreshTimer(
+      al_create_timer(1.0 / 50), al_destroy_timer);
   unique_ptr<ALLEGRO_VOICE, decltype(&al_destroy_voice)> voice(
       al_create_voice(AUDIO_SAMPLE_RATE, ALLEGRO_AUDIO_DEPTH_INT16,
                       ALLEGRO_CHANNEL_CONF_2), al_destroy_voice);
@@ -192,15 +208,19 @@ int main(int argc, char *argv[]) {
                       ALLEGRO_CHANNEL_CONF_2), al_destroy_mixer);
   unique_ptr<ALLEGRO_AUDIO_STREAM, decltype(&al_destroy_audio_stream)> stream(
       nullptr, al_destroy_audio_stream);
-  if (!bitmap || !events || !voice || !mixer ||
+  if (!bitmap || !events || !refreshTimer || !voice || !mixer ||
       !al_attach_mixer_to_voice(mixer.get(), voice.get())) {
     fprintf(stderr, "Cannot create video/audio resources\n");
     return 1;
   }
+  al_init_font_addon();
+  TapeView tapeView;
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
+  al_register_event_source(events.get(), al_get_mouse_event_source());
   al_register_event_source(events.get(), al_get_display_event_source(display.get()));
   al_register_event_source(events.get(), al_get_default_menu_event_source());
+  al_register_event_source(events.get(), al_get_timer_event_source(refreshTimer.get()));
 
   auto updateUI = [&]() {
     string title = "Gomas - ZX Spectrum 48K";
@@ -208,9 +228,20 @@ int main(int argc, char *argv[]) {
       size_t slash = machine.tapePath.find_last_of("/\\");
       title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
     }
-    al_set_window_title(display.get(), title.c_str());
-    al_set_menu_item_flags(al_get_display_menu(display.get()), MENU_CLOSE,
-        machine.tapePath.empty() ? ALLEGRO_MENU_ITEM_DISABLED : 0);
+    static string lastTitle;
+    if (title != lastTitle) { al_set_window_title(display.get(), title.c_str()); lastTitle = title; }
+    auto menu = al_get_display_menu(display.get());
+    auto flags = [&](int id, int value) {
+      if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
+    };
+    const bool loaded = !machine.tape.empty();
+    const bool available = machine.deck.CurrentBlock() < machine.deck.Blocks().size();
+    flags(MENU_CLOSE, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    flags(MENU_FAST_LOAD, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.fastLoad ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_TAPE_PLAY, !machine.fastLoad && available && !machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    flags(MENU_TAPE_PAUSE, !machine.fastLoad && machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    flags(MENU_TAPE_STOP, !machine.fastLoad && available ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    flags(MENU_TAPE_REWIND, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
   };
   auto fillAudio = [&]() {
     // Bound catch-up work so UI events cannot starve on slower machines.
@@ -238,11 +269,14 @@ int main(int argc, char *argv[]) {
   updateUI();
   if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
 
+  al_start_timer(refreshTimer.get());
   bool running = true;
   while (running) {
     ALLEGRO_EVENT event;
     al_wait_for_event(events.get(), &event);
     bool resetAudio = false;
+    // Handle input immediately; drawing is paced independently of event traffic.
+    if (tapeView.Handle(event, machine)) continue;
     switch (event.type) {
       case ALLEGRO_EVENT_DISPLAY_CLOSE: running = false; break;
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
@@ -266,7 +300,7 @@ int main(int argc, char *argv[]) {
                   "Please try again.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             } else if (al_get_native_file_dialog_count(chooser.get()) > 0) {
               const char *path = al_get_native_file_dialog_path(chooser.get(), 0);
-              if (path && machine.Open(path, error)) resetAudio = true;
+              if (path && machine.Open(path, error)) { resetAudio = true; tapeView.NewTape(); }
               else al_show_native_message_box(display.get(), "Gomas", "Cannot open tape",
                   error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             }
@@ -274,8 +308,22 @@ int main(int argc, char *argv[]) {
             if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
             break;
           }
-          case MENU_CLOSE: machine.Close(); resetAudio = true; break;
+          case MENU_CLOSE: machine.Close(); tapeView.NewTape(); resetAudio = true; break;
           case MENU_RESET: machine.Reset(); resetAudio = true; break;
+          case MENU_FAST_LOAD:
+            machine.SetFastLoad(!machine.fastLoad);
+            resetAudio = true;
+            if (!machine.fastLoad && !tapeView.Show(events.get()))
+              al_show_native_message_box(display.get(), "Gomas", "Cannot open tape deck", "Try Tape > Show tape deck again.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            break;
+          case MENU_TAPE_PLAY: machine.PlayTape(); break;
+          case MENU_TAPE_PAUSE: machine.PauseTape(); break;
+          case MENU_TAPE_STOP: machine.StopTape(); break;
+          case MENU_TAPE_REWIND: machine.CueTape(0); tapeView.NewTape(); break;
+          case MENU_TAPE_DECK:
+            if (!tapeView.Show(events.get()))
+              al_show_native_message_box(display.get(), "Gomas", "Cannot open tape deck", "No tape deck window could be created.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            break;
           case MENU_EXIT: running = false; break;
           case MENU_ABOUT:
             al_set_audio_stream_playing(stream.get(), false);
@@ -286,6 +334,10 @@ int main(int argc, char *argv[]) {
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
                 "File > Close: eject the tape and restart.\n"
                 "CPU > Reset: restart and rewind the current tape.\n"
+                "Tape > Fast load: instant loading (default).\n"
+                "Turn it off, enter LOAD \"\" and press Tape > Play for real-time loading.\n"
+                "Tape > Show tape deck: browse blocks and cue a multi-load part.\n"
+                "Pause keeps position; Stop returns to the start of this block.\n"
                 "Left Shift = CAPS SHIFT; Right Shift = SYMBOL SHIFT.\n"
                 "Escape = Exit.\n\n"
                 "By Pedro Lopez. Based on YASS by Fernando Marcos.\n"
@@ -306,6 +358,13 @@ int main(int argc, char *argv[]) {
     if (resetAudio && !restartAudio()) {
       fprintf(stderr, "Cannot restart audio stream\n"); return 1;
     }
+    if (event.type != ALLEGRO_EVENT_TIMER ||
+        event.timer.source != refreshTimer.get() ||
+        event.timer.count < al_get_timer_count(refreshTimer.get())) continue;
+    // Skip obsolete refresh ticks after a dialog or a slow frame. Mouse motion
+    // and audio events must never trigger expensive redraws on their own.
+    updateUI();
+    al_set_target_backbuffer(display.get());
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
     al_set_target_backbuffer(display.get());
     al_clear_to_color(al_map_rgb(0, 0, 0));
@@ -317,6 +376,7 @@ int main(int argc, char *argv[]) {
     al_draw_scaled_bitmap(bitmap.get(), 0, 0, 320, 240,
                           (width - w) / 2, (height - h) / 2, w, h, 0);
     al_flip_display();
+    if ((event.timer.count & 1) == 0) tapeView.Draw(machine);
   }
   return 0;
 }
