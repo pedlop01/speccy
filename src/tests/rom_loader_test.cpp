@@ -67,10 +67,7 @@ int main() {
     assert(machine.bus.Read(0x8000) == 0x42 && machine.cpu.regs.PC == 0x9000);
     assert(machine.tapePos == 21 && machine.tapePath == "cobra.tap");
   };
-  assert(!machine.LoadROM(directory + "128-0.rom", error));
-  assert(error.find("not implemented") != std::string::npos);
-  checkPreserved();
-  assert(!machine.LoadROM(directory + "plus2-0.rom", error)); checkPreserved();
+
   assert(!machine.LoadROM(directory + "plus3-2.rom", error)); checkPreserved();
   std::vector<unsigned char> custom(16384, 0);
   custom[0] = 0x76;

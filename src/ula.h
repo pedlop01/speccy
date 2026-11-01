@@ -7,6 +7,7 @@
 
 #include "ram.hpp"
 #include "machine_config.h"
+#include "ay.h"
 
 // Video
 // Compatibility constants for existing 48K tests/callers. Runtime ULA timing
@@ -70,6 +71,7 @@ class ULAIO : public BusComponent<0xFE, 1> {
 
 class ULA : public ULAMemory, public ULAIO {
   public:
+    AY8912 ay;
     signed short FrameAudio[SAMPLES_PER_FRAME];
     unsigned FrameAudioCount = 0;
 

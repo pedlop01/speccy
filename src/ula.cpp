@@ -8,10 +8,12 @@ ULA::ULA() {
 
 void ULA::Configure(MachineModel model) {
   timing = HardwareFor(model).timing;
+  ay.Configure(timing.cpuClockHz, HardwareFor(model).devices.ayClockHz);
   Reset();
 }
 
 void ULA::Reset() {
+  ay.Reset();
   displayMemory = data;
   FrameAudioCount = 0;
   dwFrameTStates = 0;
@@ -85,9 +87,10 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   while (cycles) {
     unsigned int step = std::min(cycles,
         static_cast<unsigned int>(timing.tstatesPerLine - dwScanLineTStates));
+    step = std::min(step, ay.UntilTick());
     unsigned int units = step * AUDIO_SAMPLE_RATE;
     const int signal = ((ULAIOData & 0x10) ? 16384 : 0) +
-                       ((tapeMonitor && earInput) ? 8192 : 0);
+                       ((tapeMonitor && earInput) ? 8192 : 0) + ay.Output();
     // Integrate each level over time, including transitions within a sample.
     while (units) {
       unsigned int part = std::min(units, timing.cpuClockHz - audioPhase);
@@ -97,11 +100,12 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
       if (audioPhase == timing.cpuClockHz) {
         double sample = static_cast<double>(audioSum) / timing.cpuClockHz;
         dcAverage += 0.005 * (sample - dcAverage);
-        pendingAudio[audioIndex++] = static_cast<short>(sample - dcAverage);
+        pendingAudio[audioIndex++] = static_cast<short>(std::max(-32768.0, std::min(32767.0, sample - dcAverage)));
         audioSum = 0;
         audioPhase = 0;
       }
     }
+    ay.Advance(step);
     dwFrameTStates += step;
     dwScanLineTStates += step;
     cycles -= step;

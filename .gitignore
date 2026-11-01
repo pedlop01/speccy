@@ -11,3 +11,6 @@ rom-settings-tests
 machine-config-tests
 paging-tests
 video128-tests
+ay-tests
+tape128-tests
+compat128-tests

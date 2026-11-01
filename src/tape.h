@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 inline bool ValidateTape(const std::vector<unsigned char> &data) {
@@ -75,7 +76,15 @@ public:
   bool IsPlaying() const { return state == State::Playing; }
   bool Level() const { return !IsPlaying() || level; }
   bool HasSignal() const { return IsPlaying() && pulse + 1 < pulses.size(); }
-  unsigned UntilEdge() const { return IsPlaying() ? remaining : 0; }
+  // TAP durations are specified at 3.5 MHz, not in the active CPU clock.
+  // Keep the fractional conversion across instructions and pulse boundaries.
+  void SetClock(unsigned hz) {
+    if (!hz) throw std::invalid_argument("Tape CPU clock must be positive");
+    if (cpuClock != hz) { cpuClock = hz; clockPhase = 0; }
+  }
+  unsigned UntilEdge() const {
+    return IsPlaying() ? static_cast<unsigned>((std::uint64_t(remaining) * cpuClock - clockPhase + Clock - 1) / Clock) : 0;
+  }
   double Progress() const {
     return current < blocks.size() ? double(elapsed) / blocks[current].duration : 1.0;
   }
@@ -84,6 +93,7 @@ public:
 
   bool Cue(size_t block) {
     if (block > blocks.size()) return false;
+    clockPhase = 0;
     current = block;
     state = current == blocks.size() ? State::End : State::Stopped;
     BuildPulses();
@@ -104,6 +114,10 @@ public:
   void Stop() { Cue(current); }
 
   void Advance(unsigned cycles) {
+    if (!IsPlaying()) return;
+    const std::uint64_t units = std::uint64_t(cycles) * Clock + clockPhase;
+    cycles = static_cast<unsigned>(units / cpuClock);
+    clockPhase = units % cpuClock;
     while (IsPlaying() && cycles) {
       unsigned step = std::min(cycles, remaining);
       remaining -= step;
@@ -112,7 +126,9 @@ public:
       if (remaining) continue;
       ++pulse;
       if (pulse == pulses.size()) {
+        const auto phase = clockPhase;
         Cue(current + 1);
+        clockPhase = phase;
         if (current < blocks.size()) state = State::Playing;
       } else {
         level = pulse + 1 == pulses.size() ? true : !level;
@@ -127,6 +143,8 @@ private:
   std::vector<TapeBlock> blocks;
   std::vector<unsigned> pulses;
   size_t current = 0, pulse = 0;
+  unsigned cpuClock = Clock;
+  std::uint64_t clockPhase = 0;
   unsigned remaining = 0;
   std::uint64_t elapsed = 0;
   bool level = false;

@@ -1,7 +1,16 @@
 // Optional X11 integration test: real pointer events through the application loop.
+#include <allegro5/allegro_native_dialog.h>
+#include <atomic>
+static std::atomic<unsigned> menuFlagWrites(0);
+static void RecordMenuFlags(ALLEGRO_MENU *menu, int id, int flags) {
+  ++menuFlagWrites;
+  al_set_menu_item_flags(menu, id, flags);
+}
+#define al_set_menu_item_flags RecordMenuFlags
 #define main GomasApplicationMain
 #include "../main.cpp"
 #undef main
+#undef al_set_menu_item_flags
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -93,6 +102,11 @@ int main() {
       }, 5000), "Main window did not open");
       // The title is set immediately before the event loop starts.
       Wait(100);
+      // A settled menu must not be rebuilt by every refresh tick. Allegro's
+      // CHECKBOX flag is immutable; requesting it on plain items loops forever.
+      unsigned settledWrites = menuFlagWrites.load();
+      Wait(250);
+      Check(menuFlagWrites.load() == settledWrites, "Idle refresh keeps rebuilding the native ROM menu");
       // Exercise the ROM selector through its real native file dialog.
       Menu(MENU_LOAD_ROM);
       Window chooser = 0;
@@ -121,7 +135,17 @@ int main() {
       Check(Until([&]() { return ROMPreferences::Read(configPath).restoreLast; }, 750),
           "The last-ROM startup preference was not saved");
       Check(!ROMPreferences::Read(configPath).lastROM.empty(), "The chosen ROM was not remembered");
+      for (int id : {MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2}) {
+        const auto &profile = MenuROMProfile(id);
+        Menu(id);
+        Check(Until([&]() {
+          return FindWindow(x, DefaultRootWindow(x), (std::string("Gomas - ") + profile.name + " - cobra.tap").c_str()) != 0;
+        }, 2000), "128K/+2 ROM menu did not switch model and preserve the tape");
+        Check(!ROMPreferences::Read(configPath).lastROM.empty(), "128K ROM was not remembered");
+      }
       Menu(MENU_ROM_48);
+      Check(Until([&]() { return FindWindow(x, DefaultRootWindow(x), "Gomas - ZX Spectrum 48K - cobra.tap") != 0; }, 2000),
+          "Could not switch back to 48K");
       Wait(100);
       Menu(MENU_FAST_LOAD);
       Check(Until([&]() {

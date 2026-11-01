@@ -63,6 +63,8 @@ struct ROMSet {
   std::string name, source;
   std::vector<std::vector<unsigned char>> pages;
   bool fastLoadCompatible = false;
+  // Page whose recognized LD-BYTES routine may be trapped; -1 for custom ROMs.
+  int fastLoadPage = -1;
 };
 
 inline bool ValidateROMHardware(const ROMSet &rom, std::string &error) {
@@ -101,7 +103,9 @@ inline bool LoadROMSet(const std::string &path, ROMSet &out, std::string &error,
     candidate.model = profile.model;
     candidate.name = profile.name;
     candidate.source = path;
-    candidate.fastLoadCompatible = profile.model == MachineModel::Spectrum48;
+    candidate.fastLoadCompatible = true;
+    candidate.fastLoadPage = profile.model == MachineModel::Spectrum48 ? 0 :
+        (profile.model == MachineModel::Plus3 ? 3 : 1);
     if (hashes.size() > 1) {
       if (hashes != profile.fingerprints) {
         error = "Wrong page order or incomplete ROM set for " + candidate.name;

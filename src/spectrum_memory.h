@@ -93,10 +93,21 @@ private:
 class SpectrumIO : public BusComponent<0, 65536> {
 public:
   SpectrumIO(ULA &ula, SpectrumMemory &memory) : ula(ula), memory(memory) {}
-  unsigned char Read(unsigned address) override { return ula.IORead(address & 0xFFFF); }
+  unsigned char Read(unsigned address) override {
+    unsigned char value = ula.IORead(address & 0xFFFF);
+    if (ula.ay.Enabled() && (address & 0xC002) == 0xC000) {
+      const unsigned char ayValue = ula.ay.Read();
+      return (address & 1) ? ayValue : value & ayValue;
+    }
+    return value;
+  }
   void Write(unsigned address, unsigned char value) override {
     ula.IOWrite(address & 0xFFFF, value);
     memory.WritePaging(address & 0xFFFF, value);
+    if (ula.ay.Enabled()) {
+      if ((address & 0xC002) == 0xC000) ula.ay.Select(value);
+      else if ((address & 0xC002) == 0x8000) ula.ay.Write(value);
+    }
   }
 private:
   ULA &ula;

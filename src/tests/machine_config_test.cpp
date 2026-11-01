@@ -27,9 +27,9 @@ int main() {
     assert(hardware.timing.cpuClockHz == 3546900);
     assert(hardware.timing.tstatesPerLine == 228 && hardware.timing.linesPerFrame == 311);
     assert(hardware.timing.TStatesPerFrame() == 70908);
-    assert(!SupportsHardware(model));
+    assert(SupportsHardware(model) == (model != MachineModel::Plus3));
     assert(MissingHardwareFeatures(hardware).find("banked RAM") == std::string::npos);
-    assert(MissingHardwareFeatures(hardware).find("AY sound") != std::string::npos);
+    assert(MissingHardwareFeatures(hardware).find("AY sound") == std::string::npos);
   }
   assert(HardwareFor(MachineModel::Spectrum128).memory.romPages == 2);
   assert(HardwareFor(MachineModel::Plus2).memory.paging == PagingKind::Spectrum128);
@@ -84,11 +84,19 @@ int main() {
   assert(&machine.Configuration() == &flat);
   assert(machine.ula.Timing().TStatesPerFrame() == flat.timing.TStatesPerFrame());
   machine.cpu.regs.PC = 0x9000; machine.bus.Write(0x8000, 0x42);
-  assert(!machine.LoadROM(FindROM("128-0.rom"), error));
+  assert(!machine.LoadROM(FindROM("plus3-0.rom"), error));
   assert(&machine.Configuration() == &flat && machine.cpu.regs.PC == 0x9000);
   assert(machine.bus.Read(0x8000) == 0x42 && machine.ula.Timing().tstatesPerLine == 224);
   machine.ula.Configure(MachineModel::Spectrum128);
   machine.Reset(); // Reset reapplies the machine's active profile to components.
   assert(machine.ula.Timing().tstatesPerLine == 224 && machine.cpu.regs.PC == 0);
+  for (const char *file : {"128-0.rom", "128-spanish-0.rom", "plus2-0.rom"}) {
+    assert(machine.LoadROM(FindROM(file), error));
+    assert(machine.ula.ay.Enabled() && machine.ula.Timing().tstatesPerLine == 228);
+    machine.io.Write(0x7FFD, 0x3F);
+    machine.Reset();
+    assert(machine.memory.PagingLatch() == 0 && machine.cpu.regs.PC == 0);
+    assert(machine.memory.RAMBank(0) == 5 && machine.memory.RAMBank(1) == 2);
+  }
   puts("Hardware profiles: model facts, ROM requirements, capabilities, ULA wiring and reset passed");
 }

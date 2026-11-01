@@ -141,10 +141,11 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
         {"Open &custom 48K ROM...", MENU_CUSTOM_ROM, 0, nullptr},
         {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
         {"ZX Spectrum &48K", MENU_ROM_48, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
-        {"ZX Spectrum 128K (English)", MENU_ROM_128_EN, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
-        {"ZX Spectrum 128K (Spanish)", MENU_ROM_128_ES, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
-        {"ZX Spectrum +2", MENU_ROM_PLUS2, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
-        {"ZX Spectrum +3", MENU_ROM_PLUS3, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        // CHECKBOX is immutable after creation in Allegro native menus.
+        {"ZX Spectrum 128K (English)", MENU_ROM_128_EN, ALLEGRO_MENU_ITEM_CHECKBOX | ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum 128K (Spanish)", MENU_ROM_128_ES, ALLEGRO_MENU_ITEM_CHECKBOX | ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum +2", MENU_ROM_PLUS2, ALLEGRO_MENU_ITEM_CHECKBOX | ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+        {"ZX Spectrum +3", MENU_ROM_PLUS3, ALLEGRO_MENU_ITEM_CHECKBOX | ALLEGRO_MENU_ITEM_DISABLED, nullptr},
         {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
         ALLEGRO_START_OF_MENU("On &startup", MENU_ROM_STARTUP),
           {"&Last opened ROM", MENU_START_LAST, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -450,7 +451,7 @@ int main(int argc, char *argv[]) {
           case MENU_ABOUT:
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
-            al_show_native_message_box(display.get(), "Gomas", "ZX Spectrum 48K emulator",
+            al_show_native_message_box(display.get(), "Gomas", "ZX Spectrum 48K / 128K / +2 emulator",
                 "File > Open: insert a TAP and restart the Spectrum.\n"
                 "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"

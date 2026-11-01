@@ -63,7 +63,8 @@ int main() {
   restored.lastROM = ROMDirectory(standard) + "128-0.rom";
   restored.lastCustom48 = false;
   assert(LoadStartupROM(machine, restored, "", false, executable, error, notice));
-  assert(machine.CanFastLoad() && !notice.empty());
+  assert(machine.CanFastLoad() && notice.empty());
+  assert(machine.Configuration().model == MachineModel::Spectrum128);
   // A failed save leaves the existing preferences intact, and temporary files
   // are removed even when the destination happens to be a directory.
   assert(!restored.Save(folder + "config", error));

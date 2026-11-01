@@ -68,6 +68,7 @@ public:
     memory.Reset();
     ula.Configure(configuration->model);
     tapePos = 0;
+    deck.SetClock(configuration->timing.cpuClockHz);
     deck.Rewind();
     AttachCPU();
   }
@@ -134,16 +135,22 @@ public:
     UpdateTapeInput();
     return true;
   }
+  // Page-aware trap shared by normal frame execution and loader diagnostics.
+  bool TryFastLoad() {
+    if (!fastLoad || !CanFastLoad() || systemROM.fastLoadPage < 0 ||
+        memory.ROMPage() != static_cast<unsigned>(systemROM.fastLoadPage) || cpu.regs.PC != 0x056B)
+      return false;
+    const bool loaded = LoadTrap(cpu, tape, tapePos);
+    deck.CueOffset(tapePos);
+    if (loaded) { cpu.regs.BC = 0xB001; cpu.regs.altAF = 0x0145; }
+    cpu.regs.CF = loaded;
+    cpu.regs.PC = 0x05E2;
+    return true;
+  }
   void Frame() {
     bool irq = false;
     while (!irq) {
-      if (fastLoad && CanFastLoad() && cpu.regs.PC == 0x056B) {
-        const bool loaded = LoadTrap(cpu, tape, tapePos);
-        deck.CueOffset(tapePos);
-        if (loaded) { cpu.regs.BC = 0xB001; cpu.regs.altAF = 0x0145; }
-        cpu.regs.CF = loaded;
-        cpu.regs.PC = 0x05E2;
-      }
+      TryFastLoad();
       cpu.tStates = 0;
       cpu.EmulateOne();
       Advance(cpu.tStates, irq);

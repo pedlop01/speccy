@@ -1,4 +1,4 @@
-Gomas — emulador ZX Spectrum 48K con Allegro 5
+Gomas — emulador ZX Spectrum 48K / 128K / +2 con Allegro 5
 
 El núcleo procede de YASS (referencia incluida en ../yass).
 
@@ -72,16 +72,16 @@ para una alternativa de 48K usar la opción explícita de Settings o:
 
   ./bin/gomas --custom-48-rom /ruta/alternativa.rom
 
-Actualmente solo se ejecuta el perfil 48K. Los conjuntos 128K, +2 y +3 se reconocen
-y validan, pero su activación informa de que falta implementar su hardware y
-conserva la máquina actual. if1-2.rom pertenece a Interface 1 y no sirve como ROM
+Se ejecutan los perfiles 48K, 128K inglés/español y +2. Los conjuntos +3 se
+reconocen y validan, pero faltan sus modos de paginación y disquetera; intentar
+activarlos conserva la máquina actual. if1-2.rom pertenece a Interface 1 y no sirve como ROM
 de sistema. Una selección inválida o cancelada conserva ROM, CPU, RAM y cinta.
 Una selección correcta reinicia la máquina y rebobina la cinta montada, igual que
 CPU > Reset. La última selección válida se guarda entre ejecuciones, incluyendo si era una
 ROM alternativa de 48K. En Settings > ROM > On startup se elige Last opened ROM
 o Spectrum 48K. Esto cambia el próximo arranque, sin reiniciar la sesión actual.
 Settings > ROM > ZX Spectrum 48K permite cargar directamente la ROM de 48K.
-Los perfiles 128K/+2/+3 aparecen deshabilitados hasta implementar su hardware.
+128K inglés/español y +2 también se pueden seleccionar; +3 sigue deshabilitado.
 
 Las preferencias se guardan en el directorio de configuración de usuario de
 Gomas (normalmente ~/.config/gomas/settings.ini en Linux). Las rutas de las ROMs
@@ -120,8 +120,8 @@ y el origen/política del bus flotante definidos por el perfil.
 Los bits de capacidades describen extensiones a la base 48K ya implementada.
 RequiredHardwareFeatures y ImplementedHardwareFeatures permiten que cargador y
 menú decidan con una misma regla qué modelos se pueden activar. Declarar un
-perfil no activa por sí solo hardware que falta: AY, paginación especial de +3
-y disquetera siguen pendientes. RAM paginada, pantalla alternativa y tiempos
+perfil no activa por sí solo hardware que falta: paginación especial de +3
+y disquetera siguen pendientes. RAM paginada, pantalla alternativa, AY y tiempos
 de vídeo/audio 128K están implementados y registrados como capacidades.
 
 Reproductor de cinta y multicarga
@@ -264,8 +264,8 @@ No es una emulación de ULA precisa por t-state: las escrituras de vídeo se apl
 al ejecutarse la instrucción y el borde se representa por scanline. No hay
 contención de memoria ni ajuste de eventos de E/S dentro de una instrucción.
 El reloj de audio gobierna el avance del núcleo según los Hz del modelo; se emula
-el beeper del bit 4 y la señal de cassette, sin AY ni la contribución analógica de
-MIC. La carga rápida es específica de la ROM 48K. La reproducción por pulsos
+el beeper del bit 4, la señal de cassette y el AY en 128K/+2, sin la contribución
+analógica de MIC. La carga rápida solo actúa en la página ROM reconocida. La reproducción por pulsos
 soporta TAP estándar: los cargadores propios que requieran otras temporizaciones
 no pueden reconstruirse con la información de un TAP. No hay soporte TZX/PZX ni
 grabación de cinta.
@@ -285,8 +285,7 @@ paginación adicional.
 
 make test incluye paging-tests: bancos completos, protección de ROM, alias,
 decodificación de todos los puertos, bloqueo, reset, configuraciones rechazadas
-y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. Los perfiles
-siguen deshabilitados en la interfaz hasta completar las capacidades pendientes.
+y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. 128K/+2 ya están habilitados en la interfaz; +3 sigue pendiente.
 
 Vídeo y audio por modelo (tarea 6)
 ----------------------------------
@@ -302,4 +301,44 @@ ReadAudio conserva las muestras sobrantes para rellenar fragmentos Allegro de
 960, también tras diálogos, y reset las descarta. El refresco de presentación
 sigue a 50 Hz, pero no fija la velocidad del núcleo. video128-tests comprueba
 pantallas, FLASH, bus flotante, recorte y muestras exactas con distintos lotes
-de ciclos y tamaños de fragmento. AY sigue pendiente antes de activar 128K/+2.
+de ciclos y tamaños de fragmento. 128K/+2 ya incorporan AY.
+
+AY y cinta en 128K/+2
+---------------------
+ay.h emula los tres tonos, ruido de 17 bits, mezclador y 16 formas de envolvente
+del AY-3-8912. SpectrumIO decodifica FFFD/BFFD y sus alias; el AY solo responde
+en modelos que lo tienen. El sonido se mezcla en mono con beeper y cinta a
+48 kHz, conservando los eventos del chip entre instrucciones. La curva DAC es
+aproximada y no reproduce la red analógica exacta. El puerto paralelo devuelve
+pull-ups cuando es entrada; no se conectan periféricos serie externos.
+
+La carga rápida reconoce la página de BASIC (0 en 48K, 1 en 128K/+2) y no
+intercepta la ROM de menú. Las ROMs alternativas siguen usando pulsos. Los
+pulsos TAP se convierten de 3,5 MHz al reloj CPU elegido con un resto entero,
+sin acumular redondeo en cada instrucción. Pausa/reanudación conserva la fase;
+seleccionar otro bloque o rebobinar la reinicia.
+
+En las ROMs inglesa 128K y +2, Enter selecciona Tape Loader al arrancar.
+Para BASIC, usar CAPS SHIFT + 6 para bajar a 128 BASIC y pulsar Enter. En el
+editor 128K se escriben las palabras completas. La ROM española entra en BASIC
+directamente. Fast load funciona al llegar a la rutina ROM reconocida.
+
+back3.tap se valida en ambos modos hasta su primera fase jugable. En pulsos,
+detener en el bloque 9 durante la introducción y continuar con Space; esperar
+al siguiente pedido de carga antes de Play. Detener tras los bloques 9/10 para
+conservar el resto de la cinta para las fases siguientes. Cue selected permite
+volver a un bloque si el juego indica WRONG BLOCK. No hay reconocimiento
+específico del juego ni pausa automática de multicarga.
+
+make test incluye ay-tests, tape128-tests y compat128-tests: las tres ROMs nuevas,
+PRINT 1+1 desde teclado, 48 BASIC, cargas en bancos separados, música variable y
+partida de back3 en ambos modos. Se mantiene la regresión completa de Cobra.
+La escucha y una partida de todas las fases siguen siendo comprobaciones manuales.
+
+Estabilidad del menú de ROM
+---------------------------
+Todas las opciones de modelo se crean como casillas desde el inicio: Allegro
+no permite cambiar CHECKBOX después de crear una opción. Intentarlo en cada
+refresco reconstruía continuamente el menú nativo, causando parpadeo y pérdidas
+de selección. test-ui comprueba que un menú estable no recibe escrituras de
+flags durante los ticks de refresco, además de verificar los cambios de modelo.
