@@ -62,6 +62,8 @@ public:
   SpectrumMachine &operator=(const SpectrumMachine &) = delete;
 
   void Reset() {
+    audioOffset = 0;
+    audioAvailable = 0;
     cpu = Z80();
     memory.Reset();
     ula.Configure(configuration->model);
@@ -152,6 +154,24 @@ public:
     Advance(cpu.tStates, unused);
   }
 
+  // Hardware frames have a fractional number of 48 kHz samples. Preserve
+  // leftovers between fixed-size host fragments instead of stretching frames.
+  void ReadAudio(short *output, size_t count) {
+    while (count) {
+      if (!audioAvailable) {
+        Frame();
+        audioOffset = 0;
+        audioAvailable = ula.FrameAudioCount;
+      }
+      size_t step = std::min(count, audioAvailable);
+      std::copy(ula.FrameAudio + audioOffset, ula.FrameAudio + audioOffset + step, output);
+      audioOffset += step;
+      audioAvailable -= step;
+      output += step;
+      count -= step;
+    }
+  }
+
   // Split audio integration at tape edges; playback also runs while CPU is HALTed.
   void Advance(unsigned cycles, bool &irq) {
     irq = false;
@@ -169,6 +189,7 @@ public:
   }
 
 private:
+  size_t audioOffset = 0, audioAvailable = 0;
   const MachineConfiguration *configuration = &HardwareFor(MachineModel::Spectrum48);
 
   void UpdateTapeInput() {

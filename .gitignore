@@ -10,3 +10,4 @@ rom-loader-tests
 rom-settings-tests
 machine-config-tests
 paging-tests
+video128-tests

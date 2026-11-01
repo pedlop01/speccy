@@ -12,6 +12,8 @@ void ULA::Configure(MachineModel model) {
 }
 
 void ULA::Reset() {
+  displayMemory = data;
+  FrameAudioCount = 0;
   dwFrameTStates = 0;
   dwScanLineTStates = 0;
   dwScanLine = 0;
@@ -50,7 +52,7 @@ void ULA::UpdateChar(unsigned int nChar) {
   unsigned int column;
 
   pmemOffset = ((nChar & 0x300) << 3) | (nChar & 0x0FF);
-  attr = data[nChar + 0x1800];
+  attr = displayMemory[nChar + 0x1800];
 
   row = (nChar >> 5) << 3;
   column = (nChar & 0x1F) << 3;
@@ -66,7 +68,7 @@ void ULA::UpdateChar(unsigned int nChar) {
   isDirty = true;
   // Redraw 8x8 pixels
   for (int y = 0; y < 8; y++) {
-    unsigned char pixelData = data[pmemOffset];
+    unsigned char pixelData = displayMemory[pmemOffset];
     for (int x = 0; x < 8; x++) {
       bool is_ink = (pixelData & (0x01 << (7 - x)));
 
@@ -83,17 +85,17 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   while (cycles) {
     unsigned int step = std::min(cycles,
         static_cast<unsigned int>(timing.tstatesPerLine - dwScanLineTStates));
-    unsigned int units = step * SAMPLES_PER_FRAME;
+    unsigned int units = step * AUDIO_SAMPLE_RATE;
     const int signal = ((ULAIOData & 0x10) ? 16384 : 0) +
                        ((tapeMonitor && earInput) ? 8192 : 0);
     // Integrate each level over time, including transitions within a sample.
     while (units) {
-      unsigned int part = std::min(units, timing.TStatesPerFrame() - audioPhase);
+      unsigned int part = std::min(units, timing.cpuClockHz - audioPhase);
       audioSum += static_cast<std::int64_t>(signal) * part;
       audioPhase += part;
       units -= part;
-      if (audioPhase == timing.TStatesPerFrame()) {
-        double sample = static_cast<double>(audioSum) / timing.TStatesPerFrame();
+      if (audioPhase == timing.cpuClockHz) {
+        double sample = static_cast<double>(audioSum) / timing.cpuClockHz;
         dcAverage += 0.005 * (sample - dcAverage);
         pendingAudio[audioIndex++] = static_cast<short>(sample - dcAverage);
         audioSum = 0;
@@ -115,7 +117,9 @@ void ULA::ScanLine(bool& IRQ) {
   dwScanLine++;
 
   if (dwScanLine >= timing.linesPerFrame) {
-    memcpy(FrameAudio, pendingAudio, sizeof(FrameAudio));
+    FrameAudioCount = audioIndex;
+    memcpy(FrameAudio, pendingAudio, FrameAudioCount * sizeof(short));
+    std::fill(FrameAudio + FrameAudioCount, FrameAudio + SAMPLES_PER_FRAME, 0);
     audioIndex = 0;
     // Frame complete - trigger IRQ
     IRQ = true;
@@ -130,14 +134,15 @@ void ULA::ScanLine(bool& IRQ) {
   }
 
   // Skip non-visible lines
-  // Preserve the existing 320x240 presentation crop; beam-accurate borders
-  // and alternate screen banks belong to the video implementation task.
-  if((dwScanLine < 36) || (dwScanLine >= 36 + 240))
+  // Position the 24-line top crop relative to the model's first display line.
+  const unsigned firstLine = (timing.firstDisplayTstate + timing.tstatesPerLine - 1) / timing.tstatesPerLine;
+  const unsigned cropLine = firstLine - 24;
+  if((dwScanLine < cropLine) || (dwScanLine >= cropLine + 240))
     return;
 
   // Check if current background color for scanline is
   // different from the required one
-  bitmapLine = dwScanLine-36;
+  bitmapLine = dwScanLine - cropLine;
   if (dwCurrentScanLineBackColor[bitmapLine] == dwBorderRGBColor)
     return;
 
@@ -161,11 +166,22 @@ void ULA::ScanLine(bool& IRQ) {
 
 void ULA::UpdateBlink() {
   for (unsigned int nChar = 0; nChar < 32*24; nChar++)
-    if (data[nChar + 0x1800] & 0x80)
+    if (displayMemory[nChar + 0x1800] & 0x80)
       UpdateChar(nChar);
 }
 
+void ULA::SelectScreen(const unsigned char *memory) {
+  const unsigned char *selected = memory ? memory : data;
+  if (displayMemory == selected) return;
+  displayMemory = selected;
+  for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
+}
+
 void ULA::MemoryWrite(unsigned int address, unsigned char value) {
+  if (displayMemory == data) DisplayWrite(address, value);
+}
+
+void ULA::DisplayWrite(unsigned int address, unsigned char value) {
   unsigned int ink;
   unsigned int paper;
   unsigned int row;
@@ -187,7 +203,7 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
     column = (address & 0x001F) * 8;
 
     // Get the attribute
-    attr = data[0x1800 + ((row >> 3) << 5) + (address & 0x001F)];
+    attr = displayMemory[0x1800 + ((row >> 3) << 5) + (address & 0x001F)];
 
     if((attr & 0x80) && blinkState) {
       paper = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
@@ -257,7 +273,7 @@ unsigned char ULA::IORead(unsigned int address) {
   else
     offset = ((y & 0xC0) << 5) | ((y & 7) << 8) |
              ((y & 0x38) << 2) | column;
-  return data[offset];
+  return displayMemory[offset];
 }
 
 void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {

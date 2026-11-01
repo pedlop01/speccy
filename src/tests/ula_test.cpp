@@ -75,7 +75,7 @@ int main() {
   assert(whole.dwFrameTStates == 13 && split.dwFrameTStates == 13);
   assert(whole.audioIndex == 0);
   assert(memcmp(whole.FrameAudio, split.FrameAudio, sizeof(whole.FrameAudio)) == 0);
-  assert(whole.FrameAudio[0] > 16000 && whole.FrameAudio[SAMPLES_PER_FRAME - 1] > 0);
+  assert(whole.FrameAudio[0] > 16000 && whole.FrameAudio[whole.FrameAudioCount - 1] > 0);
   // Generating the next frame must leave the completed audio snapshot intact.
   short saved[SAMPLES_PER_FRAME];
   memcpy(saved, whole.FrameAudio, sizeof(saved));

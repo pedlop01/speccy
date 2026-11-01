@@ -12,7 +12,7 @@ all: gomas
 gomas: $(SOURCES) $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
 
-test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests
+test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests
 	./ula-tests
 	./floating-bus-tests
 	./machine-tests
@@ -22,6 +22,7 @@ test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-
 	./rom-settings-tests
 	./machine-config-tests
 	./paging-tests
+	./video128-tests
 
 ula-tests: ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -54,7 +55,10 @@ tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/main.cpp ../src/ula.cpp ../s
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean:
-	rm -f *.o gomas ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests
+	rm -f *.o gomas ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests
 
 paging-tests: ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+video128-tests: ../src/tests/video128_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/video128_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)

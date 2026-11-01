@@ -311,8 +311,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
       void *fragment = al_get_audio_stream_fragment(stream.get());
       if (!fragment) break;
-      machine.Frame();
-      memcpy(fragment, ula.FrameAudio, sizeof(ula.FrameAudio));
+      machine.ReadAudio(static_cast<short *>(fragment), SAMPLES_PER_FRAME);
       if (!al_set_audio_stream_fragment(stream.get(), fragment)) return false;
     }
     return true;

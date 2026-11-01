@@ -25,8 +25,7 @@ struct MachineTiming {
   constexpr unsigned TStatesPerFrame() const { return tstatesPerLine * linesPerFrame; }
 };
 
-// Timing facts, not emulator scheduling policy. Host audio still uses the
-// existing 50 Hz frame queue; adapting that policy belongs to the timing task.
+// Hardware timing facts. Audio samples are clocked independently at 48 kHz.
 // References: https://github.com/fuse-emulator/libspectrum/blob/master/timings.c
 //             https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
 namespace MachineTimings {
@@ -114,7 +113,7 @@ inline unsigned RequiredHardwareFeatures(const MachineConfiguration &configurati
   return features;
 }
 
-inline unsigned ImplementedHardwareFeatures() { return FeatureBankedRAM | FeatureROMPaging; }
+inline unsigned ImplementedHardwareFeatures() { return FeatureBankedRAM | FeatureROMPaging | FeatureModelTiming | FeatureShadowScreen; }
 
 inline std::string MissingHardwareFeatures(const MachineConfiguration &configuration) {
   unsigned missing = RequiredHardwareFeatures(configuration) & ~ImplementedHardwareFeatures();

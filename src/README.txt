@@ -120,10 +120,9 @@ y el origen/política del bus flotante definidos por el perfil.
 Los bits de capacidades describen extensiones a la base 48K ya implementada.
 RequiredHardwareFeatures y ImplementedHardwareFeatures permiten que cargador y
 menú decidan con una misma regla qué modelos se pueden activar. Declarar un
-perfil no activa por sí solo hardware que falta: RAM paginada, pantalla alternativa,
-sonido AY, paginación especial de +3 y disquetera siguen pendientes. El recorte
-actual de vídeo y el audio de 960 muestras por fotograma a 50 Hz se conservan;
-el ajuste preciso de vídeo/audio 128K se hará en la tarea correspondiente.
+perfil no activa por sí solo hardware que falta: AY, paginación especial de +3
+y disquetera siguen pendientes. RAM paginada, pantalla alternativa y tiempos
+de vídeo/audio 128K están implementados y registrados como capacidades.
 
 Reproductor de cinta y multicarga
 --------------------------------
@@ -264,7 +263,7 @@ Límites actuales
 No es una emulación de ULA precisa por t-state: las escrituras de vídeo se aplican
 al ejecutarse la instrucción y el borde se representa por scanline. No hay
 contención de memoria ni ajuste de eventos de E/S dentro de una instrucción.
-Se conserva la aproximación de 50 frames/s (69888 t-states por frame) y se emula
+El reloj de audio gobierna el avance del núcleo según los Hz del modelo; se emula
 el beeper del bit 4 y la señal de cassette, sin AY ni la contribución analógica de
 MIC. La carga rápida es específica de la ROM 48K. La reproducción por pulsos
 soporta TAP estándar: los cargadores propios que requieran otras temporizaciones
@@ -281,10 +280,26 @@ spectrum_memory.h centraliza el mapa de CPU: ocho bancos de 16 KB, bancos fijos
 Los alias de los bancos 2/5 comparten los mismos bytes; escribir al banco 5
 por C000 también actualiza la ULA. SpectrumIO distribuye las escrituras a ULA
 y paginación, incluidas las direcciones compartidas. En 48K no hay paginación.
-El bit de pantalla se conserva; mostrar banco 7 y completar vídeo/audio 128K
-queda para la siguiente tarea. +3 requiere su propia paginación adicional.
+El bit de pantalla ya selecciona banco 5/7 en la ULA. +3 requiere su propia
+paginación adicional.
 
 make test incluye paging-tests: bancos completos, protección de ROM, alias,
 decodificación de todos los puertos, bloqueo, reset, configuraciones rechazadas
 y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. Los perfiles
 siguen deshabilitados en la interfaz hasta completar las capacidades pendientes.
+
+Vídeo y audio por modelo (tarea 6)
+----------------------------------
+La ULA lee el banco de pantalla seleccionado, independientemente del mapa CPU.
+Bitmap, atributos, FLASH y bus flotante usan la misma fuente; cambiar de pantalla
+redibuja toda la imagen y las escrituras ocultas no la modifican. Se conserva el
+recorte 320x240, situado respecto al inicio de pantalla del perfil. El borde
+sigue siendo por scanline, sin contención ni cambios por t-state.
+
+El audio se muestrea a 48000 Hz respecto al reloj emulado, conservando la fase
+entre frames. FrameAudioCount sustituye la suposición de 960 muestras por frame;
+ReadAudio conserva las muestras sobrantes para rellenar fragmentos Allegro de
+960, también tras diálogos, y reset las descarta. El refresco de presentación
+sigue a 50 Hz, pero no fija la velocidad del núcleo. video128-tests comprueba
+pantallas, FLASH, bus flotante, recorte y muestras exactas con distintos lotes
+de ciclos y tamaños de fragmento. AY sigue pendiente antes de activar 128K/+2.

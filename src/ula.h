@@ -15,7 +15,8 @@ constexpr unsigned TSTATES_PER_SCANLINE = MachineTimings::PAL48.tstatesPerLine;
 constexpr unsigned TVSCANLINES = MachineTimings::PAL48.linesPerFrame;
 constexpr unsigned TSTATES_PER_FRAME = MachineTimings::PAL48.TStatesPerFrame();
 
-// Audio
+// Audio: fixed host fragment/capacity; FrameAudioCount is the variable number
+// of completed samples in a hardware frame (at most 960 for supported PAL models).
 #define AUDIO_SAMPLE_RATE    48000
 #define SAMPLES_PER_FRAME    (AUDIO_SAMPLE_RATE / 50)
 
@@ -70,9 +71,11 @@ class ULAIO : public BusComponent<0xFE, 1> {
 class ULA : public ULAMemory, public ULAIO {
   public:
     signed short FrameAudio[SAMPLES_PER_FRAME];
+    unsigned FrameAudioCount = 0;
 
   protected:
     MachineTiming   timing = MachineTimings::PAL48;
+    const unsigned char *displayMemory = data;
     bool            isDirty;
     ALLEGRO_BITMAP* bitmap;
     bool            blinkState;
@@ -101,6 +104,9 @@ class ULA : public ULAMemory, public ULAIO {
     void Reset();
     void Configure(MachineModel model);
     const MachineTiming &Timing() const { return timing; }
+    // nullptr selects the primary screen stored by ULAMemory.
+    void SelectScreen(const unsigned char *memory);
+    void DisplayWrite(unsigned address, unsigned char value);
     void SetTapeInput(bool high, bool active) { earInput = high; tapeMonitor = active; }
 
     void SetBitmap(ALLEGRO_BITMAP *_bitmap);

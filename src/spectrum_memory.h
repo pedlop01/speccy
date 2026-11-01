@@ -6,11 +6,11 @@
 #include "ula.h"
 
 // One physical store per RAM bank. The primary screen bank lives in ULAMemory
-// so writes through either CPU window also notify the renderer. Shadow-screen
-// rendering is deliberately left to the video implementation.
+// so writes through either CPU window also notify the renderer. The ULA
+// reads the selected screen bank independently of the CPU memory windows.
 class SpectrumMemory : public BusComponent<0, 65536> {
 public:
-  explicit SpectrumMemory(ULAMemory &screen) : screen(screen) { Reset(); }
+  explicit SpectrumMemory(ULA &screen) : ula(screen), screen(static_cast<ULAMemory &>(screen)) { Reset(); }
   SpectrumMemory(const SpectrumMemory &) = delete;
   SpectrumMemory &operator=(const SpectrumMemory &) = delete;
 
@@ -33,6 +33,7 @@ public:
     for (auto &bank : banks) bank.fill(0);
     static_cast<ULAMemory &>(screen).Clear();
     paging = 0;
+    ula.SelectScreen(nullptr);
   }
   unsigned char PagingLatch() const { return paging; }
   bool PagingLocked() const { return (paging & 0x20) != 0; }
@@ -45,7 +46,12 @@ public:
   }
   void WritePaging(unsigned port, unsigned char value) {
     // 128K and grey +2 decode only A15 and A1, including overlapping ULA ports.
-    if (IsPaged() && !(port & 0x8002) && !PagingLocked()) paging = value;
+    if (IsPaged() && !(port & 0x8002) && !PagingLocked()) {
+      const unsigned previous = ScreenBank();
+      paging = value;
+      if (ScreenBank() != previous)
+        ula.SelectScreen(ScreenBank() == configuration->memory.screenBanks[0] ? nullptr : banks[ScreenBank()].data());
+    }
   }
   unsigned char Read(unsigned address) override {
     address &= 0xFFFF;
@@ -60,7 +66,10 @@ public:
     const unsigned bank = RAMBank((address >> 14) - 1);
     const unsigned offset = address & 0x3FFF;
     if (bank == configuration->memory.screenBanks[0]) screen.Write(0x4000 + offset, value);
-    else banks[bank][offset] = value;
+    else {
+      banks[bank][offset] = value;
+      if (bank == ScreenBank()) ula.DisplayWrite(offset, value);
+    }
   }
   unsigned char ReadBank(unsigned bank, unsigned offset) {
     if (bank >= configuration->memory.ramBanks || offset >= SPECTRUM_BANK_BYTES)
@@ -70,6 +79,7 @@ public:
 
 private:
   // Access via the public bus interface; ULAMemory's overrides are protected.
+  ULA &ula;
   BusComponentBase &screen;
   std::array<std::array<unsigned char, SPECTRUM_BANK_BYTES>, 8> banks;
   std::vector<std::vector<unsigned char>> romPages;
