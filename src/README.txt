@@ -4,21 +4,42 @@ El núcleo procede de YASS (referencia incluida en ../yass).
 
 Compilar y ejecutar
 ------------------
-Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5 y
-allegro_audio-5. Ya no necesita primitives ni acodec.
+Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
+allegro_audio-5 y allegro_dialog-5. Ya no necesita primitives ni acodec.
 
   make -C bin
-  cd bin
-  ./gomas manic.tap
+  ./bin/gomas
 
-El segundo argumento opcional permite indicar la ROM desde otro directorio:
+La ROM 48.rom se busca en el directorio de trabajo y junto al ejecutable.
+También se conserva la apertura por línea de comandos:
 
+  ./bin/gomas bin/manic.tap
   ./bin/gomas bin/manic.tap yass/ROM/48.rom
 
-Escape o cerrar la ventana termina el programa. La ventana se puede redimensionar;
-la imagen conserva su proporción y usa escala entera cuando cabe, sin suavizado.
-LSHIFT corresponde a CAPS SHIFT y RSHIFT a SYMBOL SHIFT. Al perder el foco se
-liberan las teclas para evitar que queden pulsadas.
+Menús
+-----
+File > Open... abre un selector de TAP. Al aceptar un archivo válido se inserta la
+cinta y se reinicia el Spectrum. Cancelar o seleccionar un archivo inválido conserva
+la partida actual. Para cargar, escribir LOAD "" en BASIC: J produce LOAD y
+Right Shift + P produce cada comilla; terminar con Enter.
+File > Close retira la cinta y reinicia el Spectrum; se deshabilita sin cinta.
+File > Exit termina el programa, igual que Escape o cerrar la ventana.
+CPU > Reset reinicia CPU, RAM, ULA y audio; conserva la cinta y la rebobina.
+View y Settings se muestran deshabilitados, sin opciones todavía.
+Help > About / Help muestra instrucciones y los créditos de YASS.
+
+Los diálogos de archivo y ayuda pausan el audio y la emulación. Tras Open, Close
+o Reset se descarta todo el audio pendiente de la sesión anterior. El nombre de
+la cinta aparece en el título de la ventana.
+
+En Linux los menús nativos de Allegro requieren X11/GLX y GTK. El programa utiliza
+ALLEGRO_GTK_TOPLEVEL y selecciona GDK_BACKEND=x11 dentro de su propio proceso,
+también en escritorios Wayland con XWayland. No modifica la configuración del
+escritorio. Referencia: https://liballeg.org/a5docs/trunk/native_dialog.html
+
+La ventana se puede redimensionar; la imagen conserva su proporción y usa escala
+entera cuando cabe, sin suavizado. LSHIFT corresponde a CAPS SHIFT y RSHIFT a
+SYMBOL SHIFT. Al perder el foco se liberan las teclas.
 
 Revisión de vídeo y audio
 ------------------------
@@ -54,6 +75,7 @@ No requieren ventana ni dispositivo de audio. Comprueban colores, BRIGHT, FLASH,
 la distribución de VRAM, límites del borde, ciclos exactos y sobrantes, muestreo
 independiente del reparto en instrucciones, eliminación de continua, separación
 de búferes y arranque de la ROM incluida durante 500 frames. También se comprueban
+Open, Reset y Close (incluido conservar la partida si Open falla), y
 los bytes de bitmap/atributos del bus flotante en las 192 líneas, los intervalos
 inactivos y el bucle de sincronización usado por Cobra.
 

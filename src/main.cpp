@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -6,6 +7,8 @@
 #include <algorithm>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_native_dialog.h>
+#include "emulator.h"
 
 #include "z80.h"
 #include "bus.hpp"
@@ -14,44 +17,6 @@
 #include "ula.h"
 
 using namespace std;
-
-// Validate TAP framing before starting; malformed files must not overrun memory.
-bool ValidateTape(const vector<unsigned char> &data) {
-  size_t pos = 0;
-  while (pos < data.size()) {
-    if (data.size() - pos < 2) return false;
-    size_t length = data[pos] | (data[pos + 1] << 8);
-    pos += 2;
-    if (length < 2 || length > data.size() - pos) return false;
-    pos += length;
-  }
-  return true;
-}
-
-bool LoadTrap(Z80 &cpu, const vector<unsigned char> &data, size_t &pos) {
-  if (pos == data.size()) return false;
-  size_t length = data[pos] | (data[pos + 1] << 8);
-  pos += 2;
-  const size_t end = pos + length;
-  const unsigned char flag = data[pos++];
-  unsigned char checksum = flag;
-  const unsigned char expectedFlag = cpu.regs.altAF >> 8;
-  const bool load = (cpu.regs.altAF & 1) != 0;
-  bool success = flag == expectedFlag && length - 2 == cpu.regs.DE;
-  while (pos < end - 1) {
-    unsigned char value = data[pos++];
-    checksum ^= value;
-    if (flag == expectedFlag && cpu.regs.DE) {
-      if (load) cpu.DataBus->Write(cpu.regs.IX, value);
-      else if (cpu.DataBus->Read(cpu.regs.IX) != value) success = false;
-      ++cpu.regs.IX;
-      --cpu.regs.DE;
-    }
-  }
-  success = success && checksum == data[pos];
-  pos = end;
-  return success;
-}
 
 void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
   bool keyEvent = false;
@@ -115,73 +80,106 @@ void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
 }
 
 
-// One emulated frame produces one immutable audio fragment. Instruction
-// overshoot is retained in the ULA, including interrupt acknowledge cycles.
-void EmulateFrame(Z80 &cpu, ULA &ula, const vector<unsigned char> &tape, size_t &pos) {
-  bool irq = false;
-  while (!irq) {
-    if (cpu.regs.PC == 0x056B) {
-      const bool loaded = LoadTrap(cpu, tape, pos);
-      if (loaded) {
-        cpu.regs.BC = 0xB001;
-        cpu.regs.altAF = 0x0145;
-      }
-      cpu.regs.CF = loaded;
-      cpu.regs.PC = 0x05E2;
-    }
-    cpu.tStates = 0;
-    cpu.EmulateOne();
-    ula.AddCycles(cpu.tStates, irq);
+enum MenuId {
+  MENU_FILE = 100, MENU_OPEN, MENU_CLOSE, MENU_EXIT,
+  MENU_CPU, MENU_RESET, MENU_VIEW, MENU_SETTINGS, MENU_HELP, MENU_ABOUT
+};
+
+// Allegro owns an attached menu. Detach/destroy it before its display goes away.
+struct DisplayDeleter {
+  void operator()(ALLEGRO_DISPLAY *display) const {
+    al_set_display_menu(display, nullptr);
+    al_destroy_display(display);
   }
-  cpu.tStates = 0;
-  cpu.INT();
-  bool unused = false;
-  ula.AddCycles(cpu.tStates, unused);
+};
+
+bool InstallMenu(ALLEGRO_DISPLAY *display) {
+  ALLEGRO_MENU_INFO items[] = {
+    ALLEGRO_START_OF_MENU("&File", MENU_FILE),
+      {"&Open...", MENU_OPEN, 0, nullptr},
+      {"&Close", MENU_CLOSE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      {"E&xit", MENU_EXIT, 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_START_OF_MENU("&CPU", MENU_CPU),
+      {"&Reset", MENU_RESET, 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    // Native top-level menus require a child. A separator provides no action;
+    // the disabled headings remain visible without exposing placeholder options.
+    {"&View->", MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    {"&Settings->", MENU_SETTINGS, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_START_OF_MENU("&Help", MENU_HELP),
+      {"&About / Help", MENU_ABOUT, 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_END_OF_MENU
+  };
+  unique_ptr<ALLEGRO_MENU, decltype(&al_destroy_menu)> menu(
+      al_build_menu(items), al_destroy_menu);
+  if (!menu) return false;
+  al_set_menu_item_flags(menu.get(), MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED);
+  al_set_menu_item_flags(menu.get(), MENU_SETTINGS, ALLEGRO_MENU_ITEM_DISABLED);
+  if (!al_set_display_menu(display, menu.get())) return false;
+  menu.release();
+  return true;
+}
+
+void ReleaseKeys(ULA &ula) {
+  for (unsigned row = 0; row < 4; ++row)
+    for (unsigned col = 0; col < 10; ++col) ula.PressKey(row, col, false);
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2 || argc > 3) {
-    fprintf(stderr, "Usage: %s tape.tap [48.rom]\n", argv[0]);
+  if (argc > 3) {
+    fprintf(stderr, "Usage: %s [tape.tap [48.rom]]\n", argv[0]);
     return 1;
   }
-  ifstream input(argv[1], ios::binary);
-  if (!input) {
-    fprintf(stderr, "Cannot open TAP file: %s\n", argv[1]);
+  if (!al_init()) { fprintf(stderr, "Cannot initialize Allegro\n"); return 1; }
+  SpectrumMachine machine;
+  ULA &ula = machine.ula;
+  // Preserve the existing working-directory ROM path, then try beside the exe.
+  bool romLoaded = machine.rom.Load(argc == 3 ? argv[2] : "48.rom") == 0;
+  if (!romLoaded && argc != 3) {
+    unique_ptr<ALLEGRO_PATH, decltype(&al_destroy_path)> path(
+        al_get_standard_path(ALLEGRO_EXENAME_PATH), al_destroy_path);
+    if (path) {
+      al_set_path_filename(path.get(), "48.rom");
+      romLoaded = machine.rom.Load(al_path_cstr(path.get(), ALLEGRO_NATIVE_PATH_SEP)) == 0;
+    }
+  }
+  if (!romLoaded) {
+    fprintf(stderr, "Cannot load 16 KB Spectrum ROM (expected 48.rom beside executable)\n");
     return 1;
   }
-  vector<unsigned char> tape((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
-  if (!ValidateTape(tape)) {
-    fprintf(stderr, "Malformed TAP file\n");
+  string error;
+  if (argc >= 2 && !machine.Open(argv[1], error)) {
+    fprintf(stderr, "%s\n", error.c_str());
     return 1;
   }
-
-  Z80 cpu;
-  ULA ula;
-  Bus16 bus;
-  ROM<0, 16384> rom;
-  RAM<32768, 32 * 1024> ram;
-  if (rom.Load(argc == 3 ? argv[2] : "48.rom")) {
-    fprintf(stderr, "Cannot load 16 KB Spectrum ROM (use optional ROM path)\n");
+#ifdef ALLEGRO_GTK_TOPLEVEL
+  // Allegro native menus use X11/GLX. Keep GTK on that same connection even
+  // when the desktop exports GDK_BACKEND=wayland (e.g. Steam Deck).
+  setenv("GDK_BACKEND", "x11", 1);
+#endif
+  if (!al_install_keyboard() || !al_install_audio() || !al_init_native_dialog_addon()) {
+    fprintf(stderr, "Cannot initialize keyboard, audio or native dialogs\n");
     return 1;
   }
-  bus.AddBusComponent(&rom);
-  bus.AddBusComponent(&ram);
-  bus.AddBusComponent(static_cast<ULAMemory *>(&ula));
-  cpu.DataBus = &bus;
-  cpu.IOBus = static_cast<ULAIO *>(&ula);
-
-  if (!al_init() || !al_install_keyboard() || !al_install_audio()) {
-    fprintf(stderr, "Cannot initialize Allegro, keyboard or audio\n");
-    return 1;
-  }
-  // Explicit ownership keeps every error and normal exit on the same cleanup path.
-  al_set_new_display_flags(ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE);
+  int displayFlags = ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE;
+#ifdef ALLEGRO_GTK_TOPLEVEL
+  displayFlags |= ALLEGRO_GTK_TOPLEVEL;
+#endif
+  al_set_new_display_flags(displayFlags);
   al_set_new_display_option(ALLEGRO_VSYNC, 0, ALLEGRO_SUGGEST);
-  unique_ptr<ALLEGRO_DISPLAY, decltype(&al_destroy_display)> display(
-      al_create_display(640, 480), al_destroy_display);
-  if (!display) { fprintf(stderr, "Cannot create display\n"); return 1; }
-  al_set_window_title(display.get(), "Gomas - ZX Spectrum 48K");
-  al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP); // nearest neighbour: no filtering flags
+  unique_ptr<ALLEGRO_DISPLAY, DisplayDeleter> display(al_create_display(640, 520));
+  if (!display || !InstallMenu(display.get())) {
+    fprintf(stderr, "Cannot create display/menu\n");
+    return 1;
+  }
+  al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
   unique_ptr<ALLEGRO_BITMAP, decltype(&al_destroy_bitmap)> bitmap(
       al_create_bitmap(320, 240), al_destroy_bitmap);
   unique_ptr<ALLEGRO_EVENT_QUEUE, decltype(&al_destroy_event_queue)> events(
@@ -193,9 +191,8 @@ int main(int argc, char *argv[]) {
       al_create_mixer(AUDIO_SAMPLE_RATE, ALLEGRO_AUDIO_DEPTH_FLOAT32,
                       ALLEGRO_CHANNEL_CONF_2), al_destroy_mixer);
   unique_ptr<ALLEGRO_AUDIO_STREAM, decltype(&al_destroy_audio_stream)> stream(
-      al_create_audio_stream(3, SAMPLES_PER_FRAME, AUDIO_SAMPLE_RATE,
-          ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_1), al_destroy_audio_stream);
-  if (!bitmap || !events || !voice || !mixer || !stream ||
+      nullptr, al_destroy_audio_stream);
+  if (!bitmap || !events || !voice || !mixer ||
       !al_attach_mixer_to_voice(mixer.get(), voice.get())) {
     fprintf(stderr, "Cannot create video/audio resources\n");
     return 1;
@@ -203,44 +200,112 @@ int main(int argc, char *argv[]) {
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
   al_register_event_source(events.get(), al_get_display_event_source(display.get()));
-  al_register_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
+  al_register_event_source(events.get(), al_get_default_menu_event_source());
 
-  size_t tapePos = 0;
-  // Prime all fragments before playback; the audio device then paces emulation.
+  auto updateUI = [&]() {
+    string title = "Gomas - ZX Spectrum 48K";
+    if (!machine.tapePath.empty()) {
+      size_t slash = machine.tapePath.find_last_of("/\\");
+      title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
+    }
+    al_set_window_title(display.get(), title.c_str());
+    al_set_menu_item_flags(al_get_display_menu(display.get()), MENU_CLOSE,
+        machine.tapePath.empty() ? ALLEGRO_MENU_ITEM_DISABLED : 0);
+  };
   auto fillAudio = [&]() {
-    while (void *fragment = al_get_audio_stream_fragment(stream.get())) {
-      EmulateFrame(cpu, ula, tape, tapePos);
+    // Bound catch-up work so UI events cannot starve on slower machines.
+    for (int i = 0; i < 3; ++i) {
+      void *fragment = al_get_audio_stream_fragment(stream.get());
+      if (!fragment) break;
+      machine.Frame();
       memcpy(fragment, ula.FrameAudio, sizeof(ula.FrameAudio));
       if (!al_set_audio_stream_fragment(stream.get(), fragment)) return false;
     }
     return true;
   };
-  if (!fillAudio() || !al_attach_audio_stream_to_mixer(stream.get(), mixer.get())) {
-    fprintf(stderr, "Cannot start audio stream\n");
-    return 1;
-  }
+  auto restartAudio = [&]() {
+    // Drop every queued sample from the previous machine state.
+    if (stream) {
+      al_unregister_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
+      stream.reset();
+    }
+    stream.reset(al_create_audio_stream(3, SAMPLES_PER_FRAME, AUDIO_SAMPLE_RATE,
+        ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_1));
+    if (!stream) return false;
+    al_register_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
+    return fillAudio() && al_attach_audio_stream_to_mixer(stream.get(), mixer.get());
+  };
+  updateUI();
+  if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
 
   bool running = true;
   while (running) {
     ALLEGRO_EVENT event;
     al_wait_for_event(events.get(), &event);
+    bool resetAudio = false;
     switch (event.type) {
       case ALLEGRO_EVENT_DISPLAY_CLOSE: running = false; break;
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
-      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT:
-        for (unsigned row = 0; row < 4; ++row)
-          for (unsigned col = 0; col < 10; ++col) ula.PressKey(row, col, false);
-        break;
+      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); break;
       case ALLEGRO_EVENT_KEY_DOWN:
         if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) running = false;
         else ReadKeyboard(event, &ula);
         break;
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
+      case ALLEGRO_EVENT_MENU_CLICK:
+        switch (event.user.data1) {
+          case MENU_OPEN: {
+            al_set_audio_stream_playing(stream.get(), false);
+            ReleaseKeys(ula);
+            unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
+                al_create_native_file_dialog(machine.tapePath.empty() ? nullptr : machine.tapePath.c_str(),
+                    "Open Spectrum tape", "*.tap;*.TAP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
+                al_destroy_native_file_dialog);
+            if (!chooser || !al_show_native_file_dialog(display.get(), chooser.get())) {
+              al_show_native_message_box(display.get(), "Gomas", "Cannot open file dialog",
+                  "Please try again.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            } else if (al_get_native_file_dialog_count(chooser.get()) > 0) {
+              const char *path = al_get_native_file_dialog_path(chooser.get(), 0);
+              if (path && machine.Open(path, error)) resetAudio = true;
+              else al_show_native_message_box(display.get(), "Gomas", "Cannot open tape",
+                  error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+            }
+            ReleaseKeys(ula);
+            if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
+            break;
+          }
+          case MENU_CLOSE: machine.Close(); resetAudio = true; break;
+          case MENU_RESET: machine.Reset(); resetAudio = true; break;
+          case MENU_EXIT: running = false; break;
+          case MENU_ABOUT:
+            al_set_audio_stream_playing(stream.get(), false);
+            ReleaseKeys(ula);
+            al_show_native_message_box(display.get(), "Gomas", "ZX Spectrum 48K emulator",
+                "File > Open: insert a TAP and restart the Spectrum.\n"
+                "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
+                "J = LOAD; Right Shift + P = quotation mark.\n\n"
+                "File > Close: eject the tape and restart.\n"
+                "CPU > Reset: restart and rewind the current tape.\n"
+                "Left Shift = CAPS SHIFT; Right Shift = SYMBOL SHIFT.\n"
+                "Escape = Exit.\n\n"
+                "By Pedro Lopez. Based on YASS by Fernando Marcos.\n"
+                "http://yass.speccy.org/", nullptr, 0);
+            ReleaseKeys(ula);
+            al_set_audio_stream_playing(stream.get(), true);
+            break;
+        }
+        updateUI();
+        break;
       case ALLEGRO_EVENT_AUDIO_STREAM_FRAGMENT:
-        if (!fillAudio()) { fprintf(stderr, "Cannot submit audio fragment\n"); return 1; }
+        if (event.any.source == al_get_audio_stream_event_source(stream.get()) && !fillAudio()) {
+          fprintf(stderr, "Cannot submit audio fragment\n"); return 1;
+        }
         break;
     }
     if (!running) break;
+    if (resetAudio && !restartAudio()) {
+      fprintf(stderr, "Cannot restart audio stream\n"); return 1;
+    }
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
     al_set_target_backbuffer(display.get());
     al_clear_to_color(al_map_rgb(0, 0, 0));

@@ -93,6 +93,7 @@ class ULA : public ULAMemory, public ULAIO {
   public:
     ULA();
     ~ULA();
+    void Reset();
 
     void SetBitmap(ALLEGRO_BITMAP *_bitmap);
     void UpdateChar(unsigned int nChar);

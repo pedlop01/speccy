@@ -3,6 +3,10 @@
 
 ULA::ULA() {
   bitmap = NULL;
+  Reset();
+}
+
+void ULA::Reset() {
   dwFrameTStates = 0;
   dwScanLineTStates = 0;
   dwScanLine = 0;
@@ -12,6 +16,7 @@ ULA::ULA() {
   dwBorderRGBColor = 0x0000000;
   memset(dwCurrentScanLineBackColor, 0xFF, sizeof(dwCurrentScanLineBackColor));
 
+  memset(data, 0, sizeof(data));
   memset(keyMatrix, 0, sizeof(keyMatrix));
 
   memset(FrameAudio, 0, sizeof(FrameAudio));

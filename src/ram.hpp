@@ -17,6 +17,8 @@ class RAM : public BusComponent<B,S> {
     };
     ~RAM() {};
 
+    void Clear() { memset(data, 0, S); }
+
     void Write(unsigned int address, unsigned char value) {
       data[address-B] = value;
     };
