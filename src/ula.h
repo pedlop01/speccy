@@ -2,7 +2,7 @@
 #define ULA_H
 
 #include <allegro5/allegro.h>
-#include <allegro5/allegro_primitives.h>
+#include <cstdint>
 
 
 #include "ram.hpp"
@@ -10,14 +10,13 @@
 // Video
 #define TSTATES_PER_SCANLINE 224
 #define TVSCANLINES          312
-#define TSTATES_PER_FRAME    TSTATES_PER_SCANLINE*TVSCANLINES
+#define TSTATES_PER_FRAME    (TSTATES_PER_SCANLINE * TVSCANLINES)
 
 // Audio
 #define AUDIO_SAMPLE_RATE    48000
-#define SAMPLES_PER_FRAME    AUDIO_SAMPLE_RATE/50
+#define SAMPLES_PER_FRAME    (AUDIO_SAMPLE_RATE / 50)
 
-// REVISIT: need to be written in allegro format
-// Spectrum color table to RGBA
+// Spectrum palette encoded as 0xRRGGBB00; PutPixel supplies opaque alpha.
 static const unsigned int dwColorTable[] =
 {
   0x00000000,
@@ -65,7 +64,7 @@ class ULAIO : public BusComponent<0xFE, 1> {
     virtual void IOWrite(unsigned int address, unsigned char value) = 0;
 };
 
-class ULA : public ULAMemory, ULAIO {
+class ULA : public ULAMemory, public ULAIO {
   public:
     signed short FrameAudio[SAMPLES_PER_FRAME];
 
@@ -74,7 +73,7 @@ class ULA : public ULAMemory, ULAIO {
     ALLEGRO_BITMAP* bitmap;
     bool            blinkState;
     unsigned int    dwBorderRGBColor;
-    unsigned int    dwCurrentScanLineBackColor[312];
+    unsigned int    dwCurrentScanLineBackColor[240];
     unsigned long   dwFrameTStates;
     unsigned long   dwScanLineTStates;
     unsigned long   dwScanLine;
@@ -83,8 +82,13 @@ class ULA : public ULAMemory, ULAIO {
     unsigned char   keyMatrix[8];
 
     unsigned char ULAIOData;
-    short         audioOutput;
-    short         dcAverage;
+    unsigned char pixels[240][320][4];
+    short pendingAudio[SAMPLES_PER_FRAME];
+    unsigned int audioPhase;
+    unsigned int audioIndex;
+    std::int64_t audioSum;
+    double dcAverage;
+    void PutPixel(unsigned int x, unsigned int y, unsigned int color);
 
   public:
     ULA();
@@ -99,6 +103,7 @@ class ULA : public ULAMemory, ULAIO {
     void IOWrite(unsigned int address, unsigned char value);
     unsigned char IORead(unsigned int address);
     void PressKey(unsigned int keyRow, unsigned int keyCol, bool down);
+    bool Present();
     bool GetIsDirty();    
 };
 

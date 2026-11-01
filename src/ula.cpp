@@ -1,20 +1,27 @@
 #include "ula.h"
+#include <algorithm>
 
 ULA::ULA() {
   bitmap = NULL;
   dwFrameTStates = 0;
   dwScanLineTStates = 0;
   dwScanLine = 0;
-  isDirty = false;
+  isDirty = true;
   blinkState = false;
   dwFrameCount = 0;
   dwBorderRGBColor = 0x0000000;
-  memset(dwCurrentScanLineBackColor, 0x00, sizeof(dwCurrentScanLineBackColor));
+  memset(dwCurrentScanLineBackColor, 0xFF, sizeof(dwCurrentScanLineBackColor));
 
   memset(keyMatrix, 0, sizeof(keyMatrix));
 
   memset(FrameAudio, 0, sizeof(FrameAudio));
-  audioOutput = 0;
+  memset(pendingAudio, 0, sizeof(pendingAudio));
+  memset(pixels, 0, sizeof(pixels));
+  for (auto &row : pixels)
+    for (auto &pixel : row) pixel[3] = 255;
+  ULAIOData = 0;
+  audioPhase = audioIndex = 0;
+  audioSum = 0;
   dcAverage = 0;
 }
 
@@ -44,17 +51,14 @@ void ULA::UpdateChar(unsigned int nChar) {
     ink   = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
   }
 
+  isDirty = true;
   // Redraw 8x8 pixels
   for (int y = 0; y < 8; y++) {
     unsigned char pixelData = data[pmemOffset];
     for (int x = 0; x < 8; x++) {
       bool is_ink = (pixelData & (0x01 << (7 - x)));
-      unsigned char r = ((is_ink ? ink : paper) & 0xFF000000) >> 24;
-      unsigned char g = ((is_ink ? ink : paper) & 0x00FF0000) >> 16;
-      unsigned char b = ((is_ink ? ink : paper) & 0x0000FF00) >> 8;
-      unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
 
-      al_put_pixel(column + x + 32, row + y + 24, al_map_rgb(r,g,b));
+      PutPixel(column + x + 32, row + y + 24, is_ink ? ink : paper);
     }
     pmemOffset += 256;
   }
@@ -62,36 +66,33 @@ void ULA::UpdateChar(unsigned int nChar) {
 }
 
 void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
-  dwFrameTStates += cycles;
-  dwScanLineTStates += cycles;
-
-    // Update the analog audio output from ULA
-  // First, compute audio output value for this cycle
-  int signal = 0;
-  signal  = (ULAIOData & 0x10) ? +16384 : 0;
-  //signal += (ULAIOData & 0x08) ?  +8192 : 0;
-
-  // update DC average (DC removal)
-  dcAverage = (dcAverage + signal) / 2;
-
-  // Now, add audio output over an 8 tap filter:
-  // 1: Maintain 7/8ths of the original signal
-  audioOutput -= audioOutput / 8;
-  // 2: add 1/8th of the new one
-  audioOutput += signal / 8;
-
-  // Update the audio sample corresponding to this screen tState
-  unsigned int offset = (dwFrameTStates * SAMPLES_PER_FRAME) /
-                        (TSTATES_PER_SCANLINE * TVSCANLINES);
-  
-  // As clocks don't match and this is a quick approximation, limit
-  // offset output
-  if (offset < SAMPLES_PER_FRAME)
-    FrameAudio[offset] = audioOutput/* - dcAverage*/;
-
-  if (dwScanLineTStates > TSTATES_PER_SCANLINE)
-    ScanLine(IRQ);
-
+  IRQ = false;
+  // Split at scanlines so frame snapshots precede any samples of the next frame.
+  while (cycles) {
+    unsigned int step = std::min(cycles,
+        static_cast<unsigned int>(TSTATES_PER_SCANLINE - dwScanLineTStates));
+    unsigned int units = step * SAMPLES_PER_FRAME;
+    const int signal = (ULAIOData & 0x10) ? 16384 : 0;
+    // Integrate each level over time, including transitions within a sample.
+    while (units) {
+      unsigned int part = std::min(units, TSTATES_PER_FRAME - audioPhase);
+      audioSum += static_cast<std::int64_t>(signal) * part;
+      audioPhase += part;
+      units -= part;
+      if (audioPhase == TSTATES_PER_FRAME) {
+        double sample = static_cast<double>(audioSum) / TSTATES_PER_FRAME;
+        dcAverage += 0.005 * (sample - dcAverage);
+        pendingAudio[audioIndex++] = static_cast<short>(sample - dcAverage);
+        audioSum = 0;
+        audioPhase = 0;
+      }
+    }
+    dwFrameTStates += step;
+    dwScanLineTStates += step;
+    cycles -= step;
+    if (dwScanLineTStates >= TSTATES_PER_SCANLINE)
+      ScanLine(IRQ);
+  }
 }
 
 void ULA::ScanLine(bool& IRQ) {
@@ -100,14 +101,15 @@ void ULA::ScanLine(bool& IRQ) {
   dwScanLineTStates %= TSTATES_PER_SCANLINE;
   dwScanLine++;
 
-
   if (dwScanLine >= TVSCANLINES) {
-    // Fame complete - trigger IRQ
+    memcpy(FrameAudio, pendingAudio, sizeof(FrameAudio));
+    audioIndex = 0;
+    // Frame complete - trigger IRQ
     IRQ = true;
     dwFrameTStates %= TSTATES_PER_FRAME;
     dwScanLine = 0;
     dwFrameCount++;
-    if (dwFrameCount > 16) {    // each 16 full frames
+    if (dwFrameCount >= 16) {    // each 16 full frames
       dwFrameCount = 0;         // reset frame counter
       blinkState = !blinkState; // invert blink
       UpdateBlink();            // update screen content
@@ -115,7 +117,7 @@ void ULA::ScanLine(bool& IRQ) {
   }
 
   // Skip non-visible lines
-  if((dwScanLine < 36) || (dwScanLine > (312-36)))
+  if((dwScanLine < 36) || (dwScanLine >= (312-36)))
     return;
 
   // Check if current background color for scanline is
@@ -124,24 +126,16 @@ void ULA::ScanLine(bool& IRQ) {
   if (dwCurrentScanLineBackColor[bitmapLine] == dwBorderRGBColor)
     return;
 
-  unsigned char r = /*0x33;*/(dwBorderRGBColor & 0xFF000000) >> 24;
-  unsigned char g = /*0x33;*/(dwBorderRGBColor & 0x00FF0000) >> 16;
-  unsigned char b = /*0x33;*/(dwBorderRGBColor & 0x0000FF00) >> 8;
-  unsigned char a = /*0x33;*/(dwBorderRGBColor & 0x000000FF);
-
   // redraw current scanline with proper color
   if ((bitmapLine < 24) || (bitmapLine > 24+191)) {
     // top/bottom border    
     for (unsigned int x = 0; x < 320; x++)
-      al_put_pixel(x, bitmapLine, al_map_rgb(r, g, b)); // al_draw_line(0, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
+      PutPixel(x, bitmapLine, dwBorderRGBColor);
   } else {
     for (unsigned int x = 0; x < 32; x++) {
       // screen contents
-      // al_draw_line(0,   bitmapLine, 31,  bitmapLine, al_map_rgb(r, g, b), 1);
-      al_put_pixel(x, bitmapLine, al_map_rgb(r, g, b));
-      // REVISIT: 287 or 288?
-      //al_draw_line(287, bitmapLine, 319, bitmapLine, al_map_rgb(r, g, b), 1);
-      al_put_pixel(x + 288, bitmapLine, al_map_rgb(r, g, b));
+      PutPixel(x, bitmapLine, dwBorderRGBColor);
+      PutPixel(x + 288, bitmapLine, dwBorderRGBColor);
     }
   }
 
@@ -167,13 +161,13 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
   if(address > 0x1AFF)
     return;
 
+  isDirty = true;
   if(address < 0x1800) {  // Bitmap graphics
 
     row = (address >> 5);
     row = ((row & 0xC0) |
            ((row & 0x38) >> 3) |
            ((row & 0x07) << 3));
-
 
     column = (address & 0x001F) * 8;
 
@@ -188,26 +182,21 @@ void ULA::MemoryWrite(unsigned int address, unsigned char value) {
       ink   = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
     }
 
-
     for (unsigned int p = 0; p < 8; p++) {
       bool is_ink = (value & (0x01 << (7 - p)));
-      unsigned char r = ((is_ink ? ink : paper) & 0xFF000000) >> 24;
-      unsigned char g = ((is_ink ? ink : paper) & 0x00FF0000) >> 16;
-      unsigned char b = ((is_ink ? ink : paper) & 0x0000FF00) >> 8;
-      unsigned char a = ((is_ink ? ink : paper) & 0x000000FF);
 
-      al_put_pixel(column + p + 32, row + 24, al_map_rgb(r,g,b));
+      PutPixel(column + p + 32, row + 24, is_ink ? ink : paper);
 
-      //printf("row=%d, column=%d, value=%x, is_ink=%d, ink=%x, paper=%x, r=%x, g=%x, b=%x, a=%x\n", row, column+p, value, is_ink, ink, paper, r, g, b, a);
     }
   } else {
-    // Redraa affected "character block"
+    // Redraw affected "character block"
     UpdateChar(address - 0x1800);
   }
 }
 
 void ULA::SetBitmap(ALLEGRO_BITMAP* _bitmap) {
   bitmap = _bitmap;
+  isDirty = true;
 }
 
 void ULA::IOWrite(unsigned int address, unsigned char value) {
@@ -218,7 +207,7 @@ void ULA::IOWrite(unsigned int address, unsigned char value) {
   // save a copy of ULA's state
   ULAIOData = value;
 
-  // Update boder color
+  // Update border color
   dwBorderRGBColor = dwColorTable[value & 0x07];
 }
 
@@ -263,4 +252,25 @@ void ULA::PressKey(unsigned int keyRow, unsigned int keyCol, bool down) {
 
 bool ULA::GetIsDirty() {
   return isDirty;
+}
+
+void ULA::PutPixel(unsigned int x, unsigned int y, unsigned int color) {
+  pixels[y][x][0] = color >> 24;
+  pixels[y][x][1] = color >> 16;
+  pixels[y][x][2] = color >> 8;
+  pixels[y][x][3] = 255;
+}
+
+bool ULA::Present() {
+  if (!bitmap) return false;
+  if (!isDirty) return true;
+  ALLEGRO_LOCKED_REGION *lock = al_lock_bitmap(bitmap,
+      ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE, ALLEGRO_LOCK_WRITEONLY);
+  if (!lock) return false;
+  for (int y = 0; y < 240; ++y)
+    memcpy(static_cast<char *>(lock->data) + y * lock->pitch,
+           pixels[y], sizeof(pixels[y]));
+  al_unlock_bitmap(bitmap);
+  isDirty = false;
+  return true;
 }

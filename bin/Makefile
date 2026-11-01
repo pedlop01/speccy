@@ -1,11 +1,22 @@
-CPPFLAGS=-O2 -std=c++11
+CXX ?= g++
+CXXFLAGS ?= -O2 -std=c++11
+PACKAGES = allegro-5 allegro_audio-5
+CPPFLAGS += $(shell pkg-config --cflags $(PACKAGES))
+LDLIBS += $(shell pkg-config --libs $(PACKAGES))
+SOURCES = ../src/main.cpp ../src/z80.cpp ../src/ula.cpp
+HEADERS = $(wildcard ../src/*.h ../src/*.hpp)
 
-gomas: ../src/main.cpp ../src/z80.cpp ula.o
-	#g++ -o gomas ../src/main.cpp ../src/z80.cpp ula.o -static -lallegro-5.0.10-monolith-md
-	g++ $(CPPFLAGS) -o gomas ../src/main.cpp ../src/z80.cpp ula.o -std=c++11 `pkg-config --libs allegro-5 allegro_primitives-5 allegro_audio-5 allegro_acodec-5`
+.PHONY: all clean test
+all: gomas
 
-ula.o: ../src/ula.cpp
-	g++ $(CPPFLAGS) -c ../src/ula.cpp
+gomas: $(SOURCES) $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
+
+test: ula-tests
+	./ula-tests
+
+ula-tests: ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
 
 clean:
-	rm -f *.o gomas
+	rm -f *.o gomas ula-tests

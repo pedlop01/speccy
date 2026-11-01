@@ -15,13 +15,13 @@ class ROM : public BusComponent<B,S> {
     };
     ~ROM() {};
 
-    int Load(char *romName) {
+    int Load(const char *romName) {
       FILE *fd = NULL;
-      fd = fopen(romName, "r");
+      fd = fopen(romName, "rb");
       if (fd != NULL) {
-          fread(data, 1, S, fd);
+          size_t bytes = fread(data, 1, S, fd);
           fclose(fd);
-          return 0;
+          return bytes == S ? 0 : -1;
       }
       return -1;
     };
