@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include "machine_config.h"
 
-enum class MachineModel { Spectrum48, Spectrum128, Plus2, Plus3 };
 
 struct ROMProfile {
   MachineModel model;
@@ -65,6 +65,22 @@ struct ROMSet {
   bool fastLoadCompatible = false;
 };
 
+inline bool ValidateROMHardware(const ROMSet &rom, std::string &error) {
+  const auto &hardware = HardwareFor(rom.model);
+  if (rom.pages.size() != hardware.memory.romPages) {
+    error = "Wrong ROM page count for " + std::string(hardware.name);
+    return false;
+  }
+  for (const auto &page : rom.pages) {
+    if (page.size() != SPECTRUM_BANK_BYTES) {
+      error = "Wrong ROM page size for " + std::string(hardware.name);
+      return false;
+    }
+  }
+  error.clear();
+  return true;
+}
+
 // A known page determines its complete model/profile. File names only locate
 // companion pages: their contents are checked too, before any state is changed.
 inline bool LoadROMSet(const std::string &path, ROMSet &out, std::string &error, bool custom48 = false) {
@@ -106,6 +122,7 @@ inline bool LoadROMSet(const std::string &path, ROMSet &out, std::string &error,
         candidate.pages.push_back(std::move(page));
       }
     }
+    if (!ValidateROMHardware(candidate, error)) return false;
     out = std::move(candidate);
     error.clear();
     return true;
@@ -115,6 +132,7 @@ inline bool LoadROMSet(const std::string &path, ROMSet &out, std::string &error,
     candidate.name = "ZX Spectrum 48K (custom ROM)";
     candidate.source = path;
     candidate.pages.push_back(std::move(bytes));
+    if (!ValidateROMHardware(candidate, error)) return false;
     out = std::move(candidate);
     error.clear();
     return true;

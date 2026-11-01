@@ -92,6 +92,39 @@ a estar disponible. Un --rom inválido produce un error, sin sustituirse por otr
 ROM silenciosamente. GOMAS_CONFIG permite indicar otro archivo de preferencias;
 un valor vacío desactiva su lectura y guardado, por ejemplo para pruebas.
 
+Configuración interna por modelo
+--------------------------------
+src/machine_config.h contiene los perfiles inmutables de hardware. El idioma y
+las huellas de la ROM pertenecen a rom_loader.h; inglés y español de 128K usan
+el mismo perfil físico.
+
+Modelo       RAM       ROM       Línea x líneas      AY      Disquetera
+48K          48 KB     16 KB     224 x 312            no      no
+128K         128 KB    32 KB     228 x 311            sí      no
++2           128 KB    32 KB     228 x 311            sí      no
++3           128 KB    64 KB     228 x 311            sí      sí
+
+Los perfiles definen además los bancos iniciales, la página ROM de arranque,
+los bancos de pantalla normal/alternativa, el tipo de paginación, el reloj de CPU,
+el pulso de interrupción y la fase del bus flotante. +3 tiene política de bus
+inactivo y temporización ASIC, diferenciadas de 128K/+2. Referencias de tiempos:
+https://github.com/fuse-emulator/libspectrum/blob/master/timings.c
+https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
+
+HardwareFor(model) devuelve el descriptor; SpectrumMachine::Configuration()
+expone el activo sin permitir modificarlo. Se comprueba que las páginas de ROM
+coinciden con el hardware antes de sustituirlo. La máquina aplica la configuración
+al cargar la ROM y al resetear. La ULA consume ya los tiempos por línea/fotograma
+y el origen/política del bus flotante definidos por el perfil.
+
+Los bits de capacidades describen extensiones a la base 48K ya implementada.
+RequiredHardwareFeatures y ImplementedHardwareFeatures permiten que cargador y
+menú decidan con una misma regla qué modelos se pueden activar. Declarar un
+perfil no activa por sí solo hardware que falta: RAM paginada, pantalla alternativa,
+sonido AY, paginación especial de +3 y disquetera siguen pendientes. El recorte
+actual de vídeo y el audio de 960 muestras por fotograma a 50 Hz se conservan;
+el ajuste preciso de vídeo/audio 128K se hará en la tarea correspondiente.
+
 Reproductor de cinta y multicarga
 --------------------------------
 Con Fast load desactivado, escribir LOAD "" y pulsar Play. Los datos se entregan
@@ -176,6 +209,9 @@ resolución de rutas desde otros directorios. Las pruebas de preferencias
 comprueban restauración de la última ROM, arranque fijo 48K, prioridad de --rom,
 ROMs alternativas, rutas absolutas, guardado y fallback si falta una ROM. La prueba
 de interfaz utiliza un archivo temporal aislado y verifica las opciones de arranque.
+Las pruebas de hardware verifican los descriptores, los requisitos de cada ROM,
+la disponibilidad de modelos, límites de fotograma, fase del bus flotante y
+reaplicación de la configuración en reset.
 
 Prueba opcional de interfaz con ratón real (requiere X11, audio y las bibliotecas
 de desarrollo x11/xtst):
@@ -236,3 +272,19 @@ no pueden reconstruirse con la información de un TAP. No hay soporte TZX/PZX ni
 grabación de cinta.
 Las pruebas automáticas no sustituyen la comprobación visual y auditiva en el
 equipo de destino, especialmente de latencia y posibles underruns del driver.
+
+Memoria 128K integrada (tarea 5)
+--------------------------------
+spectrum_memory.h centraliza el mapa de CPU: ocho bancos de 16 KB, bancos fijos
+5/2, banco superior seleccionable y dos páginas ROM para 128K/+2. El puerto
+7FFD tiene decodificación parcial, selección de ROM y bloqueo hasta reset.
+Los alias de los bancos 2/5 comparten los mismos bytes; escribir al banco 5
+por C000 también actualiza la ULA. SpectrumIO distribuye las escrituras a ULA
+y paginación, incluidas las direcciones compartidas. En 48K no hay paginación.
+El bit de pantalla se conserva; mostrar banco 7 y completar vídeo/audio 128K
+queda para la siguiente tarea. +3 requiere su propia paginación adicional.
+
+make test incluye paging-tests: bancos completos, protección de ROM, alias,
+decodificación de todos los puertos, bloqueo, reset, configuraciones rechazadas
+y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. Los perfiles
+siguen deshabilitados en la interfaz hasta completar las capacidades pendientes.

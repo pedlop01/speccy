@@ -12,6 +12,7 @@
 #include "rom_loader.h"
 #include "ula.h"
 #include "tape.h"
+#include "spectrum_memory.h"
 
 inline bool LoadTrap(Z80 &cpu, const vector<unsigned char> &data, size_t &pos) {
   if (pos == data.size()) return false;
@@ -43,8 +44,8 @@ class SpectrumMachine {
 public:
   Z80 cpu;
   ULA ula;
-  ROM<0, 16384> rom;
-  RAM<32768, 32768> ram;
+  SpectrumMemory memory;
+  SpectrumIO io;
   Bus16 bus;
   vector<unsigned char> tape;
   size_t tapePos = 0;
@@ -53,10 +54,8 @@ public:
   std::string tapePath;
   ROMSet systemROM;
 
-  SpectrumMachine() {
-    bus.AddBusComponent(&rom);
-    bus.AddBusComponent(&ram);
-    bus.AddBusComponent(static_cast<ULAMemory *>(&ula));
+  SpectrumMachine() : memory(ula), io(ula, memory) {
+    bus.AddBusComponent(&memory);
     AttachCPU();
   }
   SpectrumMachine(const SpectrumMachine &) = delete;
@@ -64,8 +63,8 @@ public:
 
   void Reset() {
     cpu = Z80();
-    ram.Clear();
-    ula.Reset();
+    memory.Reset();
+    ula.Configure(configuration->model);
     tapePos = 0;
     deck.Rewind();
     AttachCPU();
@@ -74,18 +73,23 @@ public:
   bool LoadROM(const std::string &path, std::string &error, bool custom48 = false) {
     ROMSet candidate;
     if (!LoadROMSet(path, candidate, error, custom48)) return false;
-    if (candidate.model != MachineModel::Spectrum48) {
+    const auto &hardware = HardwareFor(candidate.model);
+    if (!ValidateROMHardware(candidate, error)) return false;
+    if (!SupportsHardware(candidate.model)) {
       error = "Detected " + candidate.name + " (" + std::to_string(candidate.pages.size()) +
-          " ROM pages). This model needs memory paging and other hardware not implemented yet. The current machine is unchanged.";
+          " ROM pages). Required hardware not implemented: " + MissingHardwareFeatures(hardware) +
+          ". The current machine is unchanged.";
       return false;
     }
-    rom.LoadBytes(candidate.pages.front());
+    if (!memory.Configure(candidate, error)) return false;
+    configuration = &hardware;
     systemROM = std::move(candidate);
     if (!CanFastLoad()) fastLoad = false;
     Reset();
     error.clear();
     return true;
   }
+  const MachineConfiguration &Configuration() const { return *configuration; }
   bool CanFastLoad() const { return systemROM.fastLoadCompatible; }
 
   bool Open(const std::string &path, std::string &error) {
@@ -165,12 +169,14 @@ public:
   }
 
 private:
+  const MachineConfiguration *configuration = &HardwareFor(MachineModel::Spectrum48);
+
   void UpdateTapeInput() {
     ula.SetTapeInput(fastLoad || deck.Level(), !fastLoad && deck.HasSignal());
   }
   void AttachCPU() {
     cpu.DataBus = &bus;
-    cpu.IOBus = static_cast<ULAIO *>(&ula);
+    cpu.IOBus = &io;
   }
 };
 

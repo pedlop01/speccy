@@ -6,6 +6,11 @@ ULA::ULA() {
   Reset();
 }
 
+void ULA::Configure(MachineModel model) {
+  timing = HardwareFor(model).timing;
+  Reset();
+}
+
 void ULA::Reset() {
   dwFrameTStates = 0;
   dwScanLineTStates = 0;
@@ -77,18 +82,18 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
   // Split at scanlines so frame snapshots precede any samples of the next frame.
   while (cycles) {
     unsigned int step = std::min(cycles,
-        static_cast<unsigned int>(TSTATES_PER_SCANLINE - dwScanLineTStates));
+        static_cast<unsigned int>(timing.tstatesPerLine - dwScanLineTStates));
     unsigned int units = step * SAMPLES_PER_FRAME;
     const int signal = ((ULAIOData & 0x10) ? 16384 : 0) +
                        ((tapeMonitor && earInput) ? 8192 : 0);
     // Integrate each level over time, including transitions within a sample.
     while (units) {
-      unsigned int part = std::min(units, TSTATES_PER_FRAME - audioPhase);
+      unsigned int part = std::min(units, timing.TStatesPerFrame() - audioPhase);
       audioSum += static_cast<std::int64_t>(signal) * part;
       audioPhase += part;
       units -= part;
-      if (audioPhase == TSTATES_PER_FRAME) {
-        double sample = static_cast<double>(audioSum) / TSTATES_PER_FRAME;
+      if (audioPhase == timing.TStatesPerFrame()) {
+        double sample = static_cast<double>(audioSum) / timing.TStatesPerFrame();
         dcAverage += 0.005 * (sample - dcAverage);
         pendingAudio[audioIndex++] = static_cast<short>(sample - dcAverage);
         audioSum = 0;
@@ -98,7 +103,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
     dwFrameTStates += step;
     dwScanLineTStates += step;
     cycles -= step;
-    if (dwScanLineTStates >= TSTATES_PER_SCANLINE)
+    if (dwScanLineTStates >= timing.tstatesPerLine)
       ScanLine(IRQ);
   }
 }
@@ -106,15 +111,15 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
 void ULA::ScanLine(bool& IRQ) {
   unsigned int bitmapLine;
 
-  dwScanLineTStates %= TSTATES_PER_SCANLINE;
+  dwScanLineTStates %= timing.tstatesPerLine;
   dwScanLine++;
 
-  if (dwScanLine >= TVSCANLINES) {
+  if (dwScanLine >= timing.linesPerFrame) {
     memcpy(FrameAudio, pendingAudio, sizeof(FrameAudio));
     audioIndex = 0;
     // Frame complete - trigger IRQ
     IRQ = true;
-    dwFrameTStates %= TSTATES_PER_FRAME;
+    dwFrameTStates %= timing.TStatesPerFrame();
     dwScanLine = 0;
     dwFrameCount++;
     if (dwFrameCount >= 16) {    // each 16 full frames
@@ -125,7 +130,9 @@ void ULA::ScanLine(bool& IRQ) {
   }
 
   // Skip non-visible lines
-  if((dwScanLine < 36) || (dwScanLine >= (312-36)))
+  // Preserve the existing 320x240 presentation crop; beam-accurate borders
+  // and alternate screen banks belong to the video implementation task.
+  if((dwScanLine < 36) || (dwScanLine >= 36 + 240))
     return;
 
   // Check if current background color for scanline is
@@ -234,13 +241,14 @@ unsigned char ULA::IORead(unsigned int address) {
     return kData;
   }
   // Unattached ports expose the ULA video fetches (48K floating bus).
-  // First bitmap fetch: t-state 14338; four fetches then four idle cycles.
+  // The profile defines the first fetch; four fetches then four idle cycles.
   // See https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
-  const unsigned int firstFetch = 14338;
+  if (timing.floatingBus == FloatingBusKind::Idle) return 0xFF;
+  const unsigned int firstFetch = timing.firstFloatingFetchTstate;
   if (dwFrameTStates < firstFetch) return 0xFF;
   unsigned int elapsed = dwFrameTStates - firstFetch;
-  unsigned int y = elapsed / TSTATES_PER_SCANLINE;
-  unsigned int x = elapsed % TSTATES_PER_SCANLINE;
+  unsigned int y = elapsed / timing.tstatesPerLine;
+  unsigned int x = elapsed % timing.tstatesPerLine;
   if (y >= 192 || x >= 128 || (x & 7) >= 4) return 0xFF;
   unsigned int column = (x / 8) * 2 + ((x & 2) >> 1);
   unsigned int offset;

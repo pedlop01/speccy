@@ -43,9 +43,9 @@ int main() {
 
   machine.Reset();
   assert(machine.cpu.regs.PC == 0 && machine.cpu.regs.SP == 0);
-  assert(machine.cpu.DataBus == &machine.bus && machine.cpu.IOBus == static_cast<ULAIO *>(&machine.ula));
+  assert(machine.cpu.DataBus == &machine.bus && machine.cpu.IOBus == &machine.io);
   assert(machine.bus.Read(0x8000) == 0 && machine.bus.Read(0x4000) == 0);
-  assert(machine.bus.Read(0) == machine.rom.Read(0));
+  assert(machine.bus.Read(0) == machine.systemROM.pages[0][0]);
   assert(machine.ula.IORead(0xF7FE) == 0xFF);
   for (short sample : machine.ula.FrameAudio) assert(sample == 0);
   assert(machine.tapePos == 0 && machine.tape == originalTape);

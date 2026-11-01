@@ -92,6 +92,15 @@ enum MenuId {
   MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48
 };
 
+// Menu IDs map to canonical ROM sets, independently of registry ordering.
+const ROMProfile &MenuROMProfile(int id) {
+  static const char *files[] = {"48.rom", "128-0.rom", "128-spanish-0.rom", "plus2-0.rom", "plus3-0.rom"};
+  const char *file = files[id - MENU_ROM_48];
+  for (const auto &profile : ROMProfiles())
+    if (std::string(profile.files.front()) == file) return profile;
+  throw std::logic_error("Missing built-in ROM profile");
+}
+
 // Allegro owns an attached menu. Detach/destroy it before its display goes away.
 struct DisplayDeleter {
   void operator()(ALLEGRO_DISPLAY *display) const {
@@ -263,7 +272,12 @@ int main(int argc, char *argv[]) {
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
-    flags(MENU_ROM_48, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.CanFastLoad() ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    for (int id = MENU_ROM_48; id <= MENU_ROM_PLUS3; ++id) {
+      const auto &profile = MenuROMProfile(id);
+      flags(id, ALLEGRO_MENU_ITEM_CHECKBOX |
+          (machine.systemROM.name == profile.name ? ALLEGRO_MENU_ITEM_CHECKED : 0) |
+          (SupportsHardware(profile.model) ? 0 : ALLEGRO_MENU_ITEM_DISABLED));
+    }
     flags(MENU_START_LAST, ALLEGRO_MENU_ITEM_CHECKBOX | (preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_START_48, ALLEGRO_MENU_ITEM_CHECKBOX | (!preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     const bool loaded = !machine.tape.empty();
@@ -397,14 +411,20 @@ int main(int argc, char *argv[]) {
             if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
             break;
           }
-          case MENU_ROM_48: {
+          case MENU_ROM_48:
+          case MENU_ROM_128_EN:
+          case MENU_ROM_128_ES:
+          case MENU_ROM_PLUS2:
+          case MENU_ROM_PLUS3: {
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
-            string path = Default48ROM(executablePath);
+            const auto &profile = MenuROMProfile(event.user.data1);
+            string path = profile.model == MachineModel::Spectrum48 ? Default48ROM(executablePath) :
+                FindROM(profile.files.front(), executablePath);
             if (!path.empty() && machine.LoadROM(path, error)) {
               resetAudio = true; tapeView.NewTape(); rememberROM(false);
             } else {
-              if (path.empty()) error = "Cannot find the default 48K ROM in roms/.";
+              if (path.empty()) error = "Cannot find the ROM set for " + string(profile.name) + " in roms/.";
               al_show_native_message_box(display.get(), "Gomas", "Cannot activate ROM", error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
               al_set_audio_stream_playing(stream.get(), true);
             }

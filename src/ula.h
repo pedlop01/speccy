@@ -6,11 +6,14 @@
 
 
 #include "ram.hpp"
+#include "machine_config.h"
 
 // Video
-#define TSTATES_PER_SCANLINE 224
-#define TVSCANLINES          312
-#define TSTATES_PER_FRAME    (TSTATES_PER_SCANLINE * TVSCANLINES)
+// Compatibility constants for existing 48K tests/callers. Runtime ULA timing
+// comes from the selected hardware configuration.
+constexpr unsigned TSTATES_PER_SCANLINE = MachineTimings::PAL48.tstatesPerLine;
+constexpr unsigned TVSCANLINES = MachineTimings::PAL48.linesPerFrame;
+constexpr unsigned TSTATES_PER_FRAME = MachineTimings::PAL48.TStatesPerFrame();
 
 // Audio
 #define AUDIO_SAMPLE_RATE    48000
@@ -69,6 +72,7 @@ class ULA : public ULAMemory, public ULAIO {
     signed short FrameAudio[SAMPLES_PER_FRAME];
 
   protected:
+    MachineTiming   timing = MachineTimings::PAL48;
     bool            isDirty;
     ALLEGRO_BITMAP* bitmap;
     bool            blinkState;
@@ -95,6 +99,8 @@ class ULA : public ULAMemory, public ULAIO {
     ULA();
     ~ULA();
     void Reset();
+    void Configure(MachineModel model);
+    const MachineTiming &Timing() const { return timing; }
     void SetTapeInput(bool high, bool active) { earInput = high; tapeMonitor = active; }
 
     void SetBitmap(ALLEGRO_BITMAP *_bitmap);
