@@ -4270,13 +4270,13 @@ void Z80::EmulateOneXX() {
 			// inc hx
 		case 0x24:
 			tStates += 8;
-			regs.HX++;
+			INC_R8(regs.HX);
 			break;
 
 			// dec hx
 		case 0x25:
 			tStates += 8;
-			regs.HX--;
+			DEC_R8(regs.HX);
 			break;
 
 			// ld hx,N
@@ -4307,13 +4307,13 @@ void Z80::EmulateOneXX() {
 			// inc lx
 		case 0x2C:
 			tStates += 8;
-			regs.LX++;
+			INC_R8(regs.LX);
 			break;
 
 			// dec lx
 		case 0x2D:
 			tStates += 8;
-			regs.LX--;
+			DEC_R8(regs.LX);
 			break;
 
 			// ld lx,N

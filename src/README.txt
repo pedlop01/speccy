@@ -342,3 +342,19 @@ no permite cambiar CHECKBOX después de crear una opción. Intentarlo en cada
 refresco reconstruía continuamente el menú nativo, causando parpadeo y pérdidas
 de selección. test-ui comprueba que un menú estable no recibe escrituras de
 flags durante los ticks de refresco, además de verificar los cambios de modelo.
+
+Reinicio de Capitán Trueno al empezar
+-------------------------------------
+capitan1.tap usa DEC IYL (FD 2D) seguido de JP NZ para controlar bucles de
+copia de memoria. El núcleo reducía IYL pero dejaba los flags anteriores, así
+que Z no reflejaba cuándo el contador llegaba a cero. El bucle escribía fuera
+de su destino y dañaba código; después se ejecutaba CALL 0000 y arrancaba la ROM.
+Afectaba tanto a carga rápida como a reproducción por pulsos en 48K.
+
+Los INC/DEC de IXH, IXL, IYH e IYL reutilizan ahora las operaciones de 8 bits
+que actualizan S, Z, H, P/V y N, conservando carry. No cambia INC/DEC de los
+registros IX/IY completos, que no deben modificar flags. No se parchea el juego.
+z80-index-flags-tests recorre los 256 operandos y ambos estados iniciales de
+flags para los ocho opcodes y comprueba un bucle de copia con un centinela.
+capitan-tests carga desde BASIC, elige 1 Teclado y verifica partida sin reinicio
+en ambos modos, junto con la batería existente de Cobra y back3.

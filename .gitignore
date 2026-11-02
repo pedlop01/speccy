@@ -14,3 +14,5 @@ video128-tests
 ay-tests
 tape128-tests
 compat128-tests
+z80-index-flags-tests
+capitan-tests
