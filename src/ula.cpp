@@ -327,3 +327,58 @@ bool ULA::Present() {
   isDirty = false;
   return true;
 }
+
+ULA::State ULA::CaptureState() const {
+  State state{};
+  state.timing = timing;
+  state.ay = ay;
+  state.blinkState = blinkState;
+  state.earInput = earInput;
+  state.tapeMonitor = tapeMonitor;
+  state.borderColor = dwBorderRGBColor;
+  state.frameTStates = dwFrameTStates;
+  state.lineTStates = dwScanLineTStates;
+  state.line = dwScanLine;
+  state.frameCount = dwFrameCount;
+  state.ioData = ULAIOData;
+  state.frameAudioCount = FrameAudioCount;
+  state.audioPhase = audioPhase;
+  state.audioIndex = audioIndex;
+  state.audioSum = audioSum;
+  state.dcAverage = dcAverage;
+  memcpy(state.lineColors, dwCurrentScanLineBackColor, sizeof(dwCurrentScanLineBackColor));
+  memcpy(state.keys, keyMatrix, sizeof(keyMatrix));
+  memcpy(state.frameAudio, FrameAudio, sizeof(FrameAudio));
+  memcpy(state.pendingAudio, pendingAudio, sizeof(pendingAudio));
+  return state;
+}
+
+void ULA::RestoreState(const State &state) {
+  timing = state.timing;
+  ay = state.ay;
+  blinkState = state.blinkState;
+  earInput = state.earInput;
+  tapeMonitor = state.tapeMonitor;
+  dwBorderRGBColor = state.borderColor;
+  dwFrameTStates = state.frameTStates;
+  dwScanLineTStates = state.lineTStates;
+  dwScanLine = state.line;
+  dwFrameCount = state.frameCount;
+  ULAIOData = state.ioData;
+  FrameAudioCount = state.frameAudioCount;
+  audioPhase = state.audioPhase;
+  audioIndex = state.audioIndex;
+  audioSum = state.audioSum;
+  dcAverage = state.dcAverage;
+  memcpy(dwCurrentScanLineBackColor, state.lineColors, sizeof(dwCurrentScanLineBackColor));
+  memcpy(keyMatrix, state.keys, sizeof(keyMatrix));
+  memcpy(FrameAudio, state.frameAudio, sizeof(FrameAudio));
+  memcpy(pendingAudio, state.pendingAudio, sizeof(pendingAudio));
+  // Rebuild presentation from the selected RAM bank, saved FLASH phase and
+  // per-line border; never copy Allegro resources or the external bank pointer.
+  for (unsigned y = 0; y < 240; ++y)
+    for (unsigned x = 0; x < 320; ++x)
+      PutPixel(x, y, dwCurrentScanLineBackColor[y] == 0xFFFFFFFF ? 0 : dwCurrentScanLineBackColor[y]);
+  for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
+  isDirty = true;
+}

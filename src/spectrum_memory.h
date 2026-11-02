@@ -35,6 +35,28 @@ public:
     paging = 0;
     ula.SelectScreen(nullptr);
   }
+  struct State { std::vector<unsigned char> ram; unsigned char paging; };
+  State CaptureState() const {
+    State state;
+    state.paging = paging;
+    state.ram.resize(configuration->memory.RAMBytes());
+    for (unsigned bank = 0; bank < configuration->memory.ramBanks; ++bank) {
+      const auto *source = bank == configuration->memory.screenBanks[0] ? ula.PrimaryBank() : banks[bank].data();
+      std::copy(source, source + SPECTRUM_BANK_BYTES, state.ram.begin() + bank * SPECTRUM_BANK_BYTES);
+    }
+    return state;
+  }
+  bool RestoreState(const State &state) {
+    if (state.ram.size() != configuration->memory.RAMBytes()) return false;
+    for (unsigned bank = 0; bank < configuration->memory.ramBanks; ++bank) {
+      const auto *source = state.ram.data() + bank * SPECTRUM_BANK_BYTES;
+      if (bank == configuration->memory.screenBanks[0]) ula.RestorePrimaryBank(source);
+      else std::copy(source, source + SPECTRUM_BANK_BYTES, banks[bank].begin());
+    }
+    paging = IsPaged() ? state.paging : 0;
+    ula.SelectScreen(ScreenBank() == configuration->memory.screenBanks[0] ? nullptr : banks[ScreenBank()].data());
+    return true;
+  }
   unsigned char PagingLatch() const { return paging; }
   bool PagingLocked() const { return (paging & 0x20) != 0; }
   unsigned ROMPage() const {

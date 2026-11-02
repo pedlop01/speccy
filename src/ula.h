@@ -101,6 +101,23 @@ class ULA : public ULAMemory, public ULAIO {
     void PutPixel(unsigned int x, unsigned int y, unsigned int color);
 
   public:
+    struct State {
+      MachineTiming timing;
+      AY8912 ay;
+      bool blinkState, earInput, tapeMonitor;
+      unsigned int borderColor, lineColors[240];
+      unsigned long frameTStates, lineTStates, line, frameCount;
+      unsigned char keys[8], ioData;
+      short frameAudio[SAMPLES_PER_FRAME], pendingAudio[SAMPLES_PER_FRAME];
+      unsigned int frameAudioCount, audioPhase, audioIndex;
+      std::int64_t audioSum;
+      double dcAverage;
+    };
+    State CaptureState() const;
+    void RestoreState(const State &state);
+    const unsigned char *PrimaryBank() const { return data; }
+    void RestorePrimaryBank(const unsigned char *bytes) { memcpy(data, bytes, sizeof(data)); }
+
     ULA();
     ~ULA();
     void Reset();

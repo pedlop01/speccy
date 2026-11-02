@@ -32,6 +32,12 @@ File > Close retira la cinta y reinicia el Spectrum; se deshabilita sin cinta.
 File > Exit termina el programa. Escape sale si está en ventana; en pantalla
 completa vuelve a ventana. Cerrar la ventana también termina el programa.
 CPU > Reset reinicia CPU, RAM, ULA y audio; conserva la cinta y la rebobina.
+CPU > Pause (F5) congela toda la máquina, incluida cinta y sonido.
+CPU > Speed up (F6) duplica la velocidad global hasta 16x.
+CPU > Speed down (F7) la divide por dos hasta 0,25x (cuatro veces más lento).
+CPU > Normal speed 1x (F8) vuelve directamente a velocidad normal.
+CPU > Rewind 1 second (F9) vuelve aproximadamente un segundo, hasta 10 segundos.
+CPU > CPU frequency permite elegir 1x/2x/4x e indica los MHz del modelo activo.
 Tape > Fast load está activado por defecto y mantiene la carga instantánea.
 Al desactivarlo se abre el reproductor y se habilitan Play, Pause y Stop.
 Tape > Show tape deck... permite abrir el panel en cualquiera de los dos modos.
@@ -406,3 +412,58 @@ screen-view-tests usa bitmaps de memoria para comprobar factores 2x/4x,
 proporciones, márgenes, intensidad de scanlines, rejilla y conservación de la
 imagen fuente. test-ui verifica tamaños reales de ventana, selección de filtros,
 pantalla completa y restauración por Escape/F11, con el menú estable después.
+
+Pausa, velocidad y retroceso
+-----------------------------
+F5 pausa/reanuda el núcleo sin mover la cinta ni avanzar AY, vídeo o registros;
+el audio entrega silencio durante la pausa. Los menús y View siguen disponibles.
+La pausa de CPU es distinta de Tape > Pause, que solo pausa el cassette.
+
+F6 sube la velocidad global por pasos: 0,25x -> 0,5x -> 1x -> 2x -> 4x -> 8x -> 16x.
+Al llegar a 16x se mantiene ese valor. F7 baja por la misma escala hasta 0,25x; F8 vuelve
+directamente a 1x desde cualquier velocidad. Los tres controles están juntos en
+CPU y sus atajos son contiguos. Los extremos se deshabilitan en el menú.
+
+La velocidad global cambia cuánto tiempo emulado transcurre por segundo real,
+incluida la cinta por pulsos. Por encima de 1x el sonido también se acelera.
+El stream conserva 48 kHz: en los modos rápidos se generan tantas muestras
+virtuales por muestra de salida como indique el multiplicador y se promedian. A 0,5x/0,25x cada muestra virtual se mantiene
+2/4 muestras de salida, conservando los sobrantes entre fragmentos. La máquina
+avanza menos tiempo y el sonido también se ralentiza. El título muestra la
+velocidad activa, usando 0.5x o 0.25x para distinguir cámara lenta del retroceso
+de F9.
+
+CPU > CPU frequency modifica únicamente los ciclos que obtiene el Z80 respecto
+a los dispositivos: 1x, 2x o 4x (3,50/7/14 MHz en 48K y aproximadamente
+3,55/7,09/14,19 MHz en 128K/+2). ULA, AY y cassette conservan su reloj. El beeper
+y los juegos que temporizan mediante bucles de CPU pueden cambiar su ritmo;
+para cargas por pulsos y juegos sensibles a tiempos, usar 1x. Para acelerar una
+carga, usar F6, que mantiene la relación de tiempos entre CPU y cinta.
+Las dos velocidades son independientes y se pueden combinar; el título indica
+pausa, velocidad global y multiplicador de CPU cuando están activos.
+
+F9 recupera aproximadamente un segundo por pulsación, con un historial de hasta
+500 frames (unos 10 segundos de tiempo emulado). Se guardan estados cada 10
+frames, por lo que el salto puede variar unas décimas; si queda menos historial,
+se vuelve al estado más antiguo disponible. El historial se mantiene en RAM,
+con unas 51 copias como máximo (aproximadamente 3 MB en 48K / 7 MB en 128K).
+Repetir F9 permite seguir retrocediendo. Si estaba pausado, permanece pausado.
+Al continuar se descarta el futuro anterior y se crea una nueva rama de ejecución.
+
+Los estados conservan registros, RAM y paginación, selección de pantalla, FLASH,
+bordes por línea, AY, fase de audio, muestras pendientes, cinta, bloque/flanco,
+carga rápida y frecuencia de CPU. La imagen se reconstruye sin copiar recursos
+Allegro ni punteros al bus. Se vacía el audio de salida al cambiar pausa,
+velocidad, frecuencia o posición temporal. Reset, abrir/cerrar cinta y cambiar
+ROM borran el historial; los fallos de apertura conservan la sesión y el historial.
+La frecuencia seleccionada y los controles de pausa/velocidad se mantienen hasta
+que el usuario los cambia o cierra el programa.
+
+playback-tests verifica la escala 0,25x-16x y sus límites, pausa sin avance, separación entre las dos velocidades,
+carga real ROM por pulsos a velocidades 0,25x-16x, reproducción exacta tras restaurar RAM,
+paginación/pantalla 7, AY, FLASH, vídeo, cinta y audio parcialmente consumido,
+y límite/ramificación/invalidez del historial tras cambiar de sesión. test-ui
+prueba los controles CPU y F5-F9, incluyendo subir/bajar/restaurar velocidad
+y rebobinar la frecuencia anterior
+sin salir de pausa, además de los menús y filtros existentes. También comprueba
+cámara lenta, muestras pendientes y fragmentos de longitudes no divisibles por cuatro.

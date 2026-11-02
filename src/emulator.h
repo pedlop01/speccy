@@ -5,6 +5,7 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <deque>
 #include "z80.h"
 #include "bus.hpp"
 #include "ram.hpp"
@@ -64,6 +65,10 @@ public:
   void Reset() {
     audioOffset = 0;
     audioAvailable = 0;
+    cpuClockPhase = 0;
+    framesExecuted = 0;
+    ++generation;
+    history.clear();
     cpu = Z80();
     memory.Reset();
     ula.Configure(configuration->model);
@@ -71,6 +76,7 @@ public:
     deck.SetClock(configuration->timing.cpuClockHz);
     deck.Rewind();
     AttachCPU();
+    if (rewindEnabled) history.push_back(CaptureState());
   }
 
   bool LoadROM(const std::string &path, std::string &error, bool custom48 = false) {
@@ -94,6 +100,70 @@ public:
   }
   const MachineConfiguration &Configuration() const { return *configuration; }
   bool CanFastLoad() const { return systemROM.fastLoadCompatible; }
+
+  unsigned CPUMultiplier() const { return cpuMultiplier; }
+  bool SetCPUMultiplier(unsigned value) {
+    if (value != 1 && value != 2 && value != 4) return false;
+    if (cpuMultiplier != value) {
+      cpuMultiplier = value;
+      cpuClockPhase = 0;
+      DiscardAudio();
+    }
+    return true;
+  }
+  void DiscardAudio() { audioOffset = audioAvailable = 0; }
+  std::uint64_t FrameCounter() const { return framesExecuted; }
+
+  struct State {
+    std::uint64_t generation, frame;
+    MachineModel model;
+    Z80Registers registers;
+    unsigned tstates, multiplier, clockPhase;
+    SpectrumMemory::State memory;
+    ULA::State ula;
+    TapeDeck::TransportState deck;
+    size_t tapePos, audioOffset, audioAvailable;
+    bool fastLoad;
+  };
+  State CaptureState() const {
+    return {generation, framesExecuted, configuration->model, cpu.regs, cpu.tStates,
+        cpuMultiplier, cpuClockPhase, memory.CaptureState(), ula.CaptureState(), deck.CaptureState(),
+        tapePos, audioOffset, audioAvailable, fastLoad};
+  }
+  bool RestoreState(const State &state) {
+    if (state.generation != generation || state.model != configuration->model ||
+        (state.multiplier != 1 && state.multiplier != 2 && state.multiplier != 4) ||
+        state.clockPhase >= state.multiplier || state.memory.ram.size() != configuration->memory.RAMBytes() ||
+        state.tapePos > tape.size() || state.audioOffset + state.audioAvailable > SAMPLES_PER_FRAME) return false;
+    TapeDeck transport = deck;
+    if (!transport.RestoreState(state.deck)) return false;
+    if (!memory.RestoreState(state.memory)) return false;
+    ula.RestoreState(state.ula);
+    deck = std::move(transport);
+    cpu.regs = state.registers; cpu.tStates = state.tstates;
+    cpuMultiplier = state.multiplier; cpuClockPhase = state.clockPhase;
+    tapePos = state.tapePos; fastLoad = state.fastLoad;
+    audioOffset = state.audioOffset; audioAvailable = state.audioAvailable;
+    framesExecuted = state.frame;
+    AttachCPU();
+    while (!history.empty() && history.back().frame > framesExecuted) history.pop_back();
+    return true;
+  }
+  void EnableRewind(bool enabled = true) {
+    rewindEnabled = enabled;
+    history.clear();
+    if (enabled) history.push_back(CaptureState());
+  }
+  bool CanRewind() const { return !history.empty() && history.front().frame < framesExecuted; }
+  size_t HistorySize() const { return history.size(); }
+  bool RewindOneSecond() {
+    if (!CanRewind()) return false;
+    const std::uint64_t target = framesExecuted > RewindStepFrames ? framesExecuted - RewindStepFrames : 0;
+    size_t index = 0;
+    while (index + 1 < history.size() && history[index + 1].frame <= target) ++index;
+    State saved = history[index]; // Restore discards future entries of this branch.
+    return RestoreState(saved);
+  }
 
   bool Open(const std::string &path, std::string &error) {
     std::ifstream input(path, std::ios::binary);
@@ -159,6 +229,11 @@ public:
     cpu.INT();
     bool unused = false;
     Advance(cpu.tStates, unused);
+    ++framesExecuted;
+    if (rewindEnabled) {
+      if (framesExecuted % HistoryStride == 0) history.push_back(CaptureState());
+      while (history.size() > 1 && framesExecuted - history.front().frame > HistoryLimitFrames) history.pop_front();
+    }
   }
 
   // Hardware frames have a fractional number of 48 kHz samples. Preserve
@@ -182,6 +257,11 @@ public:
   // Split audio integration at tape edges; playback also runs while CPU is HALTed.
   void Advance(unsigned cycles, bool &irq) {
     irq = false;
+    // CPU overclock gives the Z80 more cycles per ULA/AY/tape cycle. Host
+    // fast-forward is handled separately by Playback, leaving this clock alone.
+    const unsigned total = cycles + cpuClockPhase;
+    cycles = total / cpuMultiplier;
+    cpuClockPhase = total % cpuMultiplier;
     while (cycles) {
       UpdateTapeInput();
       unsigned step = cycles;
@@ -196,6 +276,11 @@ public:
   }
 
 private:
+  enum : unsigned { HistoryStride = 10, HistoryLimitFrames = 500, RewindStepFrames = 50 };
+  unsigned cpuMultiplier = 1, cpuClockPhase = 0;
+  std::uint64_t framesExecuted = 0, generation = 0;
+  bool rewindEnabled = false;
+  std::deque<State> history;
   size_t audioOffset = 0, audioAvailable = 0;
   const MachineConfiguration *configuration = &HardwareFor(MachineModel::Spectrum48);
 

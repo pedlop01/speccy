@@ -11,6 +11,7 @@
 #include "emulator.h"
 #include "tape_view.h"
 #include "screen_view.h"
+#include "playback.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -92,7 +93,9 @@ enum MenuId {
   MENU_ROM_48, MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2, MENU_ROM_PLUS3,
   MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48,
   MENU_VIEW_2X = 400, MENU_VIEW_4X, MENU_FULLSCREEN, MENU_FILTERS,
-  MENU_FILTER_NONE, MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID
+  MENU_FILTER_NONE, MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID,
+  MENU_PAUSE = 450, MENU_SPEED_UP, MENU_REWIND_SECOND, MENU_CPU_CLOCK,
+  MENU_CPU_CLOCK_1X, MENU_CPU_CLOCK_2X, MENU_CPU_CLOCK_4X, MENU_SPEED_DOWN, MENU_SPEED_NORMAL
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -131,6 +134,18 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       {"Show tape &deck...", MENU_TAPE_DECK, 0, nullptr},
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&CPU", MENU_CPU),
+      {"&Pause (F5)", MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"Speed &up (F6)", MENU_SPEED_UP, 0, nullptr},
+      {"Speed &down (F7)", MENU_SPEED_DOWN, 0, nullptr},
+      {"&Normal speed 1x (F8)", MENU_SPEED_NORMAL, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Rewind &1 second (F9)", MENU_REWIND_SECOND, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      ALLEGRO_START_OF_MENU("CPU &frequency", MENU_CPU_CLOCK),
+        {"Model clock (1x)", MENU_CPU_CLOCK_1X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Double clock (2x)", MENU_CPU_CLOCK_2X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Quad clock (4x)", MENU_CPU_CLOCK_4X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      ALLEGRO_END_OF_MENU,
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"&Reset", MENU_RESET, 0, nullptr},
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&View", MENU_VIEW),
@@ -264,6 +279,8 @@ int main(int argc, char *argv[]) {
   al_init_font_addon();
   TapeView tapeView;
   ScreenView screenView;
+  Playback playback(machine);
+  machine.EnableRewind();
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
   al_register_event_source(events.get(), al_get_mouse_event_source());
@@ -277,12 +294,28 @@ int main(int argc, char *argv[]) {
       size_t slash = machine.tapePath.find_last_of("/\\");
       title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
     }
+    if (playback.paused) title += " [Paused]";
+    if (playback.Speed() != 1) title += " [Speed " + playback.SpeedText() + "]";
+    if (machine.CPUMultiplier() != 1) title += " [CPU " + std::to_string(machine.CPUMultiplier()) + "x]";
     static string lastTitle;
     if (title != lastTitle) { al_set_window_title(display.get(), title.c_str()); lastTitle = title; }
     auto menu = al_get_display_menu(display.get());
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
+    flags(MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX | (playback.paused ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_SPEED_UP, playback.Speed() == 16 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
+    flags(MENU_SPEED_DOWN, playback.Speed() == 0.25 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
+    flags(MENU_SPEED_NORMAL, playback.Speed() == 1 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
+    flags(MENU_REWIND_SECOND, machine.CanRewind() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    for (int id = MENU_CPU_CLOCK_1X; id <= MENU_CPU_CLOCK_4X; ++id) {
+      unsigned multiplier = 1u << (id - MENU_CPU_CLOCK_1X);
+      char caption[64];
+      snprintf(caption, sizeof(caption), "%ux (%.2f MHz)", multiplier,
+          machine.Configuration().timing.cpuClockHz * multiplier / 1000000.0);
+      if (std::string(al_get_menu_item_caption(menu, id)) != caption) al_set_menu_item_caption(menu, id, caption);
+      flags(id, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.CPUMultiplier() == multiplier ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    }
     flags(MENU_VIEW_2X, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.IsScale(display.get(), 2) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_VIEW_4X, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.IsScale(display.get(), 4) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_FULLSCREEN, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.Fullscreen(display.get()) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
@@ -338,13 +371,14 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
       void *fragment = al_get_audio_stream_fragment(stream.get());
       if (!fragment) break;
-      machine.ReadAudio(static_cast<short *>(fragment), SAMPLES_PER_FRAME);
+      playback.ReadAudio(static_cast<short *>(fragment), SAMPLES_PER_FRAME);
       if (!al_set_audio_stream_fragment(stream.get(), fragment)) return false;
     }
     return true;
   };
   auto restartAudio = [&]() {
     // Drop every queued sample from the previous machine state.
+    playback.DiscardAudio();
     if (stream) {
       al_unregister_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
       stream.reset();
@@ -372,7 +406,17 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
       case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); break;
       case ALLEGRO_EVENT_KEY_DOWN:
-        if (event.keyboard.keycode == ALLEGRO_KEY_F11) {
+        if (event.keyboard.keycode == ALLEGRO_KEY_F5) {
+          playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F6) {
+          resetAudio = playback.IncreaseSpeed(); updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F7) {
+          resetAudio = playback.DecreaseSpeed(); updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F8) {
+          resetAudio = playback.NormalSpeed(); updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F9) {
+          if (machine.RewindOneSecond()) { ReleaseKeys(ula); resetAudio = true; tapeView.NewTape(); updateUI(); }
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F11) {
           viewResult(screenView.SetFullscreen(display.get(), !screenView.Fullscreen(display.get())));
           updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
@@ -380,11 +424,24 @@ int main(int argc, char *argv[]) {
             viewResult(screenView.SetFullscreen(display.get(), false));
             updateUI();
           } else running = false;
-        } else ReadKeyboard(event, &ula);
+        } else if (!playback.paused) ReadKeyboard(event, &ula);
         break;
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_PAUSE:
+            playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; break;
+          case MENU_SPEED_UP: resetAudio = playback.IncreaseSpeed(); break;
+          case MENU_SPEED_DOWN: resetAudio = playback.DecreaseSpeed(); break;
+          case MENU_SPEED_NORMAL: resetAudio = playback.NormalSpeed(); break;
+          case MENU_REWIND_SECOND:
+            if (machine.RewindOneSecond()) { ReleaseKeys(ula); resetAudio = true; tapeView.NewTape(); }
+            break;
+          case MENU_CPU_CLOCK_1X:
+          case MENU_CPU_CLOCK_2X:
+          case MENU_CPU_CLOCK_4X:
+            machine.SetCPUMultiplier(1u << (event.user.data1 - MENU_CPU_CLOCK_1X));
+            ReleaseKeys(ula); resetAudio = true; break;
           case MENU_VIEW_2X: viewResult(screenView.SetScale(display.get(), 2)); break;
           case MENU_VIEW_4X: viewResult(screenView.SetScale(display.get(), 4)); break;
           case MENU_FULLSCREEN:
@@ -499,6 +556,10 @@ int main(int argc, char *argv[]) {
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
                 "File > Close: eject the tape and restart.\n"
                 "CPU > Reset: restart and rewind the current tape.\n"
+                "F5: pause the whole machine. F6/F7: double/halve playback speed (0.25x to 16x).\n"
+                "F8: normal speed (1x). F9: rewind about 1 second, with up to 10 seconds of history.\n"
+                "CPU > Frequency: give the Z80 more cycles at the normal video/AY/tape rate.\n"
+                "Use the model clock (1x) for timing-sensitive games and real-time tape loading.\n"
                 "Settings > ROM: choose a ROM and the startup default.\n"
                 "Tape > Fast load: instant loading (default).\n"
                 "Turn it off, enter LOAD \"\" and press Tape > Play for real-time loading.\n"

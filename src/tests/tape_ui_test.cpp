@@ -110,6 +110,63 @@ int main() {
       Wait(250);
       Check(menuFlagWrites.load() == settledWrites, "Idle refresh keeps rebuilding the native ROM menu");
       auto checked = [&](int id) { return (observedMenuFlags[id].load() & ALLEGRO_MENU_ITEM_CHECKED) != 0; };
+      auto speedIs = [&](double speed) {
+        char *name = nullptr;
+        if (!XFetchName(x, mainWindow, &name) || !name) return false;
+        std::string title(name); XFree(name);
+        std::string label = speed == 0.25 ? "0.25x" : speed == 0.5 ? "0.5x" : std::to_string(static_cast<unsigned>(speed)) + "x";
+        return speed == 1 ? title.find("[Speed ") == std::string::npos :
+            title.find("[Speed " + label + "]") != std::string::npos;
+      };
+      XRaiseWindow(x, mainWindow); XSetInputFocus(x, mainWindow, RevertToParent, CurrentTime);
+      auto shortcut = [&](KeySym symbol) {
+        XTestFakeKeyEvent(x, XKeysymToKeycode(x, symbol), True, 0);
+        XTestFakeKeyEvent(x, XKeysymToKeycode(x, symbol), False, 0); XFlush(x);
+      };
+      Menu(MENU_PAUSE);
+      Check(Until([&]() { return checked(MENU_PAUSE); }, 1000), "CPU Pause did not respond");
+      Menu(MENU_SPEED_UP);
+      Check(Until([&]() { return speedIs(2) && checked(MENU_PAUSE); }, 1000), "Speed up changed pause");
+      Menu(MENU_SPEED_UP);
+      Check(Until([&]() { return speedIs(4); }, 1000), "Second speed-up click did not select 4x");
+      Menu(MENU_SPEED_DOWN);
+      Check(Until([&]() { return speedIs(2); }, 1000), "Speed-down menu did not select 2x");
+      Menu(MENU_CPU_CLOCK_4X);
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_4X); }, 1000), "CPU frequency did not change");
+      shortcut(XK_F7);
+      Check(Until([&]() { return speedIs(1) && checked(MENU_CPU_CLOCK_4X); }, 1000),
+          "F7 should lower speed without rewinding CPU state");
+      shortcut(XK_F9);
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_1X) && checked(MENU_PAUSE); }, 1000),
+          "F9 did not rewind the CPU clock while preserving pause");
+      Menu(MENU_SPEED_UP);
+      Check(Until([&]() { return speedIs(2); }, 1000), "Could not increase speed while paused");
+      Menu(MENU_SPEED_NORMAL);
+      Check(Until([&]() { return speedIs(1); }, 1000), "Normal-speed menu did not restore 1x");
+      shortcut(XK_F5);
+      Check(Until([&]() { return !checked(MENU_PAUSE); }, 1000), "F5 did not resume the machine");
+      for (unsigned speed : {2u, 4u, 8u, 16u}) {
+        shortcut(XK_F6);
+        Check(Until([&]() { return speedIs(speed); }, 1000), "F6 multiplier ladder failed");
+      }
+      Check(Until([&]() { return (observedMenuFlags[MENU_SPEED_UP].load() & ALLEGRO_MENU_ITEM_DISABLED) != 0; }, 1000),
+          "Speed-up menu was not disabled at 16x");
+      shortcut(XK_F6); Wait(100); Check(speedIs(16), "F6 exceeded 16x");
+      shortcut(XK_F7);
+      Check(Until([&]() { return speedIs(8); }, 1000), "F7 did not halve 16x to 8x");
+      shortcut(XK_F8);
+      Check(Until([&]() { return speedIs(1); }, 1000), "F8 did not restore 1x directly");
+      shortcut(XK_F7);
+      Check(Until([&]() { return speedIs(0.5); }, 1000), "F7 did not slow playback to 0.5x");
+      shortcut(XK_F7);
+      Check(Until([&]() { return speedIs(0.25); }, 1000), "F7 did not slow playback to 0.25x");
+      Check(Until([&]() { return (observedMenuFlags[MENU_SPEED_DOWN].load() & ALLEGRO_MENU_ITEM_DISABLED) != 0; }, 1000),
+          "Speed-down menu was not disabled at 0.25x");
+      shortcut(XK_F7); Wait(100); Check(speedIs(0.25), "F7 went below 0.25x");
+      shortcut(XK_F6);
+      Check(Until([&]() { return speedIs(0.5); }, 1000), "F6 did not raise slow playback to 0.5x");
+      shortcut(XK_F8);
+      Check(Until([&]() { return speedIs(1); }, 1000), "F8 did not restore 1x from slow playback");
       auto size = [&]() {
         XWindowAttributes attributes;
         Check(XGetWindowAttributes(x, mainWindow, &attributes) != 0, "Cannot read main window size");
@@ -117,10 +174,14 @@ int main() {
       };
       Menu(MENU_VIEW_2X);
       Check(Until([&]() { return checked(MENU_VIEW_2X) && size().first == 640; }, 2000), "2x size was not applied");
+      Wait(100); // GTK geometry settles after the Allegro resize event.
       const auto originalSize = size();
       Menu(MENU_VIEW_4X);
-      Check(Until([&]() { return checked(MENU_VIEW_4X) && size().first == 1280; }, 2000), "4x size was not applied");
-      Check(size().second == originalSize.second + 480, "4x changed the image's proportions");
+      const bool resized4x = Until([&]() { return checked(MENU_VIEW_4X) && size().first == 1280 &&
+          size().second == originalSize.second + 480; }, 2000);
+      if (!resized4x) fprintf(stderr, "View geometry: initial %dx%d, actual %dx%d, flags=%d\n",
+          originalSize.first, originalSize.second, size().first, size().second, observedMenuFlags[MENU_VIEW_4X].load());
+      Check(resized4x, "4x size/proportions were not applied");
       for (int id : {MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID, MENU_FILTER_NONE}) {
         Menu(id);
         Check(Until([&]() { return checked(id); }, 1000), "View filter selection did not respond");
@@ -246,7 +307,7 @@ int main() {
         XDestroyImage(image);
         return accent;
       }, 750), "Cue selected did not move the current-block marker");
-      printf("View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
+      printf("CPU: pause, speed, clock and rewind; View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what();

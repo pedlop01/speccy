@@ -69,6 +69,35 @@ public:
     return true;
   }
 
+  struct TransportState {
+    size_t current, pulse;
+    unsigned cpuClock, remaining;
+    std::uint64_t clockPhase, elapsed;
+    bool level;
+    State state;
+  };
+  TransportState CaptureState() const {
+    return {current, pulse, cpuClock, remaining, clockPhase, elapsed, level, state};
+  }
+  bool RestoreState(const TransportState &saved) {
+    if (saved.current > blocks.size() || !saved.cpuClock || saved.clockPhase >= saved.cpuClock) return false;
+    TapeDeck candidate = *this;
+    candidate.Cue(saved.current);
+    if (saved.current < blocks.size()) {
+      if (saved.pulse >= candidate.pulses.size() || !saved.remaining ||
+          saved.remaining > candidate.pulses[saved.pulse] || saved.elapsed > blocks[saved.current].duration ||
+          saved.state == State::End) return false;
+    } else if (saved.state != State::End) return false;
+    candidate.pulse = saved.pulse;
+    candidate.cpuClock = saved.cpuClock;
+    candidate.remaining = saved.remaining;
+    candidate.clockPhase = saved.clockPhase;
+    candidate.elapsed = saved.elapsed;
+    candidate.level = saved.level;
+    candidate.state = saved.state;
+    *this = std::move(candidate);
+    return true;
+  }
   const std::vector<TapeBlock> &Blocks() const { return blocks; }
   size_t CurrentBlock() const { return current; }
   size_t Offset() const { return current < blocks.size() ? blocks[current].offset : (data ? data->size() : 0); }
