@@ -205,7 +205,7 @@ void ReleaseKeys(ULA &ula) {
 }
 
 int main(int argc, char *argv[]) {
-  const char *usage = "Usage: gomas [tape.tap [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
+  const char *usage = "Usage: gomas [tape.tap|tape.zip [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
   string tapePath, romPath;
   bool customROM = false;
   for (int i = 1; i < argc; ++i) {
@@ -498,7 +498,7 @@ int main(int argc, char *argv[]) {
             ReleaseKeys(ula);
             unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
                 al_create_native_file_dialog(machine.tapePath.empty() ? nullptr : machine.tapePath.c_str(),
-                    "Open Spectrum tape", "*.tap;*.TAP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
+                    "Open Spectrum tape", "*.tap;*.TAP;*.zip;*.ZIP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
                 al_destroy_native_file_dialog);
             if (!chooser || !al_show_native_file_dialog(display.get(), chooser.get())) {
               al_show_native_message_box(display.get(), "Gomas", "Cannot open file dialog",

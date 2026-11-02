@@ -5,7 +5,7 @@ El núcleo procede de YASS (referencia incluida en ../yass).
 Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
-allegro_audio-5, allegro_dialog-5, allegro_font-5 y allegro_primitives-5.
+allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5 y libarchive.
 No necesita acodec.
 
   make -C bin
@@ -24,7 +24,7 @@ También se conserva la apertura por línea de comandos:
 
 Menús
 -----
-File > Open... abre un selector de TAP. Al aceptar un archivo válido se inserta la
+File > Open... abre un selector de TAP o ZIP. Al aceptar un archivo válido se inserta la
 cinta y se reinicia el Spectrum. Cancelar o seleccionar un archivo inválido conserva
 la partida actual. Para cargar, escribir LOAD "" en BASIC: J produce LOAD y
 Right Shift + P produce cada comilla; terminar con Enter.
@@ -492,3 +492,20 @@ View mantienen los valores actuales. Se inicia un historial de retroceso nuevo.
 El formato propio GSS versión 1 incluye límites y comprobación de integridad;
 un fallo de lectura conserva la sesión actual. El guardado sustituye la casilla
 mediante un archivo temporal para proteger el guardado anterior si falla la escritura.
+
+Cintas comprimidas
+------------------
+File > Open... y la línea de comandos aceptan archivos .zip / .ZIP con cintas TAP:
+
+  ./bin/gomas juegos/cobra.zip
+
+Se lee en memoria la primera entrada .tap (sin distinguir mayúsculas), incluso
+si está dentro de una carpeta del ZIP. Se ignoran otros archivos y no se extrae
+nada al disco. Si hay varios TAP se usa el primero en el orden del archivo.
+El reproductor, la carga rápida y las partidas guardadas funcionan igual que
+con un TAP suelto; el título muestra el nombre del ZIP. La partida guardada
+incluye el TAP descomprimido, por lo que no necesita conservar el ZIP original.
+Se admiten ZIP almacenados o comprimidos. Las entradas cifradas, cintas vacías,
+archivos dañados y cintas de más de 16 MiB se rechazan conservando la sesión.
+La apertura se limita a recorrer 4096 entradas. Los TAP sueltos comparten el
+límite de 16 MiB para poder incluirlos también en las partidas guardadas.

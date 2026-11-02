@@ -14,6 +14,7 @@
 #include "rom_loader.h"
 #include "ula.h"
 #include "tape.h"
+#include "tape_loader.h"
 #include "spectrum_memory.h"
 
 inline bool LoadTrap(Z80 &cpu, const vector<unsigned char> &data, size_t &pos) {
@@ -195,13 +196,8 @@ public:
   }
 
   bool Open(const std::string &path, std::string &error) {
-    std::ifstream input(path, std::ios::binary);
-    if (!input) { error = "Cannot open TAP file: " + path; return false; }
-    vector<unsigned char> candidate((std::istreambuf_iterator<char>(input)), {});
-    if (input.bad() || candidate.empty() || !ValidateTape(candidate)) {
-      error = "Invalid or empty TAP file: " + path;
-      return false;
-    }
+    vector<unsigned char> candidate;
+    if (!TapeFiles::Read(path, candidate, error)) return false;
     tape.swap(candidate);
     tapePath = path;
     deck.Mount(tape);
