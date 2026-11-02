@@ -29,7 +29,8 @@ cinta y se reinicia el Spectrum. Cancelar o seleccionar un archivo inválido con
 la partida actual. Para cargar, escribir LOAD "" en BASIC: J produce LOAD y
 Right Shift + P produce cada comilla; terminar con Enter.
 File > Close retira la cinta y reinicia el Spectrum; se deshabilita sin cinta.
-File > Exit termina el programa, igual que Escape o cerrar la ventana.
+File > Exit termina el programa. Escape sale si está en ventana; en pantalla
+completa vuelve a ventana. Cerrar la ventana también termina el programa.
 CPU > Reset reinicia CPU, RAM, ULA y audio; conserva la cinta y la rebobina.
 Tape > Fast load está activado por defecto y mantiene la carga instantánea.
 Al desactivarlo se abre el reproductor y se habilitan Play, Pause y Stop.
@@ -41,7 +42,13 @@ explícitamente a hardware 48K. La carga rápida se deshabilita si la ROM no tie
 una rutina reconocida; usar Fast load OFF y Play para cargar cintas.
 Settings > ROM > Information... muestra el perfil activo, archivo y compatibilidad
 con carga rápida. El modelo aparece también en el título de la ventana.
-View sigue deshabilitado, sin opciones todavía.
+View > 2x / 4x ajusta el área de imagen a 640x480 / 1280x960.
+View > Fullscreen (F11) alterna pantalla completa sin cambiar la resolución del
+escritorio. Escape vuelve a ventana; en ventana sigue siendo Exit. Elegir 2x/4x
+sale de pantalla completa y aplica ese tamaño. Se conserva el tamaño de ventana
+anterior al salir de pantalla completa con F11 o Escape.
+View > Filters ofrece None, Scanlines (light), Scanlines (strong) y Pixel grid.
+Las opciones seleccionadas se marcan en el menú.
 Help > About / Help muestra instrucciones y los créditos de YASS.
 
 Los diálogos de archivo y ayuda pausan el audio y la emulación. Tras Open, Close
@@ -378,3 +385,24 @@ documentados, carry, puntero, contador, tiempos y terminación de las búsquedas
 bombjack-tests carga desde BASIC en 48K en ambos modos, contrasta píxel a píxel
 los textos del menú con la fuente del juego en sus posiciones esperadas y entra
 en una partida con pantallas cambiantes. No se parchean el TAP ni la ROM.
+
+Presentación y filtros de View
+------------------------------
+screen_view.h separa la presentación de la memoria y el renderizado de la ULA.
+La ventana arranca a 2x (640x480); el escalado manual conserva proporciones,
+usa factores enteros cuando caben y centra la imagen sobre negro. Los filtros
+son máscaras sobre la imagen ampliada: scanlines al 25%/50% de opacidad y una
+rejilla de un píxel de salida. Se dibujan en una sola llamada de primitivas,
+sin suavizar el bitmap original. A escalas inferiores a 2x se omite la máscara
+para conservar legibilidad. El tamaño y filtro elegidos se mantienen durante
+la sesión, también al cambiar ROM o cinta.
+
+Los cambios de View no reinician CPU, cinta ni audio. Pantalla completa usa
+ALLEGRO_FULLSCREEN_WINDOW y permite volver con F11/Escape sin recrear display,
+bitmap ni stream. Si el escritorio rechaza el cambio se muestra un error.
+Referencia: https://liballeg.org/a5docs/trunk/display.html#al_set_display_flag
+
+screen-view-tests usa bitmaps de memoria para comprobar factores 2x/4x,
+proporciones, márgenes, intensidad de scanlines, rejilla y conservación de la
+imagen fuente. test-ui verifica tamaños reales de ventana, selección de filtros,
+pantalla completa y restauración por Escape/F11, con el menú estable después.

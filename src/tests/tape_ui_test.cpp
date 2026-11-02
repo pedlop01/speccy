@@ -2,8 +2,10 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <atomic>
 static std::atomic<unsigned> menuFlagWrites(0);
+static std::atomic<int> observedMenuFlags[512];
 static void RecordMenuFlags(ALLEGRO_MENU *menu, int id, int flags) {
   ++menuFlagWrites;
+  if (id >= 0 && id < 512) observedMenuFlags[id].store(flags);
   al_set_menu_item_flags(menu, id, flags);
 }
 #define al_set_menu_item_flags RecordMenuFlags
@@ -107,6 +109,42 @@ int main() {
       unsigned settledWrites = menuFlagWrites.load();
       Wait(250);
       Check(menuFlagWrites.load() == settledWrites, "Idle refresh keeps rebuilding the native ROM menu");
+      auto checked = [&](int id) { return (observedMenuFlags[id].load() & ALLEGRO_MENU_ITEM_CHECKED) != 0; };
+      auto size = [&]() {
+        XWindowAttributes attributes;
+        Check(XGetWindowAttributes(x, mainWindow, &attributes) != 0, "Cannot read main window size");
+        return std::make_pair(attributes.width, attributes.height);
+      };
+      Menu(MENU_VIEW_2X);
+      Check(Until([&]() { return checked(MENU_VIEW_2X) && size().first == 640; }, 2000), "2x size was not applied");
+      const auto originalSize = size();
+      Menu(MENU_VIEW_4X);
+      Check(Until([&]() { return checked(MENU_VIEW_4X) && size().first == 1280; }, 2000), "4x size was not applied");
+      Check(size().second == originalSize.second + 480, "4x changed the image's proportions");
+      for (int id : {MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID, MENU_FILTER_NONE}) {
+        Menu(id);
+        Check(Until([&]() { return checked(id); }, 1000), "View filter selection did not respond");
+      }
+      Menu(MENU_VIEW_2X);
+      Check(Until([&]() { return size() == originalSize && checked(MENU_VIEW_2X); }, 2000), "Could not restore 2x");
+      Menu(MENU_FULLSCREEN);
+      Check(Until([&]() { return checked(MENU_FULLSCREEN) && size() != originalSize; }, 2000), "Fullscreen did not activate");
+      XRaiseWindow(x, mainWindow);
+      XSetInputFocus(x, mainWindow, RevertToParent, CurrentTime);
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_Escape), True, 0);
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_Escape), False, 0); XFlush(x);
+      Check(Until([&]() { return !checked(MENU_FULLSCREEN) && size() == originalSize; }, 2000),
+          "Escape did not restore the window size from fullscreen");
+      XSetInputFocus(x, mainWindow, RevertToParent, CurrentTime);
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_F11), True, 0);
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_F11), False, 0); XFlush(x);
+      Check(Until([&]() { return checked(MENU_FULLSCREEN) && size() != originalSize; }, 2000), "F11 did not enter fullscreen");
+      Menu(MENU_VIEW_2X);
+      Check(Until([&]() { return !checked(MENU_FULLSCREEN) && size() == originalSize; }, 2000),
+          "Choosing 2x did not leave fullscreen");
+      Wait(100);
+      settledWrites = menuFlagWrites.load(); Wait(250);
+      Check(menuFlagWrites.load() == settledWrites, "View menu flags keep rebuilding after a mode change");
       // Exercise the ROM selector through its real native file dialog.
       Menu(MENU_LOAD_ROM);
       Window chooser = 0;
@@ -208,7 +246,7 @@ int main() {
         XDestroyImage(image);
         return accent;
       }, 750), "Cue selected did not move the current-block marker");
-      printf("Mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
+      printf("View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what();

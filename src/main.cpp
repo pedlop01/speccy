@@ -10,6 +10,7 @@
 #include <allegro5/allegro_native_dialog.h>
 #include "emulator.h"
 #include "tape_view.h"
+#include "screen_view.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -89,7 +90,9 @@ enum MenuId {
   MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK,
   MENU_LOAD_ROM = 300, MENU_CUSTOM_ROM, MENU_ROM_INFO, MENU_ROM,
   MENU_ROM_48, MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2, MENU_ROM_PLUS3,
-  MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48
+  MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48,
+  MENU_VIEW_2X = 400, MENU_VIEW_4X, MENU_FULLSCREEN, MENU_FILTERS,
+  MENU_FILTER_NONE, MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -130,10 +133,17 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
     ALLEGRO_START_OF_MENU("&CPU", MENU_CPU),
       {"&Reset", MENU_RESET, 0, nullptr},
     ALLEGRO_END_OF_MENU,
-    // Native top-level menus require a child. A separator provides no action;
-    // the disabled headings remain visible without exposing placeholder options.
-    {"&View->", MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+    ALLEGRO_START_OF_MENU("&View", MENU_VIEW),
+      {"&2x", MENU_VIEW_2X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"&4x", MENU_VIEW_4X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"&Fullscreen (F11)", MENU_FULLSCREEN, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      ALLEGRO_START_OF_MENU("&Filters", MENU_FILTERS),
+        {"&None", MENU_FILTER_NONE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Scanlines (&light)", MENU_FILTER_SCANLINES_LIGHT, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Scanlines (&strong)", MENU_FILTER_SCANLINES_STRONG, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Pixel &grid", MENU_FILTER_GRID, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      ALLEGRO_END_OF_MENU,
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&Settings", MENU_SETTINGS),
       ALLEGRO_START_OF_MENU("&ROM", MENU_ROM),
@@ -162,7 +172,6 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
   unique_ptr<ALLEGRO_MENU, decltype(&al_destroy_menu)> menu(
       al_build_menu(items), al_destroy_menu);
   if (!menu) return false;
-  al_set_menu_item_flags(menu.get(), MENU_VIEW, ALLEGRO_MENU_ITEM_DISABLED);
   if (!al_set_display_menu(display, menu.get())) return false;
   menu.release();
   return true;
@@ -227,7 +236,7 @@ int main(int argc, char *argv[]) {
 #endif
   al_set_new_display_flags(displayFlags);
   al_set_new_display_option(ALLEGRO_VSYNC, 0, ALLEGRO_SUGGEST);
-  unique_ptr<ALLEGRO_DISPLAY, DisplayDeleter> display(al_create_display(640, 520));
+  unique_ptr<ALLEGRO_DISPLAY, DisplayDeleter> display(al_create_display(640, 480));
   if (!display || !InstallMenu(display.get())) {
     fprintf(stderr, "Cannot create display/menu\n");
     return 1;
@@ -254,6 +263,7 @@ int main(int argc, char *argv[]) {
   }
   al_init_font_addon();
   TapeView tapeView;
+  ScreenView screenView;
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
   al_register_event_source(events.get(), al_get_mouse_event_source());
@@ -273,6 +283,12 @@ int main(int argc, char *argv[]) {
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
+    flags(MENU_VIEW_2X, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.IsScale(display.get(), 2) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_VIEW_4X, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.IsScale(display.get(), 4) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    flags(MENU_FULLSCREEN, ALLEGRO_MENU_ITEM_CHECKBOX | (screenView.Fullscreen(display.get()) ? ALLEGRO_MENU_ITEM_CHECKED : 0));
+    for (int id = MENU_FILTER_NONE; id <= MENU_FILTER_GRID; ++id)
+      flags(id, ALLEGRO_MENU_ITEM_CHECKBOX |
+          (static_cast<int>(screenView.filter) == id - MENU_FILTER_NONE ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     for (int id = MENU_ROM_48; id <= MENU_ROM_PLUS3; ++id) {
       const auto &profile = MenuROMProfile(id);
       flags(id, ALLEGRO_MENU_ITEM_CHECKBOX |
@@ -306,6 +322,16 @@ int main(int argc, char *argv[]) {
   auto rememberROM = [&](bool custom) {
     preferences.Remember(machine.systemROM.source, custom);
     savePreferences();
+  };
+  auto viewResult = [&](bool success) {
+    ReleaseKeys(ula);
+    if (!success) {
+      bool playing = al_get_audio_stream_playing(stream.get());
+      al_set_audio_stream_playing(stream.get(), false);
+      al_show_native_message_box(display.get(), "Gomas", "Cannot change display mode",
+          "The window system could not apply the requested size or fullscreen mode.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+      al_set_audio_stream_playing(stream.get(), playing);
+    }
   };
   auto fillAudio = [&]() {
     // Bound catch-up work so UI events cannot starve on slower machines.
@@ -346,12 +372,28 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
       case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); break;
       case ALLEGRO_EVENT_KEY_DOWN:
-        if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) running = false;
-        else ReadKeyboard(event, &ula);
+        if (event.keyboard.keycode == ALLEGRO_KEY_F11) {
+          viewResult(screenView.SetFullscreen(display.get(), !screenView.Fullscreen(display.get())));
+          updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+          if (screenView.Fullscreen(display.get())) {
+            viewResult(screenView.SetFullscreen(display.get(), false));
+            updateUI();
+          } else running = false;
+        } else ReadKeyboard(event, &ula);
         break;
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_VIEW_2X: viewResult(screenView.SetScale(display.get(), 2)); break;
+          case MENU_VIEW_4X: viewResult(screenView.SetScale(display.get(), 4)); break;
+          case MENU_FULLSCREEN:
+            viewResult(screenView.SetFullscreen(display.get(), !screenView.Fullscreen(display.get()))); break;
+          case MENU_FILTER_NONE:
+          case MENU_FILTER_SCANLINES_LIGHT:
+          case MENU_FILTER_SCANLINES_STRONG:
+          case MENU_FILTER_GRID:
+            screenView.filter = static_cast<ScreenFilter>(event.user.data1 - MENU_FILTER_NONE); break;
           case MENU_OPEN: {
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
@@ -463,7 +505,8 @@ int main(int argc, char *argv[]) {
                 "Tape > Show tape deck: browse blocks and cue a multi-load part.\n"
                 "Pause keeps position; Stop returns to the start of this block.\n"
                 "Left Shift = CAPS SHIFT; Right Shift = SYMBOL SHIFT.\n"
-                "Escape = Exit.\n\n"
+                "View: 2x, 4x, fullscreen and pixel filters.\n"
+                "F11 = fullscreen; Escape = leave fullscreen / Exit in a window.\n\n"
                 "By Pedro Lopez. Based on YASS by Fernando Marcos.\n"
                 "http://yass.speccy.org/", nullptr, 0);
             ReleaseKeys(ula);
@@ -491,14 +534,7 @@ int main(int argc, char *argv[]) {
     al_set_target_backbuffer(display.get());
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
     al_set_target_backbuffer(display.get());
-    al_clear_to_color(al_map_rgb(0, 0, 0));
-    int width = al_get_display_width(display.get());
-    int height = al_get_display_height(display.get());
-    float scale = min(width / 320.0f, height / 240.0f);
-    if (scale >= 1) scale = static_cast<int>(scale);
-    float w = 320 * scale, h = 240 * scale;
-    al_draw_scaled_bitmap(bitmap.get(), 0, 0, 320, 240,
-                          (width - w) / 2, (height - h) / 2, w, h, 0);
+    screenView.Draw(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()));
     al_flip_display();
     if ((event.timer.count & 1) == 0) tapeView.Draw(machine);
   }
