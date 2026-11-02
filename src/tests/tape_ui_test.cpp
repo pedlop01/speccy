@@ -91,6 +91,12 @@ int main() {
   bool hadConfig = oldConfig != nullptr;
   std::string savedConfig = oldConfig ? oldConfig : "";
   setenv("GOMAS_CONFIG", configPath, 1);
+  char savesPath[] = "/tmp/gomas-ui-saves-XXXXXX";
+  if (!mkdtemp(savesPath)) return 1;
+  const char *oldSaves = getenv("GOMAS_SAVE_DIR");
+  bool hadSaves = oldSaves != nullptr;
+  std::string savedSaves = oldSaves ? oldSaves : "";
+  setenv("GOMAS_SAVE_DIR", savesPath, 1);
   bool passed = false;
   std::string failure;
   std::thread input([&]() {
@@ -125,6 +131,41 @@ int main() {
       };
       Menu(MENU_PAUSE);
       Check(Until([&]() { return checked(MENU_PAUSE); }, 1000), "CPU Pause did not respond");
+      SaveStates::Store saves(savesPath);
+      shortcut(XK_F2);
+      Check(Until([&]() { return saves.Exists(0); }, 2000), "F2 did not save the quick slot");
+      Menu(MENU_SAVE_STATE);
+      Window gallery=0;
+      Check(Until([&]() { gallery=FindWindow(x,DefaultRootWindow(x),"Gomas - Save game");return gallery!=0; },2000), "Save gallery did not open");
+      Wait(200);
+      Click(x,gallery,125,150); // Reserved quick slot cannot be overwritten here.
+      Click(x,gallery,830,660);Wait(150);
+      Check(FindWindow(x,DefaultRootWindow(x),"Gomas - Save game")!=0,"Normal save overwrote reserved quick slot");
+      Click(x,gallery,825,155); // Slot 3, different from the initial selection.
+      Check(Until([&]() { return Pixel(x,gallery,718,80)==0x223444; },750),"Mouse did not select save slot 3");
+      Click(x,gallery,825,155); // Second click saves directly.
+      Check(Until([&]() { return saves.Exists(3) && !FindWindow(x,DefaultRootWindow(x),"Gomas - Save game"); },2000),"Selected slot was not saved");
+      Menu(MENU_CPU_CLOCK_4X);
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_4X); },1000),"Could not change CPU frequency before gallery load");
+      Menu(MENU_LOAD_STATE);
+      Check(Until([&]() { gallery=FindWindow(x,DefaultRootWindow(x),"Gomas - Load game");return gallery!=0; },2000),"Load gallery did not open");
+      Wait(200);Click(x,gallery,825,155);Wait(70);Click(x,gallery,825,155);
+      Check(Until([&]() { return !FindWindow(x,DefaultRootWindow(x),"Gomas - Load game"); },2000),"Selected slot did not load");
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_1X); },1000),"Gallery load did not restore saved CPU frequency");
+      Menu(MENU_LOAD_STATE);
+      Check(Until([&]() { gallery=FindWindow(x,DefaultRootWindow(x),"Gomas - Load game");return gallery!=0; },2000),"Load gallery did not reopen");
+      XSetInputFocus(x,gallery,RevertToParent,CurrentTime);shortcut(XK_Escape);
+      Check(Until([&]() { return !FindWindow(x,DefaultRootWindow(x),"Gomas - Load game"); },1000),"Escape did not cancel gallery");
+      Menu(MENU_CPU_CLOCK_4X);
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_4X); },1000),"Could not change CPU frequency before quick load");
+      XSetInputFocus(x,mainWindow,RevertToParent,CurrentTime);shortcut(XK_F3);
+      Check(Until([&]() { return checked(MENU_CPU_CLOCK_1X); },1000),"F3 did not restore the quick slot");
+      Check(checked(MENU_PAUSE),"Loading a saved game changed CPU pause");
+      // Loading starts a new rewind timeline; advance before the existing F9 test.
+      Menu(MENU_PAUSE);
+      Check(Until([&]() { return !checked(MENU_PAUSE); },1000),"Could not resume after loading");
+      Wait(300);Menu(MENU_PAUSE);
+      Check(Until([&]() { return checked(MENU_PAUSE); },1000),"Could not pause after loading");
       Menu(MENU_SPEED_UP);
       Check(Until([&]() { return speedIs(2) && checked(MENU_PAUSE); }, 1000), "Speed up changed pause");
       Menu(MENU_SPEED_UP);
@@ -307,13 +348,13 @@ int main() {
         XDestroyImage(image);
         return accent;
       }, 750), "Cue selected did not move the current-block marker");
-      printf("CPU: pause, speed, clock and rewind; View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
+      printf("Saved games: quick save/load, gallery selection/load/cancel and reserved slot; CPU: pause, speed, clock and rewind; View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
       passed = true;
     } catch (const std::exception &error) {
-      failure = error.what();
-      for (const char *title : {"Load system ROM", "Gomas"}) {
+      failure = error.what(); fprintf(stderr,"UI failure: %s\n",failure.c_str());
+      for (const char *title : {"Load system ROM", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
         Window modal = FindWindow(x, DefaultRootWindow(x), title), parent = 0;
-        if (modal && mainWindow && XGetTransientForHint(x, modal, &parent) && parent == mainWindow) {
+        if (modal && mainWindow && (std::string(title).find("game") != std::string::npos || (XGetTransientForHint(x, modal, &parent) && parent == mainWindow))) {
           XEvent close = {};
           close.xclient.type = ClientMessage;
           close.xclient.window = modal;
@@ -334,6 +375,10 @@ int main() {
   int result = GomasApplicationMain(2, arguments);
   input.join();
   unlink(configPath);
+  SaveStates::Store saves(savesPath);
+  for(unsigned i=0;i<SaveStates::SlotCount;++i) unlink(saves.Path(i).c_str());
+  rmdir(savesPath);
+  if(hadSaves) setenv("GOMAS_SAVE_DIR",savedSaves.c_str(),1); else unsetenv("GOMAS_SAVE_DIR");
   if (hadConfig) setenv("GOMAS_CONFIG", savedConfig.c_str(), 1); else unsetenv("GOMAS_CONFIG");
   if (!passed || result != 0) {
     fprintf(stderr, "Tape UI test failed: %s\n", failure.c_str());

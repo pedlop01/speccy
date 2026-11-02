@@ -467,3 +467,28 @@ prueba los controles CPU y F5-F9, incluyendo subir/bajar/restaurar velocidad
 y rebobinar la frecuencia anterior
 sin salir de pausa, además de los menús y filtros existentes. También comprueba
 cámara lenta, muestras pendientes y fragmentos de longitudes no divisibles por cuatro.
+
+Partidas guardadas
+------------------
+File > Save game (Ctrl+S) abre una galería de 12 casillas con miniaturas,
+nombre del juego y fecha. Selecciona una casilla con el ratón o las flechas y
+pulsa Save / Replace (o Enter), o haz doble clic para guardar directamente.
+La casilla QUICK está reservada para F2.
+File > Load game (Ctrl+L) permite recuperar cualquier casilla, incluida QUICK.
+El doble clic en una casilla también permite cargarla directamente.
+F2 guarda directamente en QUICK y F3 recupera esa partida sin abrir la galería.
+Escape o Cancel cierra la galería. La emulación se detiene mientras está abierta.
+
+Los archivos slot-0.gss a slot-11.gss se guardan en el directorio de datos de
+Allegro para Gomas, subdirectorio saves (habitualmente ~/.local/share/gomas/gomas/saves
+en Linux). GOMAS_SAVE_DIR permite elegir otro directorio. Las casillas son
+comunes a todos los juegos; slot-0.gss corresponde a QUICK.
+
+Cada archivo contiene ROM, cinta TAP, miniatura y estado completo del Spectrum,
+por lo que se puede recuperar en otra sesión aunque los originales se hayan
+movido. Al cargar se recuperan el modelo, RAM, CPU, frecuencia, vídeo, AY, audio
+pendiente y posición exacta de cinta. La pausa, velocidad global y filtros de
+View mantienen los valores actuales. Se inicia un historial de retroceso nuevo.
+El formato propio GSS versión 1 incluye límites y comprobación de integridad;
+un fallo de lectura conserva la sesión actual. El guardado sustituye la casilla
+mediante un archivo temporal para proteger el guardado anterior si falla la escritura.

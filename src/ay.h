@@ -44,6 +44,36 @@ public:
       Tick();
     }
   }
+  struct State {
+    unsigned cpuHz, chipHz;
+    std::uint64_t phase;
+    std::array<unsigned char, 16> regs;
+    unsigned selected;
+    std::array<unsigned, 3> toneCount;
+    std::array<bool, 3> toneHigh;
+    unsigned noiseCount, envelopeCount, noise;
+    bool noiseDivider, holding;
+    int envelopeLevel, envelopeDirection;
+  };
+  State CaptureState() const {
+    return {cpuHz, chipHz, phase, regs, selected, toneCount, toneHigh,
+        noiseCount, envelopeCount, noise, noiseDivider, holding, envelopeLevel, envelopeDirection};
+  }
+  bool RestoreState(const State &s) {
+    if (!s.cpuHz || s.phase >= std::uint64_t(s.cpuHz) * 8 || s.selected > 15 ||
+        !s.noise || s.noise > 0x1FFFF || s.noiseCount > 31 || s.envelopeCount > 131070 ||
+        s.envelopeLevel < 0 || s.envelopeLevel > 15 ||
+        (s.envelopeDirection != -1 && s.envelopeDirection != 1)) return false;
+    for (unsigned ch = 0; ch < 3; ++ch) if (s.toneCount[ch] > 4095) return false;
+    for (unsigned r : {1u,3u,5u,13u}) if (s.regs[r] > 15) return false;
+    for (unsigned r : {6u,8u,9u,10u}) if (s.regs[r] > 31) return false;
+    if (s.regs[15]) return false;
+    cpuHz=s.cpuHz; chipHz=s.chipHz; phase=s.phase; regs=s.regs; selected=s.selected;
+    toneCount=s.toneCount; toneHigh=s.toneHigh; noiseCount=s.noiseCount;
+    envelopeCount=s.envelopeCount; noise=s.noise; noiseDivider=s.noiseDivider;
+    holding=s.holding; envelopeLevel=s.envelopeLevel; envelopeDirection=s.envelopeDirection;
+    return true;
+  }
   unsigned EnvelopeLevel() const { return envelopeLevel; }
   unsigned NoiseState() const { return noise; }
   int Output() const {

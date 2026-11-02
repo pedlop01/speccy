@@ -12,6 +12,7 @@
 #include "tape_view.h"
 #include "screen_view.h"
 #include "playback.h"
+#include "save_gallery.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -95,7 +96,8 @@ enum MenuId {
   MENU_VIEW_2X = 400, MENU_VIEW_4X, MENU_FULLSCREEN, MENU_FILTERS,
   MENU_FILTER_NONE, MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID,
   MENU_PAUSE = 450, MENU_SPEED_UP, MENU_REWIND_SECOND, MENU_CPU_CLOCK,
-  MENU_CPU_CLOCK_1X, MENU_CPU_CLOCK_2X, MENU_CPU_CLOCK_4X, MENU_SPEED_DOWN, MENU_SPEED_NORMAL
+  MENU_CPU_CLOCK_1X, MENU_CPU_CLOCK_2X, MENU_CPU_CLOCK_4X, MENU_SPEED_DOWN, MENU_SPEED_NORMAL,
+  MENU_SAVE_STATE = 480, MENU_LOAD_STATE, MENU_QUICK_SAVE, MENU_QUICK_LOAD
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -120,6 +122,11 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
     ALLEGRO_START_OF_MENU("&File", MENU_FILE),
       {"&Open...", MENU_OPEN, 0, nullptr},
       {"&Close", MENU_CLOSE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
+      {"&Save game... (Ctrl+S)", MENU_SAVE_STATE, 0, nullptr},
+      {"&Load game... (Ctrl+L)", MENU_LOAD_STATE, 0, nullptr},
+      {"&Quick save (F2)", MENU_QUICK_SAVE, 0, nullptr},
+      {"Quick loa&d (F3)", MENU_QUICK_LOAD, 0, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"E&xit", MENU_EXIT, 0, nullptr},
     ALLEGRO_END_OF_MENU,
@@ -280,6 +287,8 @@ int main(int argc, char *argv[]) {
   TapeView tapeView;
   ScreenView screenView;
   Playback playback(machine);
+  SaveStates::Store savedGames(SaveStates::Directory());
+  SaveGallery saveGallery;
   machine.EnableRewind();
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
@@ -389,6 +398,25 @@ int main(int argc, char *argv[]) {
     al_register_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
     return fillAudio() && al_attach_audio_stream_to_mixer(stream.get(), mixer.get());
   };
+  auto stateAction = [&](int action) {
+    const bool playing = al_get_audio_stream_playing(stream.get());
+    al_set_audio_stream_playing(stream.get(), false);
+    ReleaseKeys(ula);
+    bool loaded = false;
+    std::string stateError;
+    if (action == MENU_QUICK_SAVE) savedGames.Save(SaveStates::QuickSlot, machine, stateError);
+    else if (action == MENU_QUICK_LOAD) loaded = savedGames.Load(SaveStates::QuickSlot, machine, stateError);
+    else {
+      auto result = saveGallery.Show(display.get(), machine, savedGames, action == MENU_SAVE_STATE, stateError);
+      loaded = result == SaveGallery::Result::Loaded;
+    }
+    if (!stateError.empty())
+      al_show_native_message_box(display.get(), "Gomas", "Saved game", stateError.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
+    ReleaseKeys(ula);
+    if (loaded) { tapeView.NewTape(); playback.DiscardAudio(); }
+    else al_set_audio_stream_playing(stream.get(), playing);
+    return loaded;
+  };
   updateUI();
   if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
 
@@ -401,12 +429,21 @@ int main(int argc, char *argv[]) {
     bool resetAudio = false;
     // Handle input immediately; drawing is paced independently of event traffic.
     if (tapeView.Handle(event, machine)) continue;
+    // Gallery input is also queued on the global keyboard source. Do not
+    // replay its Enter/Escape/arrows into the machine after the modal closes.
+    if ((event.type == ALLEGRO_EVENT_KEY_DOWN || event.type == ALLEGRO_EVENT_KEY_UP) &&
+        event.keyboard.display != display.get()) continue;
     switch (event.type) {
       case ALLEGRO_EVENT_DISPLAY_CLOSE: running = false; break;
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
       case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); break;
       case ALLEGRO_EVENT_KEY_DOWN:
-        if (event.keyboard.keycode == ALLEGRO_KEY_F5) {
+        if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) &&
+            (event.keyboard.keycode == ALLEGRO_KEY_S || event.keyboard.keycode == ALLEGRO_KEY_L)) {
+          resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_S ? MENU_SAVE_STATE : MENU_LOAD_STATE); updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F2 || event.keyboard.keycode == ALLEGRO_KEY_F3) {
+          resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_F2 ? MENU_QUICK_SAVE : MENU_QUICK_LOAD); updateUI();
+        } else if (event.keyboard.keycode == ALLEGRO_KEY_F5) {
           playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F6) {
           resetAudio = playback.IncreaseSpeed(); updateUI();
@@ -429,6 +466,11 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_SAVE_STATE:
+          case MENU_LOAD_STATE:
+          case MENU_QUICK_SAVE:
+          case MENU_QUICK_LOAD:
+            resetAudio = stateAction(event.user.data1); break;
           case MENU_PAUSE:
             playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; break;
           case MENU_SPEED_UP: resetAudio = playback.IncreaseSpeed(); break;
@@ -555,6 +597,8 @@ int main(int argc, char *argv[]) {
                 "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
                 "File > Close: eject the tape and restart.\n"
+                "File > Save/Load game: thumbnail gallery (Ctrl+S / Ctrl+L).\n"
+                "F2: quick save to the reserved slot. F3: quick load.\n"
                 "CPU > Reset: restart and rewind the current tape.\n"
                 "F5: pause the whole machine. F6/F7: double/halve playback speed (0.25x to 16x).\n"
                 "F8: normal speed (1x). F9: rewind about 1 second, with up to 10 seconds of history.\n"

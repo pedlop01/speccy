@@ -12,7 +12,7 @@ all: gomas
 gomas: $(SOURCES) $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
 
-test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests
+test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests
 	./ula-tests
 	./floating-bus-tests
 	./machine-tests
@@ -32,6 +32,7 @@ test: ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-
 	./bombjack-tests
 	./screen-view-tests
 	./playback-tests
+	./save-state-tests
 
 ula-tests: ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/ula_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -64,7 +65,7 @@ tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/main.cpp ../src/ula.cpp ../s
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean:
-	rm -f *.o gomas ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests
+	rm -f *.o gomas ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests
 
 paging-tests: ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -98,3 +99,6 @@ screen-view-tests: ../src/tests/screen_view_test.cpp $(HEADERS)
 
 playback-tests: ../src/tests/playback_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/playback_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+save-state-tests: ../src/tests/save_state_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/save_state_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)

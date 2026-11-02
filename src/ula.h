@@ -114,6 +114,7 @@ class ULA : public ULAMemory, public ULAIO {
       double dcAverage;
     };
     State CaptureState() const;
+    std::vector<unsigned char> CaptureRGB() const;
     void RestoreState(const State &state);
     const unsigned char *PrimaryBank() const { return data; }
     void RestorePrimaryBank(const unsigned char *bytes) { memcpy(data, bytes, sizeof(data)); }

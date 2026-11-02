@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <memory>
 #include "z80.h"
 #include "bus.hpp"
 #include "ram.hpp"
@@ -148,6 +149,34 @@ public:
     AttachCPU();
     while (!history.empty() && history.back().frame > framesExecuted) history.pop_back();
     return true;
+  }
+  // Prepare a complete session before touching the running machine. Saved
+  // media is embedded; original ROM/TAP paths are informational only.
+  bool ImportSession(ROMSet rom, std::vector<unsigned char> bytes, std::string path,
+      const State &saved, std::string &error) {
+    if (!ValidateROMHardware(rom, error)) return false;
+    if (!SupportsHardware(rom.model) || saved.model != rom.model || !ValidateTape(bytes)) {
+      error = "Invalid or unsupported saved machine"; return false;
+    }
+    std::unique_ptr<SpectrumMachine> candidate(new SpectrumMachine);
+    if (!candidate->memory.Configure(rom, error)) return false;
+    candidate->configuration = &HardwareFor(rom.model);
+    candidate->systemROM = rom;
+    candidate->tape = bytes;
+    if (!candidate->deck.Mount(candidate->tape)) { error = "Invalid saved tape"; return false; }
+    candidate->Reset();
+    State state = saved; state.generation = candidate->generation;
+    if (!candidate->RestoreState(state)) { error = "Invalid saved state"; return false; }
+    // All data and transport validation succeeded. Keep this machine's buses,
+    // display bitmap and ULA object at their original addresses.
+    if (!memory.Configure(rom, error)) return false;
+    configuration = &HardwareFor(rom.model);
+    systemROM = std::move(rom); tape = std::move(bytes); tapePath = std::move(path);
+    deck.Mount(tape); Reset();
+    state.generation = generation;
+    RestoreState(state);
+    EnableRewind(rewindEnabled);
+    error.clear(); return true;
   }
   void EnableRewind(bool enabled = true) {
     rewindEnabled = enabled;

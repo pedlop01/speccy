@@ -382,3 +382,12 @@ void ULA::RestoreState(const State &state) {
   for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
   isDirty = true;
 }
+
+std::vector<unsigned char> ULA::CaptureRGB() const {
+  std::vector<unsigned char> image;
+  image.reserve(320 * 240 * 3);
+  for (const auto &row : pixels)
+    for (const auto &pixel : row)
+      image.insert(image.end(), pixel, pixel + 3);
+  return image;
+}
