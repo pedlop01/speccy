@@ -4016,13 +4016,8 @@ void Z80::EmulateOneED() {
 			tStates += 16;
 			{
 				unsigned char val = DataBus->Read(regs.HL++);
-				unsigned short res = regs.A - val;
-				unsigned char idx = ((regs.A & 0x08) >> 3) | ((val & 0x08) >> 2) | ((res & 0x08) >> 3);
+				CMP_R8_NOFLAGS(regs.A,val);
 				regs.BC--;
-				regs.SF = ((res & 0x80) != 0);
-				regs.ZF = (val == 0);
-				regs.HF = subhalfcarryTable[idx & 0x07];
-				regs.NF = 1;
 				regs.PF = (regs.BC != 0);
 			}
 			break;
@@ -4058,14 +4053,8 @@ void Z80::EmulateOneED() {
 		case 0xA9:
 			tStates += 16;
 			{
-				unsigned char val = DataBus->Read(regs.HL);
-				unsigned short res = regs.A - val;
-				unsigned char idx = ((regs.A & 0x88) >> 1) | ((val & 0x88) >> 2) | ((res & 0x88) >> 1);
-				regs.SF = ((val & 0x80) != 0);
-				regs.ZF = (val == 0);
-				regs.HF = subhalfcarryTable[idx & 0x07];
-				regs.NF = 1;
-				regs.HL--;
+				unsigned char val = DataBus->Read(regs.HL--);
+				CMP_R8_NOFLAGS(regs.A,val);
 				regs.BC--;
 				regs.PF = (regs.BC != 0);
 			}
@@ -4109,13 +4098,8 @@ void Z80::EmulateOneED() {
 			tStates += 16;
 			{
 				unsigned char val = DataBus->Read(regs.HL++);
-				unsigned short res = regs.A - val;
-				unsigned char idx = ((regs.A & 0x88) >> 3) | ((val & 0x88) >> 2) | ((res & 0x88) >> 1);
+				CMP_R8_NOFLAGS(regs.A,val);
 				regs.BC--;
-				regs.SF = ((val & 0x80) != 0);
-				regs.ZF = (res == 0);
-				regs.HF = subhalfcarryTable[idx & 0x07];
-				regs.NF = 1;
 				regs.PF = (regs.BC != 0);
 				if (regs.PF && !regs.ZF) {
 					tStates += 5;

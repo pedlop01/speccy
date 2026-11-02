@@ -16,3 +16,5 @@ tape128-tests
 compat128-tests
 z80-index-flags-tests
 capitan-tests
+z80-block-compare-tests
+bombjack-tests

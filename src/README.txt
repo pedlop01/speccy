@@ -358,3 +358,23 @@ z80-index-flags-tests recorre los 256 operandos y ambos estados iniciales de
 flags para los ocho opcodes y comprueba un bucle de copia con un centinela.
 capitan-tests carga desde BASIC, elige 1 Teclado y verifica partida sin reinicio
 en ambos modos, junto con la batería existente de Cobra y back3.
+
+Corrupción de texto en Bomb Jack
+--------------------------------
+bombjack.tap usa CPI en EA13 para buscar los códigos de control de su rutina
+de texto. CPI marcaba Z según el byte leído fuese cero, en vez de comparar A
+con ese byte. Los códigos de color y posición no se reconocían, mezclando
+caracteres y parámetros en el menú y la pantalla de juego.
+
+CPI, CPD y CPIR reutilizan ahora la comparación de 8 bits que conserva carry;
+S/Z/H reflejan A menos el byte, N se activa y P/V refleja BC tras decrementarlo.
+CPD y CPIR también obtenían S del operando en vez del resultado; CPD/CPI tenían
+cálculos de H incorrectos. Se mantiene el comportamiento de repetición y tiempos.
+CPDR ya usaba esa comparación y queda cubierto por las mismas pruebas.
+
+z80-block-compare-tests recorre las 65536 parejas de operandos, BC igual a 0/1/2
+y flags iniciales a cero/uno para las cuatro instrucciones. Comprueba flags
+documentados, carry, puntero, contador, tiempos y terminación de las búsquedas.
+bombjack-tests carga desde BASIC en 48K en ambos modos, contrasta píxel a píxel
+los textos del menú con la fuente del juego en sus posiciones esperadas y entra
+en una partida con pantallas cambiantes. No se parchean el TAP ni la ROM.
