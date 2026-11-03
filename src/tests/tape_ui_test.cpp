@@ -8,10 +8,27 @@ static void RecordMenuFlags(ALLEGRO_MENU *menu, int id, int flags) {
   if (id >= 0 && id < 512) observedMenuFlags[id].store(flags);
   al_set_menu_item_flags(menu, id, flags);
 }
+static std::atomic<ALLEGRO_DISPLAY *> applicationDisplay(nullptr);
+static std::atomic<int> renderedWidth(0),renderedHeight(0);
+static ALLEGRO_DISPLAY *RecordDisplay(int width,int height) {
+  auto *display=al_create_display(width,height);ALLEGRO_DISPLAY *empty=nullptr;
+  applicationDisplay.compare_exchange_strong(empty,display);return display;
+}
+static void RecordFrame() {
+  auto *display=al_get_current_display();
+  if(display==applicationDisplay.load()) {
+    renderedWidth.store(al_get_display_width(display));renderedHeight.store(al_get_display_height(display));
+  }
+  al_flip_display();
+}
+#define al_create_display RecordDisplay
+#define al_flip_display RecordFrame
 #define al_set_menu_item_flags RecordMenuFlags
 #define main GomasApplicationMain
 #include "../main.cpp"
 #undef main
+#undef al_create_display
+#undef al_flip_display
 #undef al_set_menu_item_flags
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -208,14 +225,12 @@ int main() {
       Check(Until([&]() { return speedIs(0.5); }, 1000), "F6 did not raise slow playback to 0.5x");
       shortcut(XK_F8);
       Check(Until([&]() { return speedIs(1); }, 1000), "F8 did not restore 1x from slow playback");
-      auto size = [&]() {
-        XWindowAttributes attributes;
-        Check(XGetWindowAttributes(x, mainWindow, &attributes) != 0, "Cannot read main window size");
-        return std::make_pair(attributes.width, attributes.height);
-      };
+      // GTK's toplevel also includes a menu whose height can change after
+      // mapping. Measure the rendered Allegro area, which View actually scales.
+      auto size = [&]() {return std::make_pair(renderedWidth.load(),renderedHeight.load());};
       Menu(MENU_VIEW_2X);
       Check(Until([&]() { return checked(MENU_VIEW_2X) && size().first == 640; }, 2000), "2x size was not applied");
-      Wait(100); // GTK geometry settles after the Allegro resize event.
+      Wait(100); // Wait for a frame at the requested size.
       const auto originalSize = size();
       Menu(MENU_VIEW_4X);
       const bool resized4x = Until([&]() { return checked(MENU_VIEW_4X) && size().first == 1280 &&
@@ -275,7 +290,7 @@ int main() {
       Check(Until([&]() { return ROMPreferences::Read(configPath).restoreLast; }, 750),
           "The last-ROM startup preference was not saved");
       Check(!ROMPreferences::Read(configPath).lastROM.empty(), "The chosen ROM was not remembered");
-      for (int id : {MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2}) {
+      for (int id : {MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2, MENU_ROM_PLUS3}) {
         const auto &profile = MenuROMProfile(id);
         Menu(id);
         Check(Until([&]() {
@@ -349,12 +364,82 @@ int main() {
         return accent;
       }, 750), "Cue selected did not move the current-block marker");
       printf("Saved games: quick save/load, gallery selection/load/cancel and reserved slot; CPU: pause, speed, clock and rewind; View: 2x/4x, filters, fullscreen/F11/Escape; mouse: 1000 motion events then Play in %.1f ms; Pause, Stop, selection, Cue and native ROM selector passed\n", latency);
+      // Open an external snapshot through the native dialog, including auto-model selection.
+      std::string snapshotPath=std::string(savesPath)+"/fixture.z80";
+      std::vector<unsigned char> snapshot(55);snapshot[30]=23;snapshot[33]=0x80;snapshot[34]=3;
+      for(unsigned bank=0;bank<8;++bank) {
+        snapshot.insert(snapshot.end(),{255,255,static_cast<unsigned char>(bank+3)});
+        size_t start=snapshot.size();snapshot.resize(start+16384,bank);
+        if(bank==2){snapshot[start]=0xc3;snapshot[start+1]=0;snapshot[start+2]=0x80;}
+      }
+      {std::ofstream file(snapshotPath,std::ios::binary);file.write(reinterpret_cast<const char *>(snapshot.data()),snapshot.size());}
+      Menu(MENU_OPEN);
+      Check(Until([&]() { chooser=FindWindow(x,DefaultRootWindow(x),"Open Spectrum game");return chooser!=0; },5000),"Game selector did not open");
+      XSetInputFocus(x,chooser,RevertToParent,CurrentTime);
+      key(XK_Control_L,true);key('l',true);key('l',false);key(XK_Control_L,false);XFlush(x);Wait(100);
+      key(XK_Control_L,true);key('a',true);key('a',false);key(XK_Control_L,false);
+      for(unsigned char c:snapshotPath){bool upper=c>='A' && c<='Z';if(upper)key(XK_Shift_L,true);key(c,true);key(c,false);if(upper)key(XK_Shift_L,false);}
+      key(XK_Return,true);key(XK_Return,false);XFlush(x);
+      const auto &snapshotProfile=MenuROMProfile(MENU_ROM_128_EN);
+      Check(Until([&]() {return FindWindow(x,DefaultRootWindow(x),(std::string("Gomas - ")+snapshotProfile.name+" - fixture.z80").c_str())!=0;},5000),
+          "Native snapshot selection did not restore the 128K model");
+      Check(Until([&]() {return !(observedMenuFlags[MENU_CLOSE].load()&ALLEGRO_MENU_ITEM_DISABLED);},1000),"Close was disabled for a snapshot");
+      Menu(MENU_CLOSE);
+      Check(Until([&]() {return FindWindow(x,DefaultRootWindow(x),(std::string("Gomas - ")+snapshotProfile.name).c_str())!=0;},2000),"Close did not close the snapshot");
+      // Disk controls have their own window; tape controls remain available.
+      Disks::Image image;image.cylinders=1;image.heads=1;image.tracks.resize(1);
+      image.tracks[0].sectors.push_back({0,0,1,2,0,0,std::vector<unsigned char>(512)});
+      std::string diskPath=std::string(savesPath)+"/fixture.dsk";auto diskBytes=image.Encode();
+      {std::ofstream file(diskPath,std::ios::binary);file.write(reinterpret_cast<const char *>(diskBytes.data()),diskBytes.size());}
+      auto enterPath=[&](const std::string &path){
+        key(XK_Control_L,true);key('l',true);key('l',false);key(XK_Control_L,false);XFlush(x);Wait(100);
+        key(XK_Control_L,true);key('a',true);key('a',false);key(XK_Control_L,false);
+        for(unsigned char c:path){bool upper=c>='A' && c<='Z';if(upper)key(XK_Shift_L,true);key(c,true);key(c,false);if(upper)key(XK_Shift_L,false);}
+        XFlush(x);Wait(200); // GTK resolves the typed location asynchronously.
+        key(XK_Return,true);key(XK_Return,false);XFlush(x);
+      };
+      Menu(MENU_DISK_A_INSERT);
+      Check(Until([&](){chooser=FindWindow(x,DefaultRootWindow(x),"Insert disk image");return chooser!=0;},5000),"Disk insert chooser did not open");
+      Wait(200);XSetInputFocus(x,chooser,RevertToParent,CurrentTime);enterPath(diskPath);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Insert disk image");},5000),"Disk selection did not complete");
+      Window drives=0;
+      Check(Until([&](){drives=FindWindow(x,DefaultRootWindow(x),"Gomas - Disk drives");return drives!=0;},5000),"Disk drives window did not open");
+      Wait(150);Click(x,drives,585,137);
+      Check(Until([&](){return checked(MENU_DISK_A_PROTECT);},1000),"Disk write-protection click did not respond");
+      Click(x,drives,257,137);
+      Check(Until([&](){return (observedMenuFlags[MENU_DISK_A_EJECT].load()&ALLEGRO_MENU_ITEM_DISABLED)!=0;},1000),"Disk eject click did not respond");
+      // Deferred TZX choices can be cancelled and reopened from Tape.
+      std::vector<unsigned char> route={'Z','X','T','a','p','e','!',26,1,20,0x28,13,0,2,1,0,3,'O','n','e',3,0,3,'T','w','o',0x12,100,0,255,255,0x23,2,0,0x12,200,0,255,255,0x20,0,0};
+      std::string routePath=std::string(savesPath)+"/route.tzx";
+      {std::ofstream file(routePath,std::ios::binary);file.write(reinterpret_cast<const char *>(route.data()),route.size());}
+      Menu(MENU_OPEN);
+      Check(Until([&](){chooser=FindWindow(x,DefaultRootWindow(x),"Open Spectrum game");return chooser!=0;},5000),"TZX chooser did not open");
+      Wait(200);XSetInputFocus(x,chooser,RevertToParent,CurrentTime);enterPath(routePath);
+      Window choice=0;
+      Check(Until([&](){choice=FindWindow(x,DefaultRootWindow(x),"Gomas - Choose TZX route");return choice!=0;},5000),"TZX route dialog did not open");
+      XSetInputFocus(x,choice,RevertToParent,CurrentTime);shortcut(XK_Escape);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Choose TZX route");},1000),"TZX cancel did not respond");
+      Menu(MENU_TAPE_CHOICE);
+      Check(Until([&](){choice=FindWindow(x,DefaultRootWindow(x),"Gomas - Choose TZX route");return choice!=0;},1000),"TZX route could not be reopened");
+      Wait(150);Click(x,choice,80,90);Wait(70);Click(x,choice,80,90);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Choose TZX route");},1000),"TZX double-click did not select a route");
+      Menu(MENU_QUICK_SAVE);
+      Check(Until([&](){SaveStates::Record saved;std::string error;return saves.Read(0,saved,error) && saved.core.deck.choices==std::vector<unsigned>{1};},2000),"Saved game lost the selected TZX route");
+      unlink(diskPath.c_str());unlink(routePath.c_str());
+      puts("Native media: disk insert/protect/eject and TZX choose/cancel/reopen/save passed");
+      unlink(snapshotPath.c_str());
+      puts("Native File > Open: Z80 snapshot and automatic 128K model selection passed");
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what(); fprintf(stderr,"UI failure: %s\n",failure.c_str());
-      for (const char *title : {"Load system ROM", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
+      for (const char *title : {"Load system ROM", "Open Spectrum game", "Insert disk image", "Gomas - Choose TZX route", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
         Window modal = FindWindow(x, DefaultRootWindow(x), title), parent = 0;
-        if (modal && mainWindow && (std::string(title).find("game") != std::string::npos || (XGetTransientForHint(x, modal, &parent) && parent == mainWindow))) {
+        if(modal && std::string(title)=="Insert disk image"){
+          XWindowAttributes a;XGetWindowAttributes(x,modal,&a);XImage *capture=XGetImage(x,modal,0,0,a.width,a.height,AllPlanes,ZPixmap);
+          if(capture){std::ofstream out("/tmp/gomas-dialog-failure.ppm",std::ios::binary);out<<"P6\n"<<a.width<<" "<<a.height<<"\n255\n";
+            for(int y=0;y<a.height;++y)for(int px=0;px<a.width;++px){unsigned rgb=XGetPixel(capture,px,y);out.put(rgb>>16);out.put(rgb>>8);out.put(rgb);}XDestroyImage(capture);}
+        }
+        if (modal && mainWindow && ((std::string(title).find("game") != std::string::npos || std::string(title).find("Choose TZX")!=std::string::npos) || (XGetTransientForHint(x, modal, &parent) && parent == mainWindow))) {
           XEvent close = {};
           close.xclient.type = ClientMessage;
           close.xclient.window = modal;
@@ -377,6 +462,9 @@ int main() {
   unlink(configPath);
   SaveStates::Store saves(savesPath);
   for(unsigned i=0;i<SaveStates::SlotCount;++i) unlink(saves.Path(i).c_str());
+  unlink((std::string(savesPath)+"/fixture.z80").c_str());
+  unlink((std::string(savesPath)+"/fixture.dsk").c_str());
+  unlink((std::string(savesPath)+"/route.tzx").c_str());
   rmdir(savesPath);
   if(hadSaves) setenv("GOMAS_SAVE_DIR",savedSaves.c_str(),1); else unsetenv("GOMAS_SAVE_DIR");
   if (hadConfig) setenv("GOMAS_CONFIG", savedConfig.c_str(), 1); else unsetenv("GOMAS_CONFIG");

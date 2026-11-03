@@ -13,7 +13,7 @@
 
 namespace SaveStates {
 constexpr unsigned SlotCount = 12, QuickSlot = 0, ThumbWidth = 160, ThumbHeight = 120;
-constexpr unsigned MaxTape = 16 * 1024 * 1024, MaxFile = 20 * 1024 * 1024;
+constexpr unsigned MaxTape = 16 * 1024 * 1024, MaxFile = 64 * 1024 * 1024;
 struct Record {
   std::uint64_t created = 0;
   std::string label, tapePath;
@@ -56,11 +56,9 @@ inline void NormalizeROM(ROMSet &rom) {
     rom.fastLoadPage=rom.model==MachineModel::Spectrum48?0:rom.model==MachineModel::Plus3?3:1;
     return;
   }
-  if(rom.model!=MachineModel::Spectrum48 || rom.pages.size()!=1)
-    throw std::runtime_error("Unrecognized saved ROM set");
-  rom.name="ZX Spectrum 48K (custom ROM)"; rom.fastLoadCompatible=false; rom.fastLoadPage=-1;
+  rom.name=std::string(HardwareFor(rom.model).name)+" (embedded ROM)";rom.fastLoadCompatible=false;rom.fastLoadPage=-1;
 }
-inline void WriteCore(Writer &w,const SpectrumMachine::State &s) {
+inline void WriteCore(Writer &w,const SpectrumMachine::State &s,unsigned version=2) {
   w.u64(s.frame); w.u32(s.tstates); w.u32(s.multiplier); w.u32(s.clockPhase);
 #define REG(field) w.u16(s.registers.field)
   REG(AF);REG(BC);REG(DE);REG(HL);REG(IX);REG(IY);REG(SP);REG(PC);REG(IR);REG(XX);
@@ -91,8 +89,21 @@ inline void WriteCore(Writer &w,const SpectrumMachine::State &s) {
   w.u32(d.current);w.u32(d.pulse);w.u32(d.cpuClock);w.u32(d.remaining);
   w.u64(d.clockPhase);w.u64(d.elapsed);w.u8(d.level);w.u8(static_cast<unsigned>(d.state));
   w.u32(s.tapePos);w.u32(s.audioOffset);w.u32(s.audioAvailable);w.u8(s.fastLoad);
+  if(version<2)return;
+  w.u32(d.choices.size());for(auto choice:d.choices)w.u32(choice);
+  w.u32(s.levels?s.levels->size():0);
+  if(s.levels)for(const auto &level:*s.levels){w.u32(level.first);w.blob(level.second);}
+  w.u8(s.snapshotHalted);
+  w.u8(s.memory.pagingPlus3);
+  const auto &f=s.floppy;
+  for(const auto &drive:f.drives){w.u8(bool(drive.image));w.text(drive.path);w.u8(drive.writeProtected);w.u8(drive.dirty);if(drive.image)w.blob(drive.image->Encode());}
+  for(auto x:f.cylinder)w.u32(x);for(auto x:f.target)w.u32(x);for(auto x:f.seek)w.u32(x);for(auto x:f.rotation)w.u32(x);
+  w.u32(f.interrupts.size());for(auto x:f.interrupts)w.u32(x);
+  w.blob(f.command);w.blob(f.buffer);w.blob(f.result);w.u32(f.position);w.u32(f.sector);
+  w.u32(f.ready);w.u32(f.unit);w.u32(f.head);w.u32(f.endSector);w.u32(f.ncode);w.u32(f.st0);w.u32(f.st1);w.u32(f.st2);w.u32(f.lastR);w.u32(f.formatCount);
+  w.u8(f.motor);w.u8(f.deleted);w.u8(f.multi);w.u8(static_cast<unsigned>(f.phase));
 }
-inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model) {
+inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model,unsigned version=2) {
   SpectrumMachine::State s{}; s.model=model; s.ula.timing=HardwareFor(model).timing;
   s.frame=r.u64();s.tstates=r.u32();s.multiplier=r.u32();s.clockPhase=r.u32();
 #define REG(field) s.registers.field=r.u16()
@@ -130,6 +141,23 @@ inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model) {
   if(transport>static_cast<unsigned>(TapeDeck::State::End)) throw std::runtime_error("Invalid saved transport");
   d.state=static_cast<TapeDeck::State>(transport);
   s.tapePos=r.u32();s.audioOffset=r.u32();s.audioAvailable=r.u32();s.fastLoad=r.bit();
+  if(version>=2) {
+    unsigned choices=r.u32();if(choices>4096)throw std::runtime_error("Too many saved TZX selections");
+    for(unsigned n=0;n<choices;++n)d.choices.push_back(r.u32());
+    unsigned count=r.u32();if(count>256)throw std::runtime_error("Too many SLT levels");
+    auto levels=std::make_shared<std::map<unsigned,std::vector<unsigned char>>>();
+    for(unsigned n=0;n<count;++n){unsigned id=r.u32();auto data=r.blob(65536);if(id>255 || data.empty() || levels->count(id))throw std::runtime_error("Invalid saved SLT level");levels->emplace(id,std::move(data));}
+    s.levels=levels;s.snapshotHalted=r.bit();
+    s.memory.pagingPlus3=r.u8();auto &f=s.floppy;
+    for(auto &drive:f.drives){bool inserted=r.bit();drive.path=r.text(4096);drive.writeProtected=r.bit();drive.dirty=r.bit();if(inserted)drive.image=std::make_shared<const Disks::Image>(Disks::Image::Parse(r.blob(16*1024*1024)));}
+    for(auto &x:f.cylinder)x=r.u32();for(auto &x:f.target)x=r.u32();for(auto &x:f.seek)x=r.u32();for(auto &x:f.rotation)x=r.u32();
+    unsigned irq=r.u32();if(irq>32)throw std::runtime_error("Too many disk interrupts");for(unsigned n=0;n<irq;++n)f.interrupts.push_back(r.u32());
+    f.command=r.blob(9);f.buffer=r.blob(65536);f.result=r.blob(7);f.position=r.u32();f.sector=r.u32();
+    f.ready=r.u32();f.unit=r.u32();f.head=r.u32();f.endSector=r.u32();f.ncode=r.u32();f.st0=r.u32();f.st1=r.u32();f.st2=r.u32();f.lastR=r.u32();f.formatCount=r.u32();
+    f.motor=r.bit();f.deleted=r.bit();f.multi=r.bit();unsigned phase=r.u8();if(phase>4)throw std::runtime_error("Invalid FDC phase");f.phase=static_cast<Disks::Controller::Phase>(phase);
+    Disks::Controller controller;if(!controller.RestoreState(f))throw std::runtime_error("Invalid saved disk controller");
+    if(model!=MachineModel::Plus3 && (s.memory.pagingPlus3 || f.drives[0].image || f.drives[1].image))throw std::runtime_error("Disks require Spectrum +3");
+  }
   const auto &t=u.timing;
   if(s.registers.IM>2 || s.tstates>1024 || (s.multiplier!=1 && s.multiplier!=2 && s.multiplier!=4) ||
       s.clockPhase>=s.multiplier || s.memory.ram.size()!=hardware.memory.RAMBytes() ||
@@ -154,13 +182,13 @@ inline std::vector<unsigned char> Encode(const Record &record) {
   if(payload.bytes.size()>MaxFile) throw std::runtime_error("Saved state is too large");
   Writer file;
   const unsigned char magic[8]={'G','O','M','A','S','S','T',0};file.raw(magic,8);
-  file.u32(1);file.u32(payload.bytes.size());file.u64(ROMFingerprint(payload.bytes.data(),payload.bytes.size()));
+  file.u32(2);file.u32(payload.bytes.size());file.u64(ROMFingerprint(payload.bytes.data(),payload.bytes.size()));
   file.raw(payload.bytes.data(),payload.bytes.size());return file.bytes;
 }
 inline Record Decode(const std::vector<unsigned char> &file) {
   Reader header{file}; const unsigned char magic[8]={'G','O','M','A','S','S','T',0};
   for(auto v:magic) if(header.u8()!=v) throw std::runtime_error("Not a Gomas saved state");
-  if(header.u32()!=1) throw std::runtime_error("Unsupported saved-state version");
+  unsigned version=header.u32();if(version!=1 && version!=2) throw std::runtime_error("Unsupported saved-state version");
   auto size=header.u32();auto hash=header.u64();
   if(size>MaxFile || size!=file.size()-header.pos || ROMFingerprint(file.data()+header.pos,size)!=hash)
     throw std::runtime_error("Saved-state checksum or size is invalid");
@@ -177,16 +205,12 @@ inline Record Decode(const std::vector<unsigned char> &file) {
   record.tape=r.blob(MaxTape);if(!ValidateTape(record.tape)) throw std::runtime_error("Invalid embedded tape");
   record.thumbnail=r.blob(ThumbWidth*ThumbHeight*3);
   if(record.thumbnail.size()!=ThumbWidth*ThumbHeight*3) throw std::runtime_error("Invalid saved thumbnail");
-  record.core=ReadCore(r,record.rom.model);
+  record.core=ReadCore(r,record.rom.model,version);
   if(r.pos!=payload.size() || (record.core.fastLoad && !record.rom.fastLoadCompatible))
     throw std::runtime_error("Invalid saved-state contents");
-  bool boundary=record.core.tapePos==record.tape.size();
-  for(size_t pos=0;pos<record.tape.size();) {
-    boundary=boundary || pos==record.core.tapePos;
-    pos+=2+record.tape[pos]+(record.tape[pos+1]<<8);
-  }
   TapeDeck deck;deck.Mount(record.tape);
-  if(!boundary || !deck.RestoreState(record.core.deck)) throw std::runtime_error("Invalid saved tape position");
+  if(!deck.RestoreState(record.core.deck) || !deck.ValidOffset(record.core.tapePos) ||
+      (record.core.fastLoad && !deck.FastLoadCompatible())) throw std::runtime_error("Invalid saved tape position");
   return record;
 }
 inline Record Capture(const SpectrumMachine &machine) {

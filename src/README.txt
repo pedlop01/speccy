@@ -1,11 +1,11 @@
-Gomas — emulador ZX Spectrum 48K / 128K / +2 con Allegro 5
+Gomas — emulador ZX Spectrum 48K / 128K / +2 / +3 con Allegro 5
 
 El núcleo procede de YASS (referencia incluida en ../yass).
 
 Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
-allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5 y libarchive.
+allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, libarchive y zlib.
 No necesita acodec.
 
   make -C bin
@@ -24,11 +24,11 @@ También se conserva la apertura por línea de comandos:
 
 Menús
 -----
-File > Open... abre un selector de TAP o ZIP. Al aceptar un archivo válido se inserta la
-cinta y se reinicia el Spectrum. Cancelar o seleccionar un archivo inválido conserva
+File > Open... abre un selector de TAP, TZX, SNA, Z80, SZX, SLT, DSK o ZIP. Las cintas válidas se insertan
+y reinician el Spectrum; los snapshots recuperan directamente la máquina. Cancelar o seleccionar un archivo inválido conserva
 la partida actual. Para cargar, escribir LOAD "" en BASIC: J produce LOAD y
 Right Shift + P produce cada comilla; terminar con Enter.
-File > Close retira la cinta y reinicia el Spectrum; se deshabilita sin cinta.
+File > Close cierra la cinta o snapshot y reinicia el Spectrum; se deshabilita sin archivo.
 File > Exit termina el programa. Escape sale si está en ventana; en pantalla
 completa vuelve a ventana. Cerrar la ventana también termina el programa.
 CPU > Reset reinicia CPU, RAM, ULA y audio; conserva la cinta y la rebobina.
@@ -85,16 +85,15 @@ para una alternativa de 48K usar la opción explícita de Settings o:
 
   ./bin/gomas --custom-48-rom /ruta/alternativa.rom
 
-Se ejecutan los perfiles 48K, 128K inglés/español y +2. Los conjuntos +3 se
-reconocen y validan, pero faltan sus modos de paginación y disquetera; intentar
-activarlos conserva la máquina actual. if1-2.rom pertenece a Interface 1 y no sirve como ROM
+Se ejecutan los perfiles 48K, 128K inglés/español, +2 y +3, con sus ROMs
+correspondientes, paginación y dispositivos. if1-2.rom pertenece a Interface 1 y no sirve como ROM
 de sistema. Una selección inválida o cancelada conserva ROM, CPU, RAM y cinta.
 Una selección correcta reinicia la máquina y rebobina la cinta montada, igual que
 CPU > Reset. La última selección válida se guarda entre ejecuciones, incluyendo si era una
 ROM alternativa de 48K. En Settings > ROM > On startup se elige Last opened ROM
 o Spectrum 48K. Esto cambia el próximo arranque, sin reiniciar la sesión actual.
 Settings > ROM > ZX Spectrum 48K permite cargar directamente la ROM de 48K.
-128K inglés/español y +2 también se pueden seleccionar; +3 sigue deshabilitado.
+128K inglés/español, +2 y +3 también se pueden seleccionar.
 
 Las preferencias se guardan en el directorio de configuración de usuario de
 Gomas (normalmente ~/.config/gomas/settings.ini en Linux). Las rutas de las ROMs
@@ -133,8 +132,8 @@ y el origen/política del bus flotante definidos por el perfil.
 Los bits de capacidades describen extensiones a la base 48K ya implementada.
 RequiredHardwareFeatures y ImplementedHardwareFeatures permiten que cargador y
 menú decidan con una misma regla qué modelos se pueden activar. Declarar un
-perfil no activa por sí solo hardware que falta: paginación especial de +3
-y disquetera siguen pendientes. RAM paginada, pantalla alternativa, AY y tiempos
+perfil no activa por sí solo hardware que falta. La paginación especial del +3
+y su controladora de disco ya están registradas como capacidades implementadas. RAM paginada, pantalla alternativa, AY y tiempos
 de vídeo/audio 128K están implementados y registrados como capacidades.
 
 Reproductor de cinta y multicarga
@@ -293,12 +292,12 @@ spectrum_memory.h centraliza el mapa de CPU: ocho bancos de 16 KB, bancos fijos
 Los alias de los bancos 2/5 comparten los mismos bytes; escribir al banco 5
 por C000 también actualiza la ULA. SpectrumIO distribuye las escrituras a ULA
 y paginación, incluidas las direcciones compartidas. En 48K no hay paginación.
-El bit de pantalla ya selecciona banco 5/7 en la ULA. +3 requiere su propia
-paginación adicional.
+El bit de pantalla selecciona banco 5/7 en la ULA. El +3 añade 1FFD, cuatro
+páginas ROM, cuatro mapas all-RAM y su decodificación de puertos específica.
 
 make test incluye paging-tests: bancos completos, protección de ROM, alias,
 decodificación de todos los puertos, bloqueo, reset, configuraciones rechazadas
-y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. 128K/+2 ya están habilitados en la interfaz; +3 sigue pendiente.
+y arranque de las ROMs 128K inglesa/española y +2 en el núcleo. 128K/+2/+3 están habilitados en la interfaz.
 
 Vídeo y audio por modelo (tarea 6)
 ----------------------------------
@@ -489,19 +488,20 @@ por lo que se puede recuperar en otra sesión aunque los originales se hayan
 movido. Al cargar se recuperan el modelo, RAM, CPU, frecuencia, vídeo, AY, audio
 pendiente y posición exacta de cinta. La pausa, velocidad global y filtros de
 View mantienen los valores actuales. Se inicia un historial de retroceso nuevo.
-El formato propio GSS versión 1 incluye límites y comprobación de integridad;
+El formato propio GSS versión 2 (compatible con lectura de partidas v1) incluye límites y comprobación de integridad;
 un fallo de lectura conserva la sesión actual. El guardado sustituye la casilla
 mediante un archivo temporal para proteger el guardado anterior si falla la escritura.
 
 Cintas comprimidas
 ------------------
-File > Open... y la línea de comandos aceptan archivos .zip / .ZIP con cintas TAP:
+File > Open... y la línea de comandos aceptan archivos .zip / .ZIP con
+TAP, TZX, SNA, Z80, SZX, SLT y DSK:
 
   ./bin/gomas juegos/cobra.zip
 
-Se lee en memoria la primera entrada .tap (sin distinguir mayúsculas), incluso
+Se lee en memoria la primera entrada compatible (sin distinguir mayúsculas), incluso
 si está dentro de una carpeta del ZIP. Se ignoran otros archivos y no se extrae
-nada al disco. Si hay varios TAP se usa el primero en el orden del archivo.
+nada al disco. Si hay varios archivos compatibles se usa el primero en el orden del ZIP.
 El reproductor, la carga rápida y las partidas guardadas funcionan igual que
 con un TAP suelto; el título muestra el nombre del ZIP. La partida guardada
 incluye el TAP descomprimido, por lo que no necesita conservar el ZIP original.
@@ -509,3 +509,91 @@ Se admiten ZIP almacenados o comprimidos. Las entradas cifradas, cintas vacías,
 archivos dañados y cintas de más de 16 MiB se rechazan conservando la sesión.
 La apertura se limita a recorrer 4096 entradas. Los TAP sueltos comparten el
 límite de 16 MiB para poder incluirlos también en las partidas guardadas.
+
+TZX y snapshots SNA/Z80
+----------------------
+Los TZX conservan su estructura y tiempos originales en el reproductor. Se
+admiten bloques estándar y turbo, tonos, secuencias de pulsos, datos puros,
+grabación directa, CSW RLE/Z-RLE, datos generalizados, pausas/paradas, grupos,
+saltos, bucles, llamadas/retornos, stop en 48K y selección del nivel EAR.
+Los textos y metadatos no generan señal. Los bloques de selección interactiva 0x28 abren una lista de rutas; Enter o
+doble clic elige una. Escape cancela manteniendo la cinta detenida; Tape >
+Choose TZX route permite abrirla de nuevo. Las decisiones se conservan al guardar
+y retroceder. Rebobinar al inicio descarta las decisiones para elegir otra ruta.
+Los tipos obsoletos no implementados se rechazan sin cambiar la sesión. Los bucles se expanden con límites de bloques, símbolos y pulsos para
+que una cinta dañada no bloquee el programa.
+
+Fast load está disponible para TZX compuestos de bloques estándar, además de
+TAP. En TZX con señales especiales se desactiva automáticamente y aparece el
+deck; pulsa Play después de LOAD "". El deck permite elegir bloques, pausar y
+reanudar; las paradas TZX se respetan y Play permite continuar. Los estados
+GSS y el retroceso conservan también la posición dentro de una cinta TZX.
+
+SNA admite 48K y 128K, incluidas las variantes de banco duplicado. Z80 admite
+las versiones 1, 2 y 3, RAM sin comprimir o con RLE y modelos 48K/128K/+2/+3.
+Se restauran registros, RAM, paginación/pantalla, borde y, cuando el formato los
+incluye, registros AY y fase de vídeo. Son snapshots externos: no incluyen una
+cinta, historial ni el estado de audio interno exacto que conserva GSS.
+Al abrirlos se retira la cinta anterior y se selecciona automáticamente el
+modelo; si hace falta cambiarlo se busca su ROM en roms, conservando la ROM
+actual cuando ya corresponde al modelo. Un fallo de lectura o una ROM ausente
+conserva la sesión anterior. El nombre del snapshot aparece en el título y en
+la galería; File > Close cierra también un snapshot.
+
+Los modelos y expansiones aún no emulados (por ejemplo Pentagon, SamRam,
+TR-DOS o una ROM de expansión paginada) se rechazan explícitamente.
+SZX admite modelos 48K/128K/+2/+3, RAM y ROM incrustadas con o sin zlib, estado
+CPU (incluido HALT), paginación, ULA y AY. También recupera cintas TAP/TZX y
+discos DSK incrustados. Los enlaces a cintas se resuelven respecto al SZX o al
+miembro SZX dentro del ZIP. Un enlace ausente o inválido conserva la sesión.
+No se emulan expansiones como Interface 1, Multiface, DivIDE o Beta Disk.
+
+SLT carga el snapshot Z80 y sus niveles comprimidos. La instrucción ED FB
+selecciona el nivel por A y lo copia al destino indicado por HL usando el mapa
+de memoria activo; no necesita archivos externos. Los niveles se incluyen en
+las partidas GSS y se conservan al retroceder. SLT y SZX también abren desde ZIP.
+
+Referencias de los lectores:
+https://www.worldofspectrum.net/TZXformat.html
+https://worldofspectrum.org/faq/reference/z80format.htm
+https://worldofspectrum.net/zx-modules/fileformats/snaformat.html
+
+Discos DSK / Extended DSK y Spectrum +3
+--------------------------------------
+File > Open... acepta DSK y EDSK (extensión .dsk), también dentro de ZIP. Se
+selecciona +3 y se inserta el disco en A; en el menú de la ROM, Loader arranca
+los discos preparados para ello. Se necesita el conjunto plus3-0..3.rom.
+
+Disk > Show disk drives abre un panel independiente del reproductor de cinta,
+con unidades A/B, nombre, pistas/caras, cilindro, motor y actividad. Sus botones
+Insert, Eject, Save as y Write protect corresponden a las opciones del menú Disk.
+Insertar en un +3 activo permite intercambiar discos sin reiniciar la CPU;
+insertar desde otro modelo cambia a +3. File > Close cierra los medios y resetea.
+
+Las escrituras del Spectrum modifican solo la imagen en memoria. Save as exporta
+un Extended DSK mediante reemplazo temporal/atómico; no se sobrescribe un ZIP
+original. El panel marca los cambios sin guardar. La protección contra escritura
+se aplica también a los comandos de la controladora.
+
+El +3 implementa los cuatro mapas RAM especiales de 1FFD, selección de cuatro
+ROMs, bloqueo y motor. La controladora uPD765 usa transferencia no DMA y fases
+command/data/result, con intervalos de disponibilidad por byte, búsqueda y
+recalibrado, Sense Interrupt/Drive, Read ID/Data, Write Data y Format Track.
+Se conservan flags de sector y geometrías de DSK/EDSK; no se pretende emulación
+a nivel de flujo magnético ni compatibilidad universal con protecciones de disco.
+Las partidas y el historial conservan ambos discos, modificaciones, protección,
+cilindros y una transferencia en curso. Las imágenes se comparten entre estados
+y solo se copian al modificarlas, evitando duplicar el disco en cada frame.
+
+new-media-tests comprueba SZX/SLT/ZIP, enlaces e imágenes incrustadas, HALT,
+compatibilidad GSS v1, selección TZX y restauración, paginación +3, lectura,
+escritura, protección, búsqueda, formato y partida a mitad de sector. También
+arranca un disco sintético con checksum usando la ROM real del +3. test-ui prueba
+los botones de disco y el diálogo TZX con cancelación, doble clic y guardado.
+Las protecciones comerciales y todos los juegos DSK requieren validación manual.
+
+Referencias adicionales:
+https://www.spectaculator.com/docs/zx-state/index.html
+https://worldofspectrum.org/faq/reference/formats.htm
+https://www.cpctech.cpcwiki.de/docs/dsk.html
+https://github.com/fuse-emulator/fuse/blob/master/machines/specplus3.c

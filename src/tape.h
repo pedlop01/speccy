@@ -7,9 +7,12 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
+#include <limits>
 #include <vector>
+#include "tzx.h"
 
 inline bool ValidateTape(const std::vector<unsigned char> &data) {
+  if (TZX::Signature(data)) {try {TZX::Parse(data);return true;}catch(const std::exception &) {return false;}}
   size_t pos = 0;
   while (pos < data.size()) {
     if (data.size() - pos < 2) return false;
@@ -28,14 +31,34 @@ struct TapeBlock {
   std::uint64_t duration;
 };
 
-// Standard Spectrum TAP encoding, timed in Z80 t-states.
+// Spectrum TAP and TZX playback, timed at the tape reference clock.
 // https://worldofspectrum.net/faq/reference/48kreference.htm
 class TapeDeck {
 public:
   enum class State { Stopped, Playing, Paused, End };
 
-  bool Mount(const std::vector<unsigned char> &bytes) {
+  bool Mount(const std::vector<unsigned char> &bytes,const std::vector<unsigned> &selectedChoices={}) {
+    if (TZX::Signature(bytes)) {
+      std::vector<TZX::Block> parsed;
+      try {parsed=TZX::Parse(bytes,selectedChoices);}catch(const std::exception &) {return false;}
+      data=&bytes;choices=selectedChoices;tzx=std::move(parsed);blocks.clear();fastCompatible=true;
+      size_t previous=0;
+      for(const auto &b:tzx) {
+        if(b.kind!=0x10 || (!blocks.empty() && b.offset<=previous))fastCompatible=false;
+        previous=b.offset;
+        unsigned char checksum=0;
+        if(b.kind==0x10)for(size_t i=0;i<b.length;++i)checksum^=bytes[b.start+i];
+        std::string label=b.label;
+        if(b.kind==0x10 && b.length==19 && bytes[b.start]==0) {
+          label="Header  ";for(size_t i=2;i<12;++i)label+=bytes[b.start+i]>=32 && bytes[b.start+i]<127?char(bytes[b.start+i]):'?';
+        }
+        blocks.push_back({b.offset,b.length,label,checksum==0,b.duration});
+      }
+      Cue(0);return true;
+    }
     if (!ValidateTape(bytes)) return false;
+    if(!selectedChoices.empty())return false;
+    choices.clear();tzx.clear();fastCompatible=true;
     data = &bytes;
     blocks.clear();
     for (size_t pos = 0; pos < bytes.size();) {
@@ -65,7 +88,7 @@ public:
       blocks.push_back(block);
       pos += length + 2;
     }
-    Rewind();
+    Cue(0);
     return true;
   }
 
@@ -75,17 +98,20 @@ public:
     std::uint64_t clockPhase, elapsed;
     bool level;
     State state;
+    std::vector<unsigned> choices;
   };
   TransportState CaptureState() const {
-    return {current, pulse, cpuClock, remaining, clockPhase, elapsed, level, state};
+    return {current, pulse, cpuClock, remaining, clockPhase, elapsed, level, state, choices};
   }
   bool RestoreState(const TransportState &saved) {
-    if (saved.current > blocks.size() || !saved.cpuClock || saved.clockPhase >= saved.cpuClock) return false;
+    if (!saved.cpuClock || saved.clockPhase >= saved.cpuClock) return false;
     TapeDeck candidate = *this;
+    if(saved.choices!=choices && (!data || !candidate.Mount(*data,saved.choices)))return false;
+    if(saved.current>candidate.blocks.size())return false;
     candidate.Cue(saved.current);
-    if (saved.current < blocks.size()) {
+    if (saved.current < candidate.blocks.size()) {
       if (saved.pulse >= candidate.pulses.size() || !saved.remaining ||
-          saved.remaining > candidate.pulses[saved.pulse] || saved.elapsed > blocks[saved.current].duration ||
+          saved.remaining > candidate.pulses[saved.pulse] || saved.elapsed > candidate.blocks[saved.current].duration ||
           saved.state == State::End) return false;
     } else if (saved.state != State::End) return false;
     candidate.pulse = saved.pulse;
@@ -97,6 +123,24 @@ public:
     candidate.state = saved.state;
     *this = std::move(candidate);
     return true;
+  }
+  const std::vector<TZX::Option> &Options() const {
+    static const std::vector<TZX::Option> empty;
+    return current<tzx.size()?tzx[current].options:empty;
+  }
+  size_t SelectionCount() const{return choices.size();}
+  bool NeedsChoice() const {return !Options().empty();}
+  bool Choose(unsigned choice) {
+    if(!data || choice>=Options().size())return false;
+    auto selected=choices;selected.push_back(choice);TapeDeck candidate=*this;size_t block=current;
+    if(!candidate.Mount(*data,selected) || !candidate.Cue(block))return false;
+    candidate.SetClock(cpuClock);candidate.Play();*this=std::move(candidate);return true;
+  }
+  bool FastLoadCompatible() const { return fastCompatible; }
+  bool ValidOffset(size_t offset) const {
+    if(data && offset==data->size())return true;
+    for(const auto &b:blocks)if(b.offset==offset)return true;
+    return false;
   }
   const std::vector<TapeBlock> &Blocks() const { return blocks; }
   size_t CurrentBlock() const { return current; }
@@ -112,7 +156,9 @@ public:
     if (cpuClock != hz) { cpuClock = hz; clockPhase = 0; }
   }
   unsigned UntilEdge() const {
-    return IsPlaying() ? static_cast<unsigned>((std::uint64_t(remaining) * cpuClock - clockPhase + Clock - 1) / Clock) : 0;
+    if(!IsPlaying())return 0;
+    const auto cycles=(std::uint64_t(remaining)*cpuClock-clockPhase+Clock-1)/Clock;
+    return static_cast<unsigned>(std::min<std::uint64_t>(cycles,std::numeric_limits<unsigned>::max()));
   }
   double Progress() const {
     return current < blocks.size() ? double(elapsed) / blocks[current].duration : 1.0;
@@ -128,13 +174,21 @@ public:
     BuildPulses();
     return true;
   }
+  bool CueFileBlock(size_t index) {
+    if(tzx.empty())return Cue(index);
+    for(size_t n=0;n<tzx.size();++n)if(tzx[n].sourceIndex>=index)return Cue(n);
+    return false;
+  }
   void CueOffset(size_t offset) {
     size_t index = 0;
     while (index < blocks.size() && blocks[index].offset < offset) ++index;
     Cue(index);
   }
-  void Rewind() { Cue(0); }
+  void Rewind() {if(!choices.empty() && data){Mount(*data);return;}Cue(0);}
   bool Play() {
+    if(NeedsChoice())return false;
+    while(current<tzx.size() && tzx[current].stop && !NeedsChoice()) Cue(current+1);
+    if(NeedsChoice())return false;
     if (current >= blocks.size()) return false;
     state = State::Playing;
     return true;
@@ -157,10 +211,12 @@ public:
       if (pulse == pulses.size()) {
         const auto phase = clockPhase;
         Cue(current + 1);
+        while(current<tzx.size() && tzx[current].stop48 && cpuClock!=Clock) Cue(current+1);
         clockPhase = phase;
-        if (current < blocks.size()) state = State::Playing;
+        if (current < blocks.size() && !(current<tzx.size() && tzx[current].stop &&
+            (!tzx[current].stop48 || cpuClock==Clock))) state = State::Playing;
       } else {
-        level = pulse + 1 == pulses.size() ? true : !level;
+        level = tzx.empty() ? (pulse + 1 == pulses.size() ? true : !level) : pulseLevels[pulse];
         remaining = pulses[pulse];
       }
     }
@@ -171,6 +227,10 @@ private:
   const std::vector<unsigned char> *data = nullptr;
   std::vector<TapeBlock> blocks;
   std::vector<unsigned> pulses;
+  std::vector<TZX::Block> tzx;
+  bool fastCompatible=true;
+  std::vector<bool> pulseLevels;
+  std::vector<unsigned> choices;
   size_t current = 0, pulse = 0;
   unsigned cpuClock = Clock;
   std::uint64_t clockPhase = 0;
@@ -180,12 +240,16 @@ private:
   State state = State::End;
 
   void BuildPulses() {
-    pulses.clear();
+    pulses.clear();pulseLevels.clear();
     pulse = 0;
     elapsed = 0;
     level = false;
     remaining = 0;
     if (current >= blocks.size()) return;
+    if(!tzx.empty()) {
+      TZX::Pulses(tzx[current],*data,[&](unsigned ticks,bool high){pulses.push_back(ticks);pulseLevels.push_back(high);});
+      remaining=pulses.front();level=pulseLevels.front();return;
+    }
     const auto &block = blocks[current];
     size_t start = block.offset + 2;
     pulses.assign((*data)[start] < 128 ? 8063 : 3223, 2168);

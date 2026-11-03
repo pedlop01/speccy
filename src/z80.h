@@ -135,7 +135,7 @@ class Z80 {
   public:
     Z80();
 
-    void INT();
+    void INT(bool checkHaltInstruction = true);
     void EmulateOne();
 
   public:

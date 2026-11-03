@@ -13,6 +13,8 @@
 #include "screen_view.h"
 #include "playback.h"
 #include "save_gallery.h"
+#include "choice_dialog.h"
+#include "disk_view.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -89,7 +91,7 @@ enum MenuId {
   MENU_FILE = 100, MENU_OPEN, MENU_CLOSE, MENU_EXIT,
   MENU_CPU, MENU_RESET, MENU_VIEW, MENU_SETTINGS, MENU_HELP, MENU_ABOUT,
   MENU_TAPE = 200, MENU_FAST_LOAD, MENU_TAPE_PLAY, MENU_TAPE_PAUSE,
-  MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK,
+  MENU_TAPE_STOP, MENU_TAPE_REWIND, MENU_TAPE_DECK, MENU_TAPE_CHOICE,
   MENU_LOAD_ROM = 300, MENU_CUSTOM_ROM, MENU_ROM_INFO, MENU_ROM,
   MENU_ROM_48, MENU_ROM_128_EN, MENU_ROM_128_ES, MENU_ROM_PLUS2, MENU_ROM_PLUS3,
   MENU_ROM_STARTUP, MENU_START_LAST, MENU_START_48,
@@ -97,7 +99,9 @@ enum MenuId {
   MENU_FILTER_NONE, MENU_FILTER_SCANLINES_LIGHT, MENU_FILTER_SCANLINES_STRONG, MENU_FILTER_GRID,
   MENU_PAUSE = 450, MENU_SPEED_UP, MENU_REWIND_SECOND, MENU_CPU_CLOCK,
   MENU_CPU_CLOCK_1X, MENU_CPU_CLOCK_2X, MENU_CPU_CLOCK_4X, MENU_SPEED_DOWN, MENU_SPEED_NORMAL,
-  MENU_SAVE_STATE = 480, MENU_LOAD_STATE, MENU_QUICK_SAVE, MENU_QUICK_LOAD
+  MENU_SAVE_STATE = 480, MENU_LOAD_STATE, MENU_QUICK_SAVE, MENU_QUICK_LOAD,
+  MENU_DISK=490,MENU_DISK_A_INSERT,MENU_DISK_A_EJECT,MENU_DISK_A_SAVE,MENU_DISK_A_PROTECT,
+  MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -139,6 +143,18 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       {"&Rewind", MENU_TAPE_REWIND, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"Show tape &deck...", MENU_TAPE_DECK, 0, nullptr},
+      {"Choose TZX route...", MENU_TAPE_CHOICE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_START_OF_MENU("&Disk", MENU_DISK),
+      {"Insert A...", MENU_DISK_A_INSERT, 0, nullptr},
+      {"Eject A", MENU_DISK_A_EJECT, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Save A as...", MENU_DISK_A_SAVE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Write protect A", MENU_DISK_A_PROTECT, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"Insert B...", MENU_DISK_B_INSERT, 0, nullptr},
+      {"Eject B", MENU_DISK_B_EJECT, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Save B as...", MENU_DISK_B_SAVE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Write protect B", MENU_DISK_B_PROTECT, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"Show disk drives...", MENU_DISK_SHOW, 0, nullptr},
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&CPU", MENU_CPU),
       {"&Pause (F5)", MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -205,7 +221,7 @@ void ReleaseKeys(ULA &ula) {
 }
 
 int main(int argc, char *argv[]) {
-  const char *usage = "Usage: gomas [tape.tap|tape.zip [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
+  const char *usage = "Usage: gomas [game.tap|tzx|sna|z80|zip [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
   string tapePath, romPath;
   bool customROM = false;
   for (int i = 1; i < argc; ++i) {
@@ -285,6 +301,7 @@ int main(int argc, char *argv[]) {
   }
   al_init_font_addon();
   TapeView tapeView;
+  DiskView diskView;
   ScreenView screenView;
   Playback playback(machine);
   SaveStates::Store savedGames(SaveStates::Directory());
@@ -296,6 +313,8 @@ int main(int argc, char *argv[]) {
   al_register_event_source(events.get(), al_get_display_event_source(display.get()));
   al_register_event_source(events.get(), al_get_default_menu_event_source());
   al_register_event_source(events.get(), al_get_timer_event_source(refreshTimer.get()));
+  if(!machine.fastLoad && !machine.tape.empty())tapeView.Show(events.get());
+  if(machine.io.floppy.state.drives[0].image || machine.io.floppy.state.drives[1].image)diskView.Show(events.get());
 
   auto updateUI = [&]() {
     string title = "Gomas - " + machine.systemROM.name;
@@ -339,11 +358,15 @@ int main(int argc, char *argv[]) {
     }
     flags(MENU_START_LAST, ALLEGRO_MENU_ITEM_CHECKBOX | (preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_START_48, ALLEGRO_MENU_ITEM_CHECKBOX | (!preferences.restoreLast ? ALLEGRO_MENU_ITEM_CHECKED : 0));
-    const bool loaded = !machine.tape.empty();
+    const bool loaded = !machine.tapePath.empty();
     const bool available = machine.deck.CurrentBlock() < machine.deck.Blocks().size();
     flags(MENU_CLOSE, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_FAST_LOAD, ALLEGRO_MENU_ITEM_CHECKBOX | (machine.fastLoad ? ALLEGRO_MENU_ITEM_CHECKED : 0) |
         (machine.CanFastLoad() ? 0 : ALLEGRO_MENU_ITEM_DISABLED));
+    flags(MENU_TAPE_CHOICE,machine.deck.NeedsChoice()?0:ALLEGRO_MENU_ITEM_DISABLED);
+    for(unsigned unit=0;unit<2;++unit){int id=MENU_DISK_A_INSERT+unit*4;const auto &drive=machine.io.floppy.state.drives[unit];
+      flags(id+1,drive.image?0:ALLEGRO_MENU_ITEM_DISABLED);flags(id+2,drive.image?0:ALLEGRO_MENU_ITEM_DISABLED);
+      flags(id+3,ALLEGRO_MENU_ITEM_CHECKBOX|(drive.writeProtected?ALLEGRO_MENU_ITEM_CHECKED:0)|(drive.image?0:ALLEGRO_MENU_ITEM_DISABLED));}
     flags(MENU_TAPE_PLAY, !machine.fastLoad && available && !machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_TAPE_PAUSE, !machine.fastLoad && machine.deck.IsPlaying() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     flags(MENU_TAPE_STOP, !machine.fastLoad && available ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
@@ -417,6 +440,15 @@ int main(int argc, char *argv[]) {
     else al_set_audio_stream_playing(stream.get(), playing);
     return loaded;
   };
+  std::string lastChoice;
+  auto chooseTape=[&]() {
+    std::vector<std::string> options;for(const auto &option:machine.deck.Options())options.push_back(option.label);
+    if(options.empty())return;
+    bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+    int selected=ChoiceDialog::Show(display.get(),options);
+    if(selected>=0){if(!machine.ChooseTape(selected))al_show_native_message_box(display.get(),"Gomas","Cannot choose TZX route","The selected route contains invalid or unsupported data.",nullptr,ALLEGRO_MESSAGEBOX_ERROR);else tapeView.NewTape();}
+    ReleaseKeys(ula);al_set_audio_stream_playing(stream.get(),playing);updateUI();
+  };
   updateUI();
   if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
 
@@ -428,6 +460,8 @@ int main(int argc, char *argv[]) {
     al_wait_for_event(events.get(), &event);
     bool resetAudio = false;
     // Handle input immediately; drawing is paced independently of event traffic.
+    int diskAction=0;
+    if(diskView.Handle(event,diskAction)){if(!diskAction)continue;event.type=ALLEGRO_EVENT_MENU_CLICK;event.user.data1=diskAction;}
     if (tapeView.Handle(event, machine)) continue;
     // Gallery input is also queued on the global keyboard source. Do not
     // replay its Enter/Escape/arrows into the machine after the modal closes.
@@ -466,6 +500,24 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_TAPE_CHOICE:chooseTape();break;
+          case MENU_DISK_SHOW:diskView.Show(events.get());break;
+          case MENU_DISK_A_EJECT:case MENU_DISK_B_EJECT:machine.EjectDisk(event.user.data1==MENU_DISK_A_EJECT?0:1);resetAudio=true;break;
+          case MENU_DISK_A_PROTECT:case MENU_DISK_B_PROTECT:{unsigned unit=event.user.data1==MENU_DISK_A_PROTECT?0:1;auto &drive=machine.io.floppy.state.drives[unit];if(drive.image)drive.writeProtected=!drive.writeProtected;break;}
+          case MENU_DISK_A_INSERT:case MENU_DISK_B_INSERT:case MENU_DISK_A_SAVE:case MENU_DISK_B_SAVE:{
+            unsigned unit=event.user.data1>=MENU_DISK_B_INSERT?1:0;bool saving=event.user.data1==MENU_DISK_A_SAVE || event.user.data1==MENU_DISK_B_SAVE;
+            al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+            const auto path=machine.io.floppy.state.drives[unit].path;
+            unique_ptr<ALLEGRO_FILECHOOSER,decltype(&al_destroy_native_file_dialog)> chooser(al_create_native_file_dialog(path.empty()?nullptr:path.c_str(),
+              saving?"Save disk image":"Insert disk image",saving?"*.dsk":"*.dsk;*.DSK;*.zip;*.ZIP",saving?ALLEGRO_FILECHOOSER_SAVE:ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),al_destroy_native_file_dialog);
+            if(chooser && al_show_native_file_dialog(display.get(),chooser.get()) && al_get_native_file_dialog_count(chooser.get())){
+              std::string selected=al_get_native_file_dialog_path(chooser.get(),0);if(saving && !TapeFiles::Extension(selected,".dsk"))selected+=".dsk";
+              bool ok=saving?machine.SaveDisk(unit,selected,error):machine.InsertDisk(selected,unit,error);
+              if(!ok)al_show_native_message_box(display.get(),"Gomas","Disk image",error.c_str(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);
+              else{resetAudio=!saving;diskView.Show(events.get());tapeView.NewTape();}
+            }
+            ReleaseKeys(ula);if(!resetAudio)al_set_audio_stream_playing(stream.get(),true);break;
+          }
           case MENU_SAVE_STATE:
           case MENU_LOAD_STATE:
           case MENU_QUICK_SAVE:
@@ -498,15 +550,19 @@ int main(int argc, char *argv[]) {
             ReleaseKeys(ula);
             unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
                 al_create_native_file_dialog(machine.tapePath.empty() ? nullptr : machine.tapePath.c_str(),
-                    "Open Spectrum tape", "*.tap;*.TAP;*.zip;*.ZIP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
+                    "Open Spectrum game", "*.tap;*.TAP;*.tzx;*.TZX;*.sna;*.SNA;*.z80;*.Z80;*.szx;*.SZX;*.slt;*.SLT;*.dsk;*.DSK;*.zip;*.ZIP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
                 al_destroy_native_file_dialog);
             if (!chooser || !al_show_native_file_dialog(display.get(), chooser.get())) {
               al_show_native_message_box(display.get(), "Gomas", "Cannot open file dialog",
                   "Please try again.", nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             } else if (al_get_native_file_dialog_count(chooser.get()) > 0) {
               const char *path = al_get_native_file_dialog_path(chooser.get(), 0);
-              if (path && machine.Open(path, error)) { resetAudio = true; tapeView.NewTape(); }
-              else al_show_native_message_box(display.get(), "Gomas", "Cannot open tape",
+              if (path && machine.Open(path, error)) {
+                resetAudio = true;tapeView.NewTape();
+                if(machine.io.floppy.state.drives[0].image || machine.io.floppy.state.drives[1].image)diskView.Show(events.get());
+                if(!machine.fastLoad && !machine.tape.empty())tapeView.Show(events.get());
+              }
+              else al_show_native_message_box(display.get(), "Gomas", "Cannot open game",
                   error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             }
             ReleaseKeys(ula);
@@ -582,7 +638,7 @@ int main(int argc, char *argv[]) {
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
             string information = machine.systemROM.name + "\n" + machine.systemROM.source +
-                "\n\nFast load: " + (machine.CanFastLoad() ? "supported" : "not available for this ROM; use tape playback") +
+                "\n\nFast load: " + (machine.CanFastLoad() ? "supported" : "not available for this ROM/tape; use tape playback") +
                 "\n\nOn startup: " + (preferences.restoreLast ? "last opened ROM (48K fallback)" : "Spectrum 48K") +
                 "\n\nSelecting a recognized ROM determines its machine model.\n128K, +2 and +3 hardware support is still pending.";
             al_show_native_message_box(display.get(), "Gomas", "Machine ROM", information.c_str(), nullptr, 0);
@@ -593,7 +649,7 @@ int main(int argc, char *argv[]) {
             al_set_audio_stream_playing(stream.get(), false);
             ReleaseKeys(ula);
             al_show_native_message_box(display.get(), "Gomas", "ZX Spectrum 48K / 128K / +2 emulator",
-                "File > Open: insert a TAP and restart the Spectrum.\n"
+                "File > Open: TAP/TZX, SNA/Z80/SZX/SLT snapshots or DSK disks, also in ZIP.\n"
                 "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
                 "File > Close: eject the tape and restart.\n"
@@ -608,6 +664,8 @@ int main(int argc, char *argv[]) {
                 "Tape > Fast load: instant loading (default).\n"
                 "Turn it off, enter LOAD \"\" and press Tape > Play for real-time loading.\n"
                 "Tape > Show tape deck: browse blocks and cue a multi-load part.\n"
+                "Tape > Choose TZX route: reopen a cancelled route selection.\n"
+                "Disk > Show disk drives: A/B insert, eject, save as and write protection.\n"
                 "Pause keeps position; Stop returns to the start of this block.\n"
                 "Left Shift = CAPS SHIFT; Right Shift = SYMBOL SHIFT.\n"
                 "View: 2x, 4x, fullscreen and pixel filters.\n"
@@ -627,6 +685,10 @@ int main(int argc, char *argv[]) {
         break;
     }
     if (!running) break;
+    if(machine.deck.NeedsChoice()){
+      std::string token=machine.tapePath+":"+std::to_string(machine.SessionGeneration())+":"+std::to_string(machine.deck.Offset())+":"+std::to_string(machine.deck.SelectionCount());
+      if(token!=lastChoice){lastChoice=token;chooseTape();}
+    }else lastChoice.clear();
     if (resetAudio && !restartAudio()) {
       fprintf(stderr, "Cannot restart audio stream\n"); return 1;
     }
@@ -641,7 +703,7 @@ int main(int argc, char *argv[]) {
     al_set_target_backbuffer(display.get());
     screenView.Draw(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()));
     al_flip_display();
-    if ((event.timer.count & 1) == 0) tapeView.Draw(machine);
+    if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);}
   }
   return 0;
 }

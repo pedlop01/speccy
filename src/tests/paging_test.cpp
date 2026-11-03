@@ -68,7 +68,7 @@ int main() {
   assert(!memory.Configure(invalid, error));
   assert(memory.PagingLocked() && memory.Read(0xC000) == 0x91);
   assert(LoadROMSet(FindROM("plus3-0.rom"), invalid, error));
-  assert(!memory.Configure(invalid, error) && memory.PagingLocked());
+  assert(memory.Configure(invalid, error) && !memory.PagingLocked());
 
   assert(LoadROMSet(FindROM("48.rom"), rom, error));
   assert(memory.Configure(rom, error));

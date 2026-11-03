@@ -22,3 +22,5 @@ screen-view-tests
 playback-tests
 save-state-tests
 tape-zip-tests
+formats-tests
+new-media-tests

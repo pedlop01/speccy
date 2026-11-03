@@ -27,7 +27,7 @@ int main() {
     assert(hardware.timing.cpuClockHz == 3546900);
     assert(hardware.timing.tstatesPerLine == 228 && hardware.timing.linesPerFrame == 311);
     assert(hardware.timing.TStatesPerFrame() == 70908);
-    assert(SupportsHardware(model) == (model != MachineModel::Plus3));
+    assert(SupportsHardware(model));
     assert(MissingHardwareFeatures(hardware).find("banked RAM") == std::string::npos);
     assert(MissingHardwareFeatures(hardware).find("AY sound") == std::string::npos);
   }
@@ -37,7 +37,7 @@ int main() {
   assert(plus3.memory.romPages == 4 && plus3.memory.paging == PagingKind::Plus3);
   assert(plus3.devices.floppyController && plus3.timing.floatingBus == FloatingBusKind::Idle);
   assert(plus3.timing.firstDisplayTstate == 14365);
-  assert(MissingHardwareFeatures(plus3).find("floppy controller") != std::string::npos);
+  assert(MissingHardwareFeatures(plus3).empty());
   bool rejected = false;
   try { HardwareFor(static_cast<MachineModel>(99)); } catch (const std::invalid_argument &) { rejected = true; }
   assert(rejected); // Unknown hardware must never silently default to 48K.
@@ -84,12 +84,10 @@ int main() {
   assert(&machine.Configuration() == &flat);
   assert(machine.ula.Timing().TStatesPerFrame() == flat.timing.TStatesPerFrame());
   machine.cpu.regs.PC = 0x9000; machine.bus.Write(0x8000, 0x42);
-  assert(!machine.LoadROM(FindROM("plus3-0.rom"), error));
-  assert(&machine.Configuration() == &flat && machine.cpu.regs.PC == 0x9000);
-  assert(machine.bus.Read(0x8000) == 0x42 && machine.ula.Timing().tstatesPerLine == 224);
-  machine.ula.Configure(MachineModel::Spectrum128);
-  machine.Reset(); // Reset reapplies the machine's active profile to components.
-  assert(machine.ula.Timing().tstatesPerLine == 224 && machine.cpu.regs.PC == 0);
+  assert(machine.LoadROM(FindROM("plus3-0.rom"), error));
+  assert(machine.Configuration().model==MachineModel::Plus3 && machine.ula.Timing().tstatesPerLine==228);
+  machine.ula.Configure(MachineModel::Spectrum48);machine.Reset();
+  assert(machine.ula.Timing().tstatesPerLine==228 && machine.cpu.regs.PC==0);
   for (const char *file : {"128-0.rom", "128-spanish-0.rom", "plus2-0.rom"}) {
     assert(machine.LoadROM(FindROM(file), error));
     assert(machine.ula.ay.Enabled() && machine.ula.Timing().tstatesPerLine == 228);

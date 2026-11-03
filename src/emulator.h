@@ -7,6 +7,10 @@
 #include <vector>
 #include <deque>
 #include <memory>
+#include <unistd.h>
+#include <cstdio>
+#include "snapshot.h"
+#include "extended_snapshot.h"
 #include "z80.h"
 #include "bus.hpp"
 #include "ram.hpp"
@@ -71,12 +75,13 @@ public:
     framesExecuted = 0;
     ++generation;
     history.clear();
+    snapshotHalted=false;
     cpu = Z80();
-    memory.Reset();
+    memory.Reset();io.floppy.Reset();
     ula.Configure(configuration->model);
-    tapePos = 0;
     deck.SetClock(configuration->timing.cpuClockHz);
     deck.Rewind();
+    tapePos = deck.Offset();
     AttachCPU();
     if (rewindEnabled) history.push_back(CaptureState());
   }
@@ -96,12 +101,13 @@ public:
     configuration = &hardware;
     systemROM = std::move(candidate);
     if (!CanFastLoad()) fastLoad = false;
+    if(configuration->model!=MachineModel::Plus3){io.floppy.Eject(0);io.floppy.Eject(1);}
     Reset();
     error.clear();
     return true;
   }
   const MachineConfiguration &Configuration() const { return *configuration; }
-  bool CanFastLoad() const { return systemROM.fastLoadCompatible; }
+  bool CanFastLoad() const { return systemROM.fastLoadCompatible && deck.FastLoadCompatible(); }
 
   unsigned CPUMultiplier() const { return cpuMultiplier; }
   bool SetCPUMultiplier(unsigned value) {
@@ -114,6 +120,7 @@ public:
     return true;
   }
   void DiscardAudio() { audioOffset = audioAvailable = 0; }
+  std::uint64_t SessionGeneration() const{return generation;}
   std::uint64_t FrameCounter() const { return framesExecuted; }
 
   struct State {
@@ -126,11 +133,14 @@ public:
     TapeDeck::TransportState deck;
     size_t tapePos, audioOffset, audioAvailable;
     bool fastLoad;
+    std::shared_ptr<const std::map<unsigned,std::vector<unsigned char>>> levels;
+    bool snapshotHalted;
+    Disks::Controller::State floppy;
   };
   State CaptureState() const {
     return {generation, framesExecuted, configuration->model, cpu.regs, cpu.tStates,
         cpuMultiplier, cpuClockPhase, memory.CaptureState(), ula.CaptureState(), deck.CaptureState(),
-        tapePos, audioOffset, audioAvailable, fastLoad};
+        tapePos, audioOffset, audioAvailable, fastLoad, levels, snapshotHalted,io.floppy.CaptureState()};
   }
   bool RestoreState(const State &state) {
     if (state.generation != generation || state.model != configuration->model ||
@@ -139,7 +149,10 @@ public:
         state.tapePos > tape.size() || state.audioOffset + state.audioAvailable > SAMPLES_PER_FRAME) return false;
     TapeDeck transport = deck;
     if (!transport.RestoreState(state.deck)) return false;
+    Disks::Controller floppy;
+    if(!floppy.RestoreState(state.floppy))return false;
     if (!memory.RestoreState(state.memory)) return false;
+    io.floppy=std::move(floppy);
     ula.RestoreState(state.ula);
     deck = std::move(transport);
     cpu.regs = state.registers; cpu.tStates = state.tstates;
@@ -147,6 +160,7 @@ public:
     tapePos = state.tapePos; fastLoad = state.fastLoad;
     audioOffset = state.audioOffset; audioAvailable = state.audioAvailable;
     framesExecuted = state.frame;
+    levels=state.levels;snapshotHalted=state.snapshotHalted;
     AttachCPU();
     while (!history.empty() && history.back().frame > framesExecuted) history.pop_back();
     return true;
@@ -195,18 +209,106 @@ public:
     return RestoreState(saved);
   }
 
+  bool OpenSnapshot(const Snapshots::Image &image,const std::string &path,std::string &error) {
+    std::unique_ptr<SpectrumMachine> candidate(new SpectrumMachine);
+    ROMSet rom=systemROM;
+    if(!image.romPages.empty()) {
+      rom=ROMSet();rom.model=image.model;rom.pages=image.romPages;rom.source="Embedded SZX ROM";
+      rom.name=std::string(HardwareFor(image.model).name)+" (embedded ROM)";rom.fastLoadCompatible=false;rom.fastLoadPage=-1;
+      std::vector<std::uint64_t> hashes;for(const auto &page:rom.pages)hashes.push_back(ROMFingerprint(page.data(),page.size()));
+      for(const auto &profile:ROMProfiles())if(profile.model==rom.model && profile.fingerprints==hashes){rom.name=profile.name;rom.fastLoadCompatible=true;rom.fastLoadPage=rom.model==MachineModel::Spectrum48?0:rom.model==MachineModel::Plus3?3:1;}
+    }
+    if(rom.pages.empty() || rom.model!=image.model) {
+      char exe[4096];ssize_t n=readlink("/proc/self/exe",exe,sizeof(exe)-1);
+      std::string executable=n>0?std::string(exe,n):"";
+      const char *file=image.model==MachineModel::Spectrum48?"48.rom":image.model==MachineModel::Plus2?"plus2-0.rom":image.model==MachineModel::Plus3?"plus3-0.rom":"128-0.rom";
+      if(!LoadROMSet(FindROM(file,executable),rom,error))return false;
+    }
+    if(!candidate->memory.Configure(rom,error))return false;
+    candidate->configuration=&HardwareFor(image.model);candidate->systemROM=rom;candidate->Reset();
+    candidate->ula.IOWrite(0xfe,image.hasIO?image.ioData:image.border);
+    for(unsigned reg=0;reg<16;++reg) {candidate->ula.ay.Select(reg);candidate->ula.ay.Write(image.ay[reg]);}
+    candidate->ula.ay.Select(image.selectedAY);
+    auto state=candidate->CaptureState();state.registers=image.registers;
+    state.memory.ram=image.ram;state.memory.paging=image.paging;state.memory.pagingPlus3=image.pagingPlus3;
+    state.ula.frameTStates=image.frameTStates;
+    state.ula.line=image.frameTStates/state.ula.timing.tstatesPerLine;
+    state.ula.lineTStates=image.frameTStates%state.ula.timing.tstatesPerLine;
+    for(auto &color:state.ula.lineColors)color=state.ula.borderColor;
+    state.fastLoad=rom.fastLoadCompatible;
+    state.floppy.motor=(image.pagingPlus3&8)!=0;state.floppy.drives=image.disks;
+    state.levels=std::make_shared<const std::map<unsigned,std::vector<unsigned char>>>(image.levels);
+    state.snapshotHalted=image.halted;
+    if(!candidate->deck.Mount(image.tape) || !candidate->deck.CueFileBlock(image.tapeBlock)){error="Invalid SZX tape block";return false;}
+    state.deck=candidate->deck.CaptureState();state.tapePos=candidate->deck.Offset();
+    if(!candidate->deck.FastLoadCompatible())state.fastLoad=false;
+    return ImportSession(std::move(rom),image.tape,path,state,error);
+  }
   bool Open(const std::string &path, std::string &error) {
-    vector<unsigned char> candidate;
-    if (!TapeFiles::Read(path, candidate, error)) return false;
-    tape.swap(candidate);
-    tapePath = path;
-    deck.Mount(tape);
-    Reset();
-    error.clear();
-    return true;
+    vector<unsigned char> candidate;std::string name;
+    if(!TapeFiles::ReadMedia(path,candidate,name,error))return false;
+    try {
+      if(TapeFiles::Extension(name,".dsk"))return OpenDisk(Disks::Image::Parse(candidate),path,0,error);
+      if(TapeFiles::Extension(name,".sna"))return OpenSnapshot(Snapshots::SNA(candidate),path,error);
+      if(TapeFiles::Extension(name,".z80"))return OpenSnapshot(Snapshots::Z80(candidate),path,error);
+      if(TapeFiles::Extension(name,".szx")) {
+        auto image=Snapshots::SZX(candidate);
+        if(!image.externalTape.empty()) {
+          std::string mediaName;std::vector<unsigned char> media;
+          if(TapeFiles::Extension(path,".zip")) {
+            std::string member=TapeFiles::Normalize(ROMDirectory(name)+image.externalTape);
+            if(!TapeFiles::ReadMedia(path,media,mediaName,error,member))return false;
+          } else {
+            std::string linked=image.externalTape;
+            if(linked.empty() || linked[0]!='/')linked=ROMDirectory(path)+linked;
+            if(!TapeFiles::ReadMedia(linked,media,mediaName,error))return false;
+          }
+          if(!ValidateTape(media)){error="Invalid tape referenced by SZX";return false;}
+          image.tape=std::move(media);
+        }
+        return OpenSnapshot(image,path,error);
+      }
+      if(TapeFiles::Extension(name,".slt"))return OpenSnapshot(Snapshots::SLT(candidate),path,error);
+      if(TZX::Signature(candidate))TZX::Parse(candidate);
+      else if(TapeFiles::Extension(name,".tzx") || !ValidateTape(candidate))throw std::runtime_error("Invalid TAP/TZX file");
+    }catch(const std::exception &e){error=e.what();return false;}
+    levels.reset();
+    tape.swap(candidate);tapePath=path;deck.Mount(tape);
+    if(!CanFastLoad())fastLoad=false;
+    Reset();error.clear();return true;
   }
 
+  bool OpenDisk(Disks::Image disk,const std::string &path,unsigned unit,std::string &error) {
+    if(unit>1){error="Invalid disk drive";return false;}
+    Snapshots::Image image;image.model=MachineModel::Plus3;image.ram.resize(131072);
+    image.disks[unit].image=std::make_shared<const Disks::Image>(std::move(disk));image.disks[unit].path=path;
+    return OpenSnapshot(image,path,error);
+  }
+  bool InsertDisk(const std::string &path,unsigned unit,std::string &error) {
+    std::vector<unsigned char> bytes;std::string name;if(unit>1){error="Invalid disk drive";return false;}if(!TapeFiles::ReadMedia(path,bytes,name,error))return false;
+    try {
+      auto image=Disks::Image::Parse(bytes);
+      if(configuration->model!=MachineModel::Plus3)return OpenDisk(std::move(image),path,unit,error);
+      io.floppy.Insert(unit,std::move(image),path);ClearTimeline();error.clear();return true;
+    }catch(const std::exception &e){error=e.what();return false;}
+  }
+  void EjectDisk(unsigned unit){io.floppy.Eject(unit);ClearTimeline();}
+  void ClearTimeline(){++generation;history.clear();if(rewindEnabled)history.push_back(CaptureState());DiscardAudio();}
+  bool SaveDisk(unsigned unit,const std::string &path,std::string &error) {
+    if(unit>1 || !io.floppy.state.drives[unit].image){error="No disk in this drive";return false;}
+    std::string temporary;
+    try {
+      auto bytes=io.floppy.state.drives[unit].image->Encode();std::string pattern=path+".XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
+      int fd=mkstemp(name.data());if(fd<0)throw std::runtime_error("Cannot create disk output");temporary=name.data();FILE *file=fdopen(fd,"wb");
+      if(!file){close(fd);throw std::runtime_error("Cannot write disk image");}
+      bool ok=fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();ok=(fflush(file)==0)&&ok;ok=(fsync(fileno(file))==0)&&ok;ok=(fclose(file)==0)&&ok;
+      if(!ok || rename(temporary.c_str(),path.c_str()))throw std::runtime_error("Cannot save disk image");
+      io.floppy.state.drives[unit].path=path;io.floppy.state.drives[unit].dirty=false;error.clear();return true;
+    }catch(const std::exception &e){if(!temporary.empty())remove(temporary.c_str());error=e.what();return false;}
+  }
   void Close() {
+    io.floppy.Eject(0);io.floppy.Eject(1);
+    levels.reset();
     tape.clear();
     tapePath.clear();
     deck.Mount(tape);
@@ -221,11 +323,14 @@ public:
     fastLoad = enabled;
     UpdateTapeInput();
   }
-  bool PlayTape() { return !fastLoad && deck.Play(); }
+  bool ChooseTape(unsigned choice){bool ok=deck.Choose(choice);tapePos=deck.Offset();UpdateTapeInput();return ok;}
+  bool PlayTape() { bool playing=!fastLoad && deck.Play();tapePos=deck.Offset();UpdateTapeInput();return playing; }
   void PauseTape() { deck.Pause(); UpdateTapeInput(); }
   void StopTape() { deck.Stop(); tapePos = deck.Offset(); UpdateTapeInput(); }
   bool CueTape(size_t block) {
-    if (!deck.Cue(block)) return false;
+    if(block==0 && deck.SelectionCount())deck.Rewind();
+    else if (!deck.Cue(block)) return false;
+    if(!CanFastLoad())fastLoad=false;
     tapePos = deck.Offset();
     UpdateTapeInput();
     return true;
@@ -237,21 +342,31 @@ public:
       return false;
     const bool loaded = LoadTrap(cpu, tape, tapePos);
     deck.CueOffset(tapePos);
+    tapePos=deck.Offset();
     if (loaded) { cpu.regs.BC = 0xB001; cpu.regs.altAF = 0x0145; }
     cpu.regs.CF = loaded;
     cpu.regs.PC = 0x05E2;
     return true;
+  }
+  bool TryLevelLoad() {
+    if(!levels || levels->empty() || bus.Read(cpu.regs.PC)!=0xed || bus.Read((cpu.regs.PC+1)&65535)!=0xfb)return false;
+    auto entry=levels->find(cpu.regs.A);
+    if(entry!=levels->end())for(size_t n=0;n<entry->second.size();++n)bus.Write((cpu.regs.HL+n)&65535,entry->second[n]);
+    cpu.regs.PC+=2;cpu.regs.R60++;cpu.regs.R60++;cpu.tStates+=8;return true;
   }
   void Frame() {
     bool irq = false;
     while (!irq) {
       TryFastLoad();
       cpu.tStates = 0;
-      cpu.EmulateOne();
+      if(snapshotHalted){cpu.regs.R60++;cpu.tStates=4;}
+      else if(!TryLevelLoad())cpu.EmulateOne();
       Advance(cpu.tStates, irq);
     }
     cpu.tStates = 0;
-    cpu.INT();
+    bool halted=snapshotHalted;
+    if(cpu.regs.iff1A)snapshotHalted=false;
+    cpu.INT(!halted);
     bool unused = false;
     Advance(cpu.tStates, unused);
     ++framesExecuted;
@@ -293,6 +408,7 @@ public:
       if (!fastLoad && deck.IsPlaying()) step = std::min(step, deck.UntilEdge());
       bool frame = false;
       ula.AddCycles(step, frame);
+      if(configuration->devices.floppyController)io.floppy.Advance(step);
       irq = irq || frame;
       if (!fastLoad) { deck.Advance(step); tapePos = deck.Offset(); }
       cycles -= step;
@@ -302,6 +418,8 @@ public:
 
 private:
   enum : unsigned { HistoryStride = 10, HistoryLimitFrames = 500, RewindStepFrames = 50 };
+  std::shared_ptr<const std::map<unsigned,std::vector<unsigned char>>> levels;
+  bool snapshotHalted=false;
   unsigned cpuMultiplier = 1, cpuClockPhase = 0;
   std::uint64_t framesExecuted = 0, generation = 0;
   bool rewindEnabled = false;

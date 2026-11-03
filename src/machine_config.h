@@ -113,7 +113,7 @@ inline unsigned RequiredHardwareFeatures(const MachineConfiguration &configurati
   return features;
 }
 
-inline unsigned ImplementedHardwareFeatures() { return FeatureBankedRAM | FeatureROMPaging | FeatureModelTiming | FeatureShadowScreen | FeatureAY; }
+inline unsigned ImplementedHardwareFeatures() { return FeatureBankedRAM | FeatureROMPaging | FeatureModelTiming | FeatureShadowScreen | FeatureAY | FeaturePlus3Paging | FeatureFloppy; }
 
 inline std::string MissingHardwareFeatures(const MachineConfiguration &configuration) {
   unsigned missing = RequiredHardwareFeatures(configuration) & ~ImplementedHardwareFeatures();

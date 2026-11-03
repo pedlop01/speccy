@@ -7,11 +7,11 @@ Z80::Z80 () {
 	tStates = 0;    
 }
 
-void Z80::INT() {
+void Z80::INT(bool checkHaltInstruction) {
 	if (regs.iff1A)
 	{
 		// If over a HALT instruction, increment PC
-		if (DataBus->Read(regs.PC) == 0x76)
+		if (checkHaltInstruction && DataBus->Read(regs.PC) == 0x76)
 			regs.PC++;
 
 		regs.iff1A = regs.iff1B = 0;

@@ -10,7 +10,7 @@ int main() {
   std::vector<unsigned char> payload(32), tap;
   for (unsigned n = 0; n < payload.size(); ++n) payload[n] = n * 71;
   block(tap, payload); block(tap, {0x5A, 0xA5});
-  for (const char *file : {"48.rom", "128-0.rom", "128-spanish-0.rom", "plus2-0.rom"}) {
+  for (const char *file : {"48.rom", "128-0.rom", "128-spanish-0.rom", "plus2-0.rom", "plus3-0.rom"}) {
     for (bool fast : {true, false}) {
       SpectrumMachine m; std::string error;
       assert(m.LoadROM(FindROM(file), error));
@@ -20,6 +20,7 @@ int main() {
       if (paged) { assert(!m.TryFastLoad()); assert(m.tapePos == 0 && m.cpu.regs.PC == 0x056B); }
       m.SetFastLoad(fast);
       for (unsigned part = 0; part < 2; ++part) {
+        if(m.Configuration().model==MachineModel::Plus3)m.io.Write(0x1FFD,4);
         if (paged) m.io.Write(0x7FFD, 0x10 | (part ? 6 : 3));
         assert(m.CueTape(part));
         m.cpu.regs.PC = 0x0556; m.cpu.regs.SP = 0xBF00;

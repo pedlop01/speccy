@@ -68,7 +68,7 @@ int main() {
     assert(machine.tapePos == 21 && machine.tapePath == "cobra.tap");
   };
 
-  assert(!machine.LoadROM(directory + "plus3-2.rom", error)); checkPreserved();
+  assert(!machine.LoadROM(directory + "if1-2.rom", error)); checkPreserved();
   std::vector<unsigned char> custom(16384, 0);
   custom[0] = 0x76;
   WriteFile(file, custom);

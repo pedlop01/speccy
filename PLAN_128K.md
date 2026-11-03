@@ -14,7 +14,7 @@ El estado describe el código integrado, salvo las tareas de diagnóstico y arch
 | 5 | Implementar RAM y paginación 128K | Hecho | Ocho bancos de RAM de 16 KB; bancos 5 y 2 fijos; banco seleccionable en `C000–FFFF`; dos páginas de ROM. Implementar selección y bloqueo de `0x7FFD`, con alias correctos de los bancos 2 y 5. |
 | 6 | Adaptar vídeo y temporización | Hecho | Mostrar la pantalla del banco 5 o del 7, actualizarla al cambiar de banco y aplicar los tiempos y bus flotante del 128K. Mantener la frecuencia de muestreo de audio al cambiar la duración del fotograma. |
 | 7 | Implementar sonido AY | Hecho | Puertos y registros del AY, tres canales de tono, ruido, mezclador y envolvente. Mezclar la salida con beeper y cinta. |
-| 8 | Añadir selección de modelo en Settings | Hecho | Settings > ROM activa 48K, 128K inglés/español y +2, recuerda la selección y conserva la cinta rebobinada. +3 sigue deshabilitado por paginación/disquetera pendientes. Si falta una ROM o se elige un modelo no soportado, conservar la máquina actual. |
+| 8 | Añadir selección de modelo en Settings | Hecho | Settings > ROM activa 48K, 128K inglés/español y +2, recuerda la selección y conserva la cinta rebobinada. +3 también está habilitado tras la ampliación de paginación y disquetera descrita al final. Si falta una ROM o se elige un modelo no soportado, conservar la máquina actual. |
 | 9 | Adaptar carga rápida y reproductor | Hecho | Trampa solo en la página reconocida: 0 en 48K, 1 en 128K/+2. ROMs alternativas usan pulsos. Conversión fraccionaria de pulsos TAP al reloj del modelo; selección de bloques, pausa y cargas en bancos separados verificadas con ROMs reales. |
 | 10 | Validar arranque y compatibilidad | Hecho | Pruebas de paginación, bloqueo, alias, ROM, pantalla y AY; arranque del menú 128K y BASIC. Regresión de `back3.tap` en ambos modos: introducción, señal de música, menú y primera fase jugable; Cobra y pruebas 48K existentes. La escucha y validación de todas las fases quedan como pruebas manuales. |
 
@@ -34,7 +34,7 @@ La aplicación restaura la última ROM válida o arranca con 48K según la prefe
 
 Settings permite seleccionar una ROM conocida o una ROM alternativa de 48K de forma explícita. Se identifica el perfil por las huellas del contenido. Las páginas de un conjunto se buscan en el mismo directorio con sus nombres conocidos y se validan; se admiten conjuntos combinados de 32/64 KB en el orden de páginas correspondiente. Interface 1 se rechaza como ROM de sistema.
 
-Las ROMs 128K inglés/español y +2/+3 disponibles ya se han validado mediante pruebas. 48K, 128K inglés/español y +2 ya se activan. +3 sigue pendiente por su paginación especial y disquetera; la aplicación conserva la máquina actual si se intenta cargarlo. Una ROM nueva solo sustituye la anterior tras validarse por completo; una carga correcta reinicia y conserva la cinta montada, rebobinada.
+Las ROMs 128K inglés/español y +2/+3 disponibles ya se han validado mediante pruebas. 48K, 128K inglés/español y +2 ya se activan. +3 ya está habilitado con paginación especial y controladora de disco. Una ROM nueva solo sustituye la anterior tras validarse por completo; una carga correcta reinicia y conserva la cinta montada, rebobinada.
 
 Las preferencias se guardan por usuario. Una ROM elegida por --rom tiene prioridad; los cambios fallidos no sustituyen la última ROM guardada.
 
@@ -85,3 +85,17 @@ Los tiempos TAP están expresados a 3,5 MHz. `TapeDeck::SetClock` y un resto ent
 `ay-tests` verifica registros, puertos, los tres tonos, ruido, las 16 envolventes, reinicio y mezcla independiente de cómo se reparten las instrucciones. `tape128-tests` carga dos bloques mediante la ROM real en 48K/128K inglés/128K español/+2, rápido y por pulsos, comprobando bancos 3 y 6 independientes y el rechazo de la trampa en ROM 0. También comprueba la conversión del reloj.
 
 `compat128-tests` arranca las tres ROMs nuevas, entra en BASIC, escribe PRINT 1+1 y comprueba el resultado 2; en las ROMs con menú verifica también 48 BASIC y el bloqueo de paginación. Carga back3 desde Tape Loader, espera la introducción y entra por teclado en la primera fase, sin parchear ROM ni TAP. En pulsos conserva el bloque 9 durante la introducción y vuelve a pulsar Play cuando LD-BYTES espera el piloto. Conserva los bloques siguientes para futuras fases. Se comprueba señal musical variable durante más de 1000 frames y 18 pantallas de juego distintas en cada modo. No sustituye una comprobación auditiva ni una partida de todas las fases. Cobra conserva su prueba completa con ambos modos de carga.
+
+## Ampliación posterior: +3 y discos DSK
+
+| Tarea | Estado | Validación |
+|---|---|---|
+| Cuatro ROMs y paginación 1FFD / all-RAM | Hecho | Cuatro mapas completos, bloqueo, reset y ROMs verificadas. |
+| uPD765 y DSK/EDSK | Hecho | Lectura/escritura no DMA, búsqueda, protección, formato y arranque de disco con ROM real +3. |
+| Menú Disk y panel A/B | Hecho | Inserción/cambio, expulsión, guardar como y protección, con eventos reales de ratón. |
+| Discos en guardado y retroceso | Hecho | Imágenes con copia al escribir y recuperación de transferencia a mitad de sector; GSS v2 conserva lectura v1. |
+| Validación de títulos DSK comerciales | Pendiente | El arranque sintético no sustituye pruebas de juegos ni garantiza protecciones de disco. |
+
+Los apartados anteriores describen la incorporación original del 128K; las
+referencias a +3 como pendiente corresponden a ese estado anterior. El código
+actual permite +3 y mantiene cinta y disco como dispositivos independientes.
