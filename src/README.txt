@@ -5,7 +5,9 @@ El núcleo procede de YASS (referencia incluida en ../yass).
 Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
-allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, libarchive y zlib.
+allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
+nlohmann_json. El catálogo usa HTTPS con certificados verificados y un hilo de
+trabajo; compilar/enlazar con soporte pthread (incluido en el Makefile).
 No necesita acodec.
 
   make -C bin
@@ -601,3 +603,55 @@ https://www.spectaculator.com/docs/zx-state/index.html
 https://worldofspectrum.org/faq/reference/formats.htm
 https://www.cpctech.cpcwiki.de/docs/dsk.html
 https://github.com/fuse-emulator/fuse/blob/master/machines/specplus3.c
+
+Catálogo de juegos y biblioteca local
+--------------------------------------
+File > Game catalog... abre el catálogo de ZXArt.ee. La primera versión usa
+su API pública de juegos: buscador, orden A-Z/Z-A, páginas y lista de versiones
+por juego. Selecciona un título y un archivo compatible (formato y 48K/128K/+2/+3)
+y pulsa Install & load. Los archivos ofrecidos por el catálogo que requieren
+hardware no soportado se muestran deshabilitados. No todos los títulos tienen
+una descarga compatible disponible.
+
+Las búsquedas y descargas trabajan en segundo plano; se puede seguir usando
+la ventana o cancelar. La búsqueda se actualiza tras una pausa breve al escribir.
+La rueda desplaza las listas; Tab cambia de panel, flechas recorren las listas,
+Enter busca o carga y Escape cierra. El emulador queda pausado mientras se navega.
+Una descarga y apertura válidas sustituyen la sesión; un fallo conserva la anterior.
+
+Los archivos se guardan en games/zxart/<juego>/<versión-archivo>/<nombre>.
+En el proyecto, games queda junto a roms; si esa ubicación no está disponible se
+usa el directorio de datos del usuario, subdirectorio games. GOMAS_GAMES_DIR
+permite elegir otra ubicación. games/catalog.json guarda los metadatos visitados,
+versiones e instalaciones. No se descarga el catálogo entero al abrir la ventana.
+Los nombres y rutas locales se construyen de forma segura, sin extraer rutas de
+ZIP al disco. Se comprueban tamaño, MD5 cuando ZXArt lo proporciona, y formato;
+el archivo definitivo se reemplaza mediante una escritura temporal/atómica.
+
+Los juegos con alguna versión descargada muestran Installed. All games / Installed
+permite ver solo la biblioteca local, sin consultas de red. Offline: ON usa los
+metadatos ya visitados y las versiones instaladas; esa preferencia se conserva.
+Los juegos descargados cargan desde disco, sin volver a solicitar el archivo.
+Si falla la red, se ofrecen los resultados guardados que coincidan con la búsqueda.
+El catálogo sin conexión contiene lo visitado/instalado, no todos los juegos del
+servidor. Un archivo local dañado necesita una descarga nueva en modo online.
+
+Load installed game abre directamente la versión instalada. Los snapshots
+arrancan desde su estado; para TAP/TZX se elige la ROM indicada y se introduce
+LOAD automáticamente usando el teclado de la ROM. En 128K/+2/+3 se usa Loader.
+Se respeta Fast load; con reproducción real se pulsa Play automáticamente.
+Los discos arrancan a través del Loader del +3. Las preguntas de un juego y las
+rutas interactivas TZX siguen siendo decisiones del usuario. En juegos con varios
+archivos, el catálogo permite elegir cada versión/archivo ofrecido por ZXArt.
+
+catalog-tests usa respuestas de prueba sin red para verificar búsqueda, orden,
+páginas, versiones, rutas, checksum, cancelación, archivos ZIP, reutilización
+offline y carga transaccional. Prueba también el arranque de Cobra en los cuatro
+modelos. catalog-tests --live es una comprobación opcional de consulta y descarga
+real; la suite normal no necesita Internet. test-ui abre el catálogo con una
+biblioteca aislada, busca y carga una versión instalada sin contactar con ZXArt.
+
+Referencias de la integración:
+https://github.com/moroz1999/zxart-api-bridge
+https://hype.retroscene.org/blog/898.html
+https://curl.se/libcurl/c/CURLOPT_XFERINFOFUNCTION.html

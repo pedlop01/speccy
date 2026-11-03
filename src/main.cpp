@@ -16,6 +16,8 @@
 #include "save_gallery.h"
 #include "choice_dialog.h"
 #include "disk_view.h"
+#include "catalog_view.h"
+#include "catalog_load.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -118,7 +120,8 @@ enum MenuId {
   MENU_CPU_CLOCK_1X, MENU_CPU_CLOCK_2X, MENU_CPU_CLOCK_4X, MENU_SPEED_DOWN, MENU_SPEED_NORMAL,
   MENU_SAVE_STATE = 480, MENU_LOAD_STATE, MENU_QUICK_SAVE, MENU_QUICK_LOAD,
   MENU_DISK=490,MENU_DISK_A_INSERT,MENU_DISK_A_EJECT,MENU_DISK_A_SAVE,MENU_DISK_A_PROTECT,
-  MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW
+  MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW,
+  MENU_CATALOG=510
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -142,6 +145,7 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
   ALLEGRO_MENU_INFO items[] = {
     ALLEGRO_START_OF_MENU("&File", MENU_FILE),
       {"&Open...", MENU_OPEN, 0, nullptr},
+      {"Game &catalog...", MENU_CATALOG, 0, nullptr},
       {"&Close", MENU_CLOSE, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"&Save game... (Ctrl+S)", MENU_SAVE_STATE, 0, nullptr},
@@ -518,6 +522,19 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_CATALOG: {
+            bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+            try {
+              GameCatalog::Library library(GameCatalog::Directory(executablePath));CatalogView browser;auto choice=browser.Show(display.get(),library);
+              if(!choice.path.empty()){
+                if(GameCatalog::Load(machine,choice.path,choice.model,error)){
+                  resetAudio=true;tapeView.NewTape();if(!machine.fastLoad && !machine.tape.empty())tapeView.Show(events.get());
+                  if(machine.io.floppy.state.drives[0].image || machine.io.floppy.state.drives[1].image)diskView.Show(events.get());
+                }else al_show_native_message_box(display.get(),"Gomas","Cannot load game",error.c_str(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);
+              }
+            }catch(const std::exception &e){al_show_native_message_box(display.get(),"Gomas","Game catalog",e.what(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);}
+            ReleaseKeys(ula);if(!resetAudio)al_set_audio_stream_playing(stream.get(),playing);break;
+          }
           case MENU_TAPE_CHOICE:chooseTape();break;
           case MENU_DISK_SHOW:diskView.Show(events.get());break;
           case MENU_DISK_A_EJECT:case MENU_DISK_B_EJECT:machine.EjectDisk(event.user.data1==MENU_DISK_A_EJECT?0:1);resetAudio=true;break;
@@ -670,6 +687,7 @@ int main(int argc, char *argv[]) {
                 "File > Open: TAP/TZX, SNA/Z80/SZX/SLT snapshots or DSK disks, also in ZIP.\n"
                 "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
                 "J = LOAD; Right Shift + P = quotation mark.\n\n"
+                "File > Game catalog: browse ZXArt and install games for offline loading.\n"
                 "File > Close: eject the tape and restart.\n"
                 "File > Save/Load game: thumbnail gallery (Ctrl+S / Ctrl+L).\n"
                 "F2: quick save to the reserved slot. F3: quick load.\n"

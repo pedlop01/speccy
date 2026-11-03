@@ -131,6 +131,9 @@ int main() {
   bool hadSaves = oldSaves != nullptr;
   std::string savedSaves = oldSaves ? oldSaves : "";
   setenv("GOMAS_SAVE_DIR", savesPath, 1);
+  std::string gamesPath=std::string(savesPath)+"/games";
+  const char *oldGames=getenv("GOMAS_GAMES_DIR");bool hadGames=oldGames!=nullptr;std::string savedGamesDir=oldGames?oldGames:"";
+  setenv("GOMAS_GAMES_DIR",gamesPath.c_str(),1);
   bool passed = false;
   std::string failure;
   std::thread input([&]() {
@@ -446,17 +449,42 @@ int main() {
       puts("Native media: disk insert/protect/eject and TZX choose/cancel/reopen/save passed");
       unlink(snapshotPath.c_str());
       puts("Native File > Open: Z80 snapshot and automatic 128K model selection passed");
+      // The native catalog test uses a seeded local library and never contacts ZXArt.
+      auto gameBytes=GameCatalog::Read("cobra.tap",16*1024*1024);
+      GameCatalog::Json gameRow={{"id",7},{"title","Cobra"},{"year",1986},{"legalStatus","allowed"}};
+      GameCatalog::Json releaseRow={{"id",70},{"releaseType","original"},{"year",1986},{"hardwareRequired",GameCatalog::Json::array({"zx48"})},
+        {"releaseStructure",GameCatalog::Json::array({{{"id",1},{"fileName","Cobra.tap"},{"type","tap"},{"size",gameBytes.size()},{"md5",GameCatalog::MD5(gameBytes)}}})}};
+      GameCatalog::Fetcher fixture=[&](const std::string &url,size_t,GameCatalog::Progress &)->GameCatalog::Bytes{
+        if(url.find("/zxfile/")!=std::string::npos)return gameBytes;
+        bool games=url.find("export:zxProd/")!=std::string::npos;GameCatalog::Json response={{"responseStatus","success"},{"totalAmount",1},{"responseData",{{games?"zxProd":"zxRelease",GameCatalog::Json::array({games?gameRow:releaseRow})}}}};
+        auto body=response.dump();return {body.begin(),body.end()};
+      };
+      GameCatalog::Library seed(gamesPath,fixture);GameCatalog::Progress progress;
+      auto seeded=seed.Search("",0,false,progress);auto variants=seed.Versions(seeded.games[0],progress);auto installedPath=seed.Install(variants[0],false,progress);seed.SetOffline(true);
+      Menu(MENU_CATALOG);Window catalog=0;
+      Check(Until([&](){catalog=FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");return catalog!=0;},2000),"Game catalog did not open");
+      Wait(200);XSetInputFocus(x,catalog,RevertToParent,CurrentTime);Click(x,catalog,120,60);
+      for(char c:std::string("cobra")){key(c,true);key(c,false);}XFlush(x);Wait(450);Click(x,catalog,100,128);
+      Check(Until([&](){return Pixel(x,catalog,650,650)==0x31536d;},2000),"Installed catalog version did not become loadable");
+      Click(x,catalog,770,650);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog") && FindWindow(x,DefaultRootWindow(x),"Gomas - ZX Spectrum 48K - Cobra.tap");},5000),"Catalog did not load the installed game");
+      Menu(MENU_CATALOG);
+      Check(Until([&](){catalog=FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");return catalog!=0;},2000),"Offline catalog did not reopen");
+      Wait(150);XSetInputFocus(x,catalog,RevertToParent,CurrentTime);shortcut(XK_Escape);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");},1000),"Catalog Escape did not close");
+      Check(al_filename_exists(installedPath.c_str()),"Catalog removed an installed game on close");
+      puts("Native catalog: offline search, installed version, one-click load, reopen and Escape passed");
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what(); fprintf(stderr,"UI failure: %s\n",failure.c_str());
-      for (const char *title : {"Load system ROM", "Open Spectrum game", "Insert disk image", "Gomas - Choose TZX route", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
+      for (const char *title : {"Load system ROM", "Open Spectrum game", "Insert disk image", "Gomas - Choose TZX route", "Gomas - Game catalog", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
         Window modal = FindWindow(x, DefaultRootWindow(x), title), parent = 0;
         if(modal && std::string(title)=="Insert disk image"){
           XWindowAttributes a;XGetWindowAttributes(x,modal,&a);XImage *capture=XGetImage(x,modal,0,0,a.width,a.height,AllPlanes,ZPixmap);
           if(capture){std::ofstream out("/tmp/gomas-dialog-failure.ppm",std::ios::binary);out<<"P6\n"<<a.width<<" "<<a.height<<"\n255\n";
             for(int y=0;y<a.height;++y)for(int px=0;px<a.width;++px){unsigned rgb=XGetPixel(capture,px,y);out.put(rgb>>16);out.put(rgb>>8);out.put(rgb);}XDestroyImage(capture);}
         }
-        if (modal && mainWindow && ((std::string(title).find("game") != std::string::npos || std::string(title).find("Choose TZX")!=std::string::npos) || (XGetTransientForHint(x, modal, &parent) && parent == mainWindow))) {
+        if (modal && mainWindow && ((std::string(title).find("game") != std::string::npos || std::string(title).find("Choose TZX")!=std::string::npos || std::string(title)=="Gomas - Game catalog") || (XGetTransientForHint(x, modal, &parent) && parent == mainWindow))) {
           XEvent close = {};
           close.xclient.type = ClientMessage;
           close.xclient.window = modal;
@@ -482,6 +510,9 @@ int main() {
   unlink((std::string(savesPath)+"/fixture.z80").c_str());
   unlink((std::string(savesPath)+"/fixture.dsk").c_str());
   unlink((std::string(savesPath)+"/route.tzx").c_str());
+  unlink((gamesPath+"/zxart/7/70-1/Cobra.tap").c_str());rmdir((gamesPath+"/zxart/7/70-1").c_str());rmdir((gamesPath+"/zxart/7").c_str());rmdir((gamesPath+"/zxart").c_str());
+  unlink((gamesPath+"/catalog.json").c_str());rmdir(gamesPath.c_str());
+  if(hadGames)setenv("GOMAS_GAMES_DIR",savedGamesDir.c_str(),1);else unsetenv("GOMAS_GAMES_DIR");
   rmdir(savesPath);
   if(hadSaves) setenv("GOMAS_SAVE_DIR",savedSaves.c_str(),1); else unsetenv("GOMAS_SAVE_DIR");
   if (hadConfig) setenv("GOMAS_CONFIG", savedConfig.c_str(), 1); else unsetenv("GOMAS_CONFIG");
