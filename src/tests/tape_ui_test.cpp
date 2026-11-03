@@ -2,10 +2,10 @@
 #include <allegro5/allegro_native_dialog.h>
 #include <atomic>
 static std::atomic<unsigned> menuFlagWrites(0);
-static std::atomic<int> observedMenuFlags[512];
+static std::atomic<int> observedMenuFlags[640];
 static void RecordMenuFlags(ALLEGRO_MENU *menu, int id, int flags) {
   ++menuFlagWrites;
-  if (id >= 0 && id < 512) observedMenuFlags[id].store(flags);
+  if (id >= 0 && id < 640) observedMenuFlags[id].store(flags);
   al_set_menu_item_flags(menu, id, flags);
 }
 static std::atomic<ALLEGRO_DISPLAY *> applicationDisplay(nullptr);
@@ -31,6 +31,7 @@ static void RecordFrame() {
 #undef al_flip_display
 #undef al_set_menu_item_flags
 #include <X11/Xlib.h>
+#include <sys/stat.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XTest.h>
@@ -474,10 +475,31 @@ int main() {
       Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");},1000),"Catalog Escape did not close");
       Check(al_filename_exists(installedPath.c_str()),"Catalog removed an installed game on close");
       puts("Native catalog: offline search, installed version, one-click load, reopen and Escape passed");
+      // The debugger pauses on open, steps without resuming, and only reads RAM.
+      Menu(MENU_DEBUG_SHOW);Window debugger=0;
+      Check(Until([&](){debugger=FindWindow(x,DefaultRootWindow(x),"Gomas - Debugger");return debugger && checked(MENU_PAUSE);},2000),"Debugger did not open paused");
+      auto debugSnapshot=[&](){struct stat old={};stat(saves.Path(0).c_str(),&old);Menu(MENU_QUICK_SAVE);
+        Check(Until([&](){struct stat now={};return stat(saves.Path(0).c_str(),&now)==0 && now.st_ino!=old.st_ino;},2000),"Debugger snapshot did not complete");
+        SaveStates::Record record;std::string error;Check(saves.Read(0,record,error),"Cannot read debugger snapshot");return record.core;};
+      auto debugBefore=debugSnapshot();Wait(200);auto debugAfter=debugSnapshot();
+      auto encoded=[](const SpectrumMachine::State &state){SaveStates::Writer w;SaveStates::WriteCore(w,state);return w.bytes;};
+      Check(encoded(debugBefore)==encoded(debugAfter),"Debugger drawing changed machine state");
+      Wait(100);Click(x,debugger,225,60);Wait(100);auto instruction=debugSnapshot();
+      Check(checked(MENU_PAUSE) && (instruction.frame!=debugAfter.frame || instruction.ula.frameTStates!=debugAfter.ula.frameTStates),"Debugger step did not advance an instruction while paused");
+      Click(x,debugger,380,60);Wait(100);auto nextFrame=debugSnapshot();Check(nextFrame.frame==instruction.frame+1 && checked(MENU_PAUSE),"Debugger next frame did not stop at the next frame");
+      Click(x,debugger,160,288);XSetInputFocus(x,debugger,RevertToParent,CurrentTime);
+      for(KeySym symbol:{XK_c,XK_0,XK_0,XK_0})shortcut(symbol);shortcut(XK_Return);Click(x,debugger,820,60);Wait(150);
+      Check(encoded(nextFrame)==encoded(debugSnapshot()),"Debugger RAM navigation modified emulated state");
+      shortcut(XK_Escape);
+      Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Debugger") && !checked(MENU_DEBUG_SHOW);},1000),"Debugger Escape did not close only its own window");
+      Check(checked(MENU_PAUSE),"Closing debugger changed pause");
+      XSetInputFocus(x,mainWindow,RevertToParent,CurrentTime);shortcut(XK_F5);
+      Check(Until([&](){return !checked(MENU_PAUSE);},1000),"Could not resume after debugging");
+      puts("Native debugger: pause, instruction/frame steps, RAM navigation, read-only inspection and Escape passed");
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what(); fprintf(stderr,"UI failure: %s\n",failure.c_str());
-      for (const char *title : {"Load system ROM", "Open Spectrum game", "Insert disk image", "Gomas - Choose TZX route", "Gomas - Game catalog", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
+      for (const char *title : {"Load system ROM", "Open Spectrum game", "Insert disk image", "Gomas - Choose TZX route", "Gomas - Game catalog", "Gomas - Debugger", "Gomas", "Gomas - Save game", "Gomas - Load game"}) {
         Window modal = FindWindow(x, DefaultRootWindow(x), title), parent = 0;
         if(modal && std::string(title)=="Insert disk image"){
           XWindowAttributes a;XGetWindowAttributes(x,modal,&a);XImage *capture=XGetImage(x,modal,0,0,a.width,a.height,AllPlanes,ZPixmap);

@@ -655,3 +655,34 @@ Referencias de la integración:
 https://github.com/moroz1999/zxart-api-bridge
 https://hype.retroscene.org/blog/898.html
 https://curl.se/libcurl/c/CURLOPT_XFERINFOFUNCTION.html
+
+Vista de depuración
+-------------------
+Debug > Show debugger (F12) abre una ventana independiente y pausa la máquina.
+Muestra AF/BC/DE/HL, registros alternativos, IX/IY/SP/PC, I/R, IFF1/IFF2, modo de
+interrupción y todos los bits de F. También muestra fase de vídeo, frecuencia,
+paginación 7FFD/1FFD, banco de pantalla, pila y el mapa activo de memoria.
+La ventana se actualiza en vivo al reanudar con F5; cerrarla mantiene la pausa
+actual. Escape cierra solo la ventana de depuración.
+
+F10 / Step CPU avanza una instrucción del núcleo y conserva la pausa. F4 / Next
+frame avanza hasta el siguiente límite de fotograma. Ambos siguen la misma ruta
+que la ejecución normal, incluyendo interrupciones, overclock, ULA, AY, cassette
+y disquetera. Se respetan las trampas de carga rápida y SLT; una trampa puede
+copiar un bloque completo durante un paso. El audio de salida se descarta al
+pasar al modo de pasos y permanece en silencio mientras la máquina está pausada.
+
+El visor de memoria muestra 256 bytes en hexadecimal y ASCII. View alterna entre
+el mapa CPU completo y cada banco físico de RAM, sin modificar la paginación.
+Address/Offset acepta una dirección hexadecimal (0000-FFFF en CPU, 0000-3FFF en
+bancos físicos): pulsa el campo, escribe y confirma con Enter o Go. La rueda,
+las flechas y PgUp/PgDn desplazan la vista. Follow PC / Home sigue el contador
+de programa; Go to SP muestra la pila. PC se resalta en cian y SP en violeta.
+La inspección lee memoria, no puertos de E/S, y no consume datos de la cinta o
+controladora. Esta primera vista permite inspección y avance; no edita RAM ni
+registros y todavía no incluye desensamblador o puntos de ruptura.
+
+debug-tests verifica que pasos individuales y frames producen el mismo estado
+en 48K/128K/+2/+3, incluyendo interrupciones, audio, overclock, cinta, AY,
+disquetera y retroceso. test-ui prueba apertura pausada, botones de paso,
+navegación RAM sin cambios en la máquina y cierre independiente.

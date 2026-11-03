@@ -354,26 +354,28 @@ public:
     if(entry!=levels->end())for(size_t n=0;n<entry->second.size();++n)bus.Write((cpu.regs.HL+n)&65535,entry->second[n]);
     cpu.regs.PC+=2;cpu.regs.R60++;cpu.regs.R60++;cpu.tStates+=8;return true;
   }
+  // The normal frame loop and debugger share the same instruction/device path.
+  // Emulated loader traps are kept active, as they are during normal execution.
+  unsigned StepInstruction() {
+    TryFastLoad();cpu.tStates=0;
+    if(snapshotHalted){cpu.regs.R60++;cpu.tStates=4;}
+    else if(!TryLevelLoad())cpu.EmulateOne();
+    unsigned cycles=cpu.tStates;bool irq=false;Advance(cycles,irq);
+    if(irq) {
+      cpu.tStates=0;bool halted=snapshotHalted;
+      if(cpu.regs.iff1A)snapshotHalted=false;
+      cpu.INT(!halted);cycles+=cpu.tStates;bool unused=false;Advance(cpu.tStates,unused);
+      ++framesExecuted;
+      if(rewindEnabled){
+        if(framesExecuted%HistoryStride==0)history.push_back(CaptureState());
+        while(history.size()>1 && framesExecuted-history.front().frame>HistoryLimitFrames)history.pop_front();
+      }
+    }
+    return cycles;
+  }
   void Frame() {
-    bool irq = false;
-    while (!irq) {
-      TryFastLoad();
-      cpu.tStates = 0;
-      if(snapshotHalted){cpu.regs.R60++;cpu.tStates=4;}
-      else if(!TryLevelLoad())cpu.EmulateOne();
-      Advance(cpu.tStates, irq);
-    }
-    cpu.tStates = 0;
-    bool halted=snapshotHalted;
-    if(cpu.regs.iff1A)snapshotHalted=false;
-    cpu.INT(!halted);
-    bool unused = false;
-    Advance(cpu.tStates, unused);
-    ++framesExecuted;
-    if (rewindEnabled) {
-      if (framesExecuted % HistoryStride == 0) history.push_back(CaptureState());
-      while (history.size() > 1 && framesExecuted - history.front().frame > HistoryLimitFrames) history.pop_front();
-    }
+    const auto frame=framesExecuted;
+    do{StepInstruction();}while(framesExecuted==frame);
   }
 
   // Hardware frames have a fractional number of 48 kHz samples. Preserve

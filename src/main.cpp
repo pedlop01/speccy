@@ -18,6 +18,7 @@
 #include "disk_view.h"
 #include "catalog_view.h"
 #include "catalog_load.h"
+#include "debug_view.h"
 #include "rom_settings.h"
 
 #include "z80.h"
@@ -121,7 +122,8 @@ enum MenuId {
   MENU_SAVE_STATE = 480, MENU_LOAD_STATE, MENU_QUICK_SAVE, MENU_QUICK_LOAD,
   MENU_DISK=490,MENU_DISK_A_INSERT,MENU_DISK_A_EJECT,MENU_DISK_A_SAVE,MENU_DISK_A_PROTECT,
   MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW,
-  MENU_CATALOG=510
+  MENU_CATALOG=510,
+  MENU_DEBUG=520,MENU_DEBUG_SHOW,MENU_DEBUG_STEP,MENU_DEBUG_FRAME
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -191,6 +193,11 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       ALLEGRO_END_OF_MENU,
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       {"&Reset", MENU_RESET, 0, nullptr},
+    ALLEGRO_END_OF_MENU,
+    ALLEGRO_START_OF_MENU("De&bug", MENU_DEBUG),
+      {"Show &debugger (F12)", MENU_DEBUG_SHOW, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"Step &instruction (F10)", MENU_DEBUG_STEP, 0, nullptr},
+      {"Next &frame (F4)", MENU_DEBUG_FRAME, 0, nullptr},
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&View", MENU_VIEW),
       {"&2x", MENU_VIEW_2X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -324,6 +331,7 @@ int main(int argc, char *argv[]) {
   al_init_font_addon();
   TapeView tapeView;
   DiskView diskView;
+  DebugView debugView;
   ScreenView screenView;
   Playback playback(machine);
   SaveStates::Store savedGames(SaveStates::Directory());
@@ -353,6 +361,7 @@ int main(int argc, char *argv[]) {
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
+    flags(MENU_DEBUG_SHOW,ALLEGRO_MENU_ITEM_CHECKBOX|(debugView.IsOpen()?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX | (playback.paused ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_SPEED_UP, playback.Speed() == 16 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
     flags(MENU_SPEED_DOWN, playback.Speed() == 0.25 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
@@ -482,6 +491,12 @@ int main(int argc, char *argv[]) {
     al_wait_for_event(events.get(), &event);
     bool resetAudio = false;
     // Handle input immediately; drawing is paced independently of event traffic.
+    DebugView::Action debugAction;
+    if(debugView.Handle(event,machine,debugAction)){
+      if(debugAction==DebugView::Action::None)continue;
+      event.type=ALLEGRO_EVENT_MENU_CLICK;
+      event.user.data1=debugAction==DebugView::Action::Pause?MENU_PAUSE:debugAction==DebugView::Action::Step?MENU_DEBUG_STEP:debugAction==DebugView::Action::Frame?MENU_DEBUG_FRAME:MENU_DEBUG_SHOW;
+    }
     int diskAction=0;
     if(diskView.Handle(event,diskAction)){if(!diskAction)continue;event.type=ALLEGRO_EVENT_MENU_CLICK;event.user.data1=diskAction;}
     if (tapeView.Handle(event, machine)) continue;
@@ -499,6 +514,12 @@ int main(int argc, char *argv[]) {
           resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_S ? MENU_SAVE_STATE : MENU_LOAD_STATE); updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F2 || event.keyboard.keycode == ALLEGRO_KEY_F3) {
           resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_F2 ? MENU_QUICK_SAVE : MENU_QUICK_LOAD); updateUI();
+        } else if(event.keyboard.keycode==ALLEGRO_KEY_F12){
+          if(debugView.IsOpen())debugView.Close();else if(debugView.Show(events.get())){playback.paused=true;ReleaseKeys(ula);resetAudio=true;}updateUI();
+        } else if(event.keyboard.keycode==ALLEGRO_KEY_F10 || event.keyboard.keycode==ALLEGRO_KEY_F4){
+          playback.paused=true;ReleaseKeys(ula);machine.DiscardAudio();
+          if(event.keyboard.keycode==ALLEGRO_KEY_F10)debugView.RecordStep(machine.StepInstruction());else{machine.Frame();debugView.RecordFrame();}
+          resetAudio=true;updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F5) {
           playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F6) {
@@ -522,6 +543,16 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_DEBUG_SHOW:
+            if(debugView.IsOpen())debugView.Close();
+            else if(debugView.Show(events.get())){playback.paused=true;ReleaseKeys(ula);resetAudio=true;}
+            else al_show_native_message_box(display.get(),"Gomas","Debugger","Cannot open debugger window.",nullptr,ALLEGRO_MESSAGEBOX_ERROR);
+            break;
+          case MENU_DEBUG_STEP:case MENU_DEBUG_FRAME:
+            playback.paused=true;ReleaseKeys(ula);machine.DiscardAudio();
+            if(event.user.data1==MENU_DEBUG_STEP)debugView.RecordStep(machine.StepInstruction());else{machine.Frame();debugView.RecordFrame();}
+            resetAudio=true;break;
+
           case MENU_CATALOG: {
             bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
             try {
@@ -692,6 +723,7 @@ int main(int argc, char *argv[]) {
                 "File > Save/Load game: thumbnail gallery (Ctrl+S / Ctrl+L).\n"
                 "F2: quick save to the reserved slot. F3: quick load.\n"
                 "CPU > Reset: restart and rewind the current tape.\n"
+                "Debug: F12 debugger, F10 single instruction, F4 next frame (paused).\n"
                 "F5: pause the whole machine. F6/F7: double/halve playback speed (0.25x to 16x).\n"
                 "F8: normal speed (1x). F9: rewind about 1 second, with up to 10 seconds of history.\n"
                 "CPU > Frequency: give the Z80 more cycles at the normal video/AY/tape rate.\n"
@@ -739,7 +771,7 @@ int main(int argc, char *argv[]) {
     al_set_target_backbuffer(display.get());
     screenView.Draw(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()));
     al_flip_display();
-    if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);}
+    if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);debugView.Draw(machine,playback.paused);}
   }
   return 0;
 }
