@@ -96,7 +96,24 @@ static void Check(bool condition, const char *message) {
   if (!condition) throw std::runtime_error(message);
 }
 
+static void CursorKeys() {
+  ULA ula;
+  auto key=[&](int code,bool down){ALLEGRO_EVENT event={};event.type=down?ALLEGRO_EVENT_KEY_DOWN:ALLEGRO_EVENT_KEY_UP;event.keyboard.keycode=code;ReadKeyboard(event,&ula);};
+  const int arrows[]={ALLEGRO_KEY_LEFT,ALLEGRO_KEY_DOWN,ALLEGRO_KEY_UP,ALLEGRO_KEY_RIGHT};
+  for(unsigned n=0;n<4;++n){key(arrows[n],true);auto state=ula.CaptureState();
+    Check(state.keys[0]==1,"Cursor did not hold CAPS SHIFT");
+    Check(state.keys[3]==(n==0?16:0) && state.keys[4]==(n==0?0:1u<<(5-n)),"Cursor digit mapping is wrong");
+    key(arrows[n],false);state=ula.CaptureState();Check(!state.keys[0] && !state.keys[3] && !state.keys[4],"Cursor release left a key pressed");}
+  key(ALLEGRO_KEY_LSHIFT,true);key(ALLEGRO_KEY_UP,true);key(ALLEGRO_KEY_DOWN,true);key(ALLEGRO_KEY_UP,false);
+  Check(ula.CaptureState().keys[0]==1 && ula.CaptureState().keys[4]==16,"Overlapping cursor release lost Shift or Down");
+  key(ALLEGRO_KEY_DOWN,false);Check(ula.CaptureState().keys[0]==1,"Arrow release lost physical Shift");
+  key(ALLEGRO_KEY_5,true);key(ALLEGRO_KEY_LEFT,true);key(ALLEGRO_KEY_LEFT,false);
+  Check(ula.CaptureState().keys[3]==16,"Arrow release lost physical digit 5");
+  ReleaseKeys(ula);key(ALLEGRO_KEY_RIGHT,true);key(ALLEGRO_KEY_RIGHT,false);
+  auto state=ula.CaptureState();for(auto row:state.keys)Check(!row,"Focus release left host keys held");
+}
 int main() {
+  CursorKeys();
   XInitThreads();
   // Never read or overwrite the user's actual last-ROM preference.
   char configPath[] = "/tmp/gomas-ui-settings-XXXXXX";

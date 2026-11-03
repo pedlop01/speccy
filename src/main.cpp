@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <array>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_native_dialog.h>
@@ -25,6 +26,8 @@
 
 using namespace std;
 
+static std::array<bool, ALLEGRO_KEY_MAX> hostKeys{};
+
 void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
   bool keyEvent = false;
   bool keyDown  = false;
@@ -37,6 +40,9 @@ void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
   }
 
   if (keyEvent) {
+    int key=ev.keyboard.keycode;
+    if(key<0 || key>=ALLEGRO_KEY_MAX)return;
+    hostKeys[key]=keyDown;
     switch (ev.keyboard.keycode) {
       // Row 0
       case ALLEGRO_KEY_0: ula->PressKey(0, 9, keyDown); break;
@@ -82,6 +88,17 @@ void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
       case ALLEGRO_KEY_M: ula->PressKey(3, 7, keyDown); break;
       case ALLEGRO_KEY_RSHIFT: ula->PressKey(3, 8, keyDown); break;
       case ALLEGRO_KEY_SPACE:  ula->PressKey(3, 9, keyDown); break;
+    }
+    if(key==ALLEGRO_KEY_LSHIFT || (key>=ALLEGRO_KEY_5 && key<=ALLEGRO_KEY_8) ||
+        key==ALLEGRO_KEY_LEFT || key==ALLEGRO_KEY_DOWN || key==ALLEGRO_KEY_UP || key==ALLEGRO_KEY_RIGHT) {
+      // Spectrum cursors are CAPS SHIFT + 5/6/7/8. Merge the host keys so
+      // releasing one arrow does not release a held Shift or another cursor.
+      bool cursor=hostKeys[ALLEGRO_KEY_LEFT] || hostKeys[ALLEGRO_KEY_DOWN] || hostKeys[ALLEGRO_KEY_UP] || hostKeys[ALLEGRO_KEY_RIGHT];
+      ula->PressKey(3,0,hostKeys[ALLEGRO_KEY_LSHIFT] || cursor);
+      ula->PressKey(0,4,hostKeys[ALLEGRO_KEY_5] || hostKeys[ALLEGRO_KEY_LEFT]);
+      ula->PressKey(0,5,hostKeys[ALLEGRO_KEY_6] || hostKeys[ALLEGRO_KEY_DOWN]);
+      ula->PressKey(0,6,hostKeys[ALLEGRO_KEY_7] || hostKeys[ALLEGRO_KEY_UP]);
+      ula->PressKey(0,7,hostKeys[ALLEGRO_KEY_8] || hostKeys[ALLEGRO_KEY_RIGHT]);
     }
   }
 }
@@ -216,6 +233,7 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
 }
 
 void ReleaseKeys(ULA &ula) {
+  hostKeys.fill(false);
   for (unsigned row = 0; row < 4; ++row)
     for (unsigned col = 0; col < 10; ++col) ula.PressKey(row, col, false);
 }

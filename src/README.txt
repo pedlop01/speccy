@@ -28,6 +28,10 @@ File > Open... abre un selector de TAP, TZX, SNA, Z80, SZX, SLT, DSK o ZIP. Las 
 y reinician el Spectrum; los snapshots recuperan directamente la máquina. Cancelar o seleccionar un archivo inválido conserva
 la partida actual. Para cargar, escribir LOAD "" en BASIC: J produce LOAD y
 Right Shift + P produce cada comilla; terminar con Enter.
+Las flechas del PC emulan los cursores Spectrum: izquierda = CAPS SHIFT+5,
+abajo = CAPS SHIFT+6, arriba = CAPS SHIFT+7 y derecha = CAPS SHIFT+8. Permiten
+navegar por el menú 128K/+2/+3; Enter confirma. En juegos equivalen a esas
+combinaciones, no a un joystick Kempston.
 File > Close cierra la cinta o snapshot y reinicia el Spectrum; se deshabilita sin archivo.
 File > Exit termina el programa. Escape sale si está en ventana; en pantalla
 completa vuelve a ventana. Cerrar la ventana también termina el programa.
