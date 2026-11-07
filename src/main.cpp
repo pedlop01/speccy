@@ -804,6 +804,7 @@ int main(int argc, char *argv[]) {
     const double now = al_get_time();
     if (playback.TickRewind(now - lastRefresh)) { ReleaseKeys(ula); tapeView.NewTape(); }
     lastRefresh = now;
+    screenView.SettleWindow(display.get(), now);
     screenView.RememberWindow(display.get());
     updateUI();
     al_set_target_backbuffer(display.get());

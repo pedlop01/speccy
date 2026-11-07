@@ -9,6 +9,7 @@ static void RecordMenuFlags(ALLEGRO_MENU *menu, int id, int flags) {
   al_set_menu_item_flags(menu, id, flags);
 }
 static std::atomic<ALLEGRO_DISPLAY *> applicationDisplay(nullptr);
+static std::atomic<bool> delayedMenuResize(false);
 static std::atomic<int> renderedWidth(0),renderedHeight(0);
 static ALLEGRO_DISPLAY *RecordDisplay(int width,int height) {
   auto *display=al_create_display(width,height);ALLEGRO_DISPLAY *empty=nullptr;
@@ -17,6 +18,12 @@ static ALLEGRO_DISPLAY *RecordDisplay(int width,int height) {
 static void RecordFrame() {
   auto *display=al_get_current_display();
   if(display==applicationDisplay.load()) {
+    // Reproduce GTK's late menu ConfigureNotify after startup's initial resize.
+    static unsigned startupFrames = 0;
+    if (++startupFrames == 8) {
+      al_resize_display(display, 640, 451);
+      delayedMenuResize.store(true);
+    }
     renderedWidth.store(al_get_display_width(display));renderedHeight.store(al_get_display_height(display));
   }
   al_flip_display();
@@ -122,7 +129,7 @@ int main() {
   if (configFd < 0) return 1;
   close(configFd);
   { std::ofstream config(configPath);
-    config << "[view]\nwidth=640\nheight=451\nfilter=2\nfullscreen=0\n"; }
+    config << "[view]\nsize_version=1\nwidth=640\nheight=451\nfilter=2\nfullscreen=0\n"; }
   const char *oldConfig = getenv("GOMAS_CONFIG");
   bool hadConfig = oldConfig != nullptr;
   std::string savedConfig = oldConfig ? oldConfig : "";
@@ -155,7 +162,8 @@ int main() {
           ScreenView::Viewport(renderedWidth.load(), renderedHeight.load()).scale == 2 &&
           (observedMenuFlags[MENU_FILTER_SCANLINES_STRONG].load() & ALLEGRO_MENU_ITEM_CHECKED); }, 2000),
           "Saved 2x window/filter did not restore at startup (native menu reduced the drawable area)");
-      Wait(400); // Native menu mapping must not shrink the drawable later.
+      Check(Until([&]() { return delayedMenuResize.load(); }, 2000), "Delayed menu resize was not injected");
+      Wait(1200); // Allow the late GTK configure and size reconciliation to settle.
       Check(renderedWidth.load() == 640 && renderedHeight.load() == 480,
           "Native menu shrank the restored 2x window after mapping");
       Menu(MENU_FULLSCREEN);
@@ -530,6 +538,13 @@ int main() {
       if (checked(MENU_FAST_LOAD)) Menu(MENU_FAST_LOAD);
       Menu(MENU_FULLSCREEN);
       Check(Until([&]() { return checked(MENU_FULLSCREEN); }, 2000), "Final fullscreen was not applied");
+      Menu(MENU_START_LAST);
+      Check(Until([&]() { auto saved = ROMPreferences::Read(configPath);
+        return saved.fullscreen && saved.windowWidth == 1280 && saved.windowHeight == 960;
+      }, 1000), "Fullscreen lost its underlying window dimensions");
+      Menu(MENU_FULLSCREEN); Menu(MENU_VIEW_2X);
+      Check(Until([&]() { return checked(MENU_VIEW_2X); }, 2000), "Final 2x window was not applied");
+
 
       passed = true;
     } catch (const std::exception &error) {
@@ -562,8 +577,8 @@ int main() {
   int result = GomasApplicationMain(2, arguments);
   input.join();
   auto finalSettings = ROMPreferences::Read(configPath);
-  if (passed && !(finalSettings.windowWidth == 1280 && finalSettings.windowHeight == 960 &&
-      finalSettings.fullscreen && finalSettings.filter == 3 && finalSettings.playbackSpeed == 0.5 &&
+  if (passed && !(finalSettings.windowWidth == 640 && finalSettings.windowHeight == 480 &&
+      !finalSettings.fullscreen && finalSettings.filter == 3 && finalSettings.playbackSpeed == 0.5 &&
       finalSettings.cpuMultiplier == 2 && !finalSettings.fastLoad)) {
     passed = false; failure = "Normal exit did not persist the final view/emulation configuration";
   }

@@ -62,7 +62,7 @@ struct ROMPreferences {
     result.windowHeight = Integer(config.get(), "view", "height", 480, 240, 4320);
     // Older settings captured GTK's menu-reduced initial height. Repair only
     // the known 2x/4x widths, once; arbitrary sizes from the new schema stay exact.
-    if (!Integer(config.get(), "view", "size_version", 0, 0, 1)) {
+    if (Integer(config.get(), "view", "size_version", 0, 0, 2) < 2) {
       int height = result.windowWidth / 320 * 240;
       if ((result.windowWidth == 640 || result.windowWidth == 1280) &&
           result.windowHeight < height && result.windowHeight >= height - 64)
@@ -109,7 +109,7 @@ struct ROMPreferences {
     auto number = [&](const char *section, const char *key, int value) {
       al_set_config_value(config.get(), section, key, std::to_string(value).c_str());
     };
-    number("view", "size_version", 1);
+    number("view", "size_version", 2);
     number("view", "width", windowWidth); number("view", "height", windowHeight);
     number("view", "filter", filter); number("view", "fullscreen", fullscreen);
     number("view", "maximized", maximized);

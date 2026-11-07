@@ -60,8 +60,10 @@ int main() {
   assert(legacy.windowWidth == 640 && legacy.windowHeight == 480);
   { std::ofstream out(malformed); out << "[view]\nwidth=1280\nheight=931\n"; }
   assert(ROMPreferences::Read(malformed).windowHeight == 960);
-  { std::ofstream out(malformed); out << "[view]\nsize_version=1\nwidth=640\nheight=451\n"; }
+  { std::ofstream out(malformed); out << "[view]\nsize_version=2\nwidth=640\nheight=451\n"; }
   assert(ROMPreferences::Read(malformed).windowHeight == 451);
+  { std::ofstream out(malformed); out << "[view]\nsize_version=1\nwidth=640\nheight=451\n"; }
+  assert(ROMPreferences::Read(malformed).windowHeight == 480);
   unlink(malformed.c_str());
   char *cwd = al_get_current_directory(); assert(cwd);
   std::string originalDirectory = cwd; al_free(cwd);

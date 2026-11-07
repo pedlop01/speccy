@@ -25,7 +25,7 @@ public:
             std::floor((height - 240 * scale) / 2), scale};
   }
   void RememberWindow(ALLEGRO_DISPLAY *display) {
-    if (Fullscreen(display)) return;
+    if (Fullscreen(display) || restoringWindow || (al_get_display_flags(display) & ALLEGRO_MINIMIZED)) return;
     windowMaximized = (al_get_display_flags(display) & ALLEGRO_MAXIMIZED) != 0;
     if (!windowMaximized) {
       windowWidth = al_get_display_width(display);
@@ -37,6 +37,20 @@ public:
   bool WindowMaximized() const { return windowMaximized; }
   void SetWindowDefaults(int width, int height, bool maximized) {
     windowWidth = width; windowHeight = height; windowMaximized = maximized;
+    restoringWindow = true; restoreStarted = -1;
+  }
+  // GTK may send its menu-adjusted ConfigureNotify after display creation and
+  // after the first resize. Reassert the requested client size while mapping;
+  // never capture those transient dimensions as the user's preference.
+  void SettleWindow(ALLEGRO_DISPLAY *display, double now) {
+    if (!restoringWindow) return;
+    if (restoreStarted < 0) restoreStarted = now;
+    if (!Fullscreen(display) && !windowMaximized &&
+        (al_get_display_width(display) != windowWidth || al_get_display_height(display) != windowHeight)) {
+      al_resize_display(display, windowWidth, windowHeight);
+      restoreStarted = now;
+    }
+    if (now - restoreStarted >= 1.0) restoringWindow = false;
   }
   bool Fullscreen(ALLEGRO_DISPLAY *display) const {
     return (al_get_display_flags(display) & ALLEGRO_FULLSCREEN_WINDOW) != 0;
@@ -58,7 +72,10 @@ public:
     if (al_get_display_flags(display) & ALLEGRO_MAXIMIZED)
       if (!al_set_display_flag(display, ALLEGRO_MAXIMIZED, false)) return false;
     bool resized = al_resize_display(display, 320 * scale, 240 * scale);
-    if (resized) { windowWidth = 320 * scale; windowHeight = 240 * scale; windowMaximized = false; }
+    if (resized) {
+      windowWidth = 320 * scale; windowHeight = 240 * scale; windowMaximized = false;
+      restoringWindow = true; restoreStarted = -1;
+    }
     return resized;
   }
   bool IsScale(ALLEGRO_DISPLAY *display, int scale) const {
@@ -120,6 +137,7 @@ public:
   }
 private:
   int windowWidth = 640, windowHeight = 480;
-  bool windowMaximized = false;
+  bool windowMaximized = false, restoringWindow = false;
+  double restoreStarted = -1;
 };
 #endif
