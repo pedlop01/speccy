@@ -5,6 +5,7 @@
 #include <openssl/evp.h>
 #include <nlohmann/json.hpp>
 #include <atomic>
+#include <cerrno>
 #include <functional>
 #include <fstream>
 #include <map>
@@ -195,6 +196,21 @@ public:
       }catch(const std::exception &){if(progress.cancel)throw; /* Artwork never prevents game loading. */}
     }
     return paths;
+  }
+  void Uninstall(const File &file) {
+    auto found=installed.find(Key(file));if(found==installed.end())return;
+    // Only remove the file recorded by this library, never a caller's path.
+    const File saved=found->second;const auto path=Path(saved);
+    std::string temporary;
+    if(al_filename_exists(path.c_str())) {
+      std::string pattern=path+".uninstall-XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
+      int fd=mkstemp(name.data());if(fd<0)throw std::runtime_error("Cannot uninstall game file");close(fd);temporary=name.data();
+      if(rename(path.c_str(),temporary.c_str())){remove(temporary.c_str());throw std::runtime_error("Cannot uninstall game file");}
+    }
+    installed.erase(found);
+    try{Save();}catch(...){installed[Key(saved)]=saved;if(!temporary.empty())rename(temporary.c_str(),path.c_str());throw;}
+    if(!temporary.empty() && remove(temporary.c_str()))throw std::runtime_error("Game uninstalled, but its temporary file could not be removed");
+    rmdir(ROMDirectory(path).c_str());rmdir((root+"/zxart/"+std::to_string(saved.game)).c_str());
   }
   std::string Install(const File &file,bool localOnly,Progress &progress) {
     if(progress.cancel)throw std::runtime_error("Cancelled");

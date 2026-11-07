@@ -505,7 +505,7 @@ int main() {
       Check(Until([&](){catalog=FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");return catalog!=0;},2000),"Game catalog did not open");
       Wait(200);XSetInputFocus(x,catalog,RevertToParent,CurrentTime);Click(x,catalog,120,60);
       for(char c:std::string("cobra")){key(c,true);key(c,false);}XFlush(x);Wait(450);Click(x,catalog,100,128);
-      Check(Until([&](){return Pixel(x,catalog,650,650)==0x31536d;},2000),"Installed catalog version did not become loadable");
+      Check(Until([&](){return Pixel(x,catalog,645,650)==0x31536d;},2000),"Installed catalog version did not become loadable");
       Check(Until([&](){return Pixel(x,catalog,850,253)==0xdc323c;},2000),"Cached PNG preview did not appear above versions");
       Click(x,catalog,1020,374);
       Check(Until([&](){return Pixel(x,catalog,850,253)==0x28c86e;},1000),"Artwork next button did not show the GIF preview");
@@ -516,9 +516,16 @@ int main() {
       Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog") && FindWindow(x,DefaultRootWindow(x),"Gomas - ZX Spectrum 48K - Cobra.tap");},5000),"Catalog did not load the installed game");
       Menu(MENU_CATALOG);
       Check(Until([&](){catalog=FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");return catalog!=0;},2000),"Offline catalog did not reopen");
-      Wait(150);XSetInputFocus(x,catalog,RevertToParent,CurrentTime);shortcut(XK_Escape);
+      Wait(200);Click(x,catalog,100,128);
+      Check(Until([&](){return Pixel(x,catalog,850,253)==0xdc323c;},2000),"Installed game did not reopen with its artwork");
+      Click(x,catalog,860,650);
+      Check(Until([&](){GameCatalog::Library local(gamesPath);return !al_filename_exists(installedPath.c_str()) && local.InstalledFiles().empty();},2000),
+          "Uninstall did not remove the selected file and its installed status");
+      Check(al_filename_exists(cachedArtwork[0].c_str()),"Uninstall removed cached artwork");
+      Click(x,catalog,720,60); // Installed filter must no longer contain this game.
+      Wait(200);XSetInputFocus(x,catalog,RevertToParent,CurrentTime);shortcut(XK_Escape);
       Check(Until([&](){return !FindWindow(x,DefaultRootWindow(x),"Gomas - Game catalog");},1000),"Catalog Escape did not close");
-      Check(al_filename_exists(installedPath.c_str()),"Catalog removed an installed game on close");
+      Check(!al_filename_exists(installedPath.c_str()),"Catalog restored an uninstalled game on close");
       puts("Native catalog: offline search, installed version, one-click load, reopen and Escape passed");
       // The debugger pauses on open, steps without resuming, and only reads RAM.
       Menu(MENU_DEBUG_SHOW);Window debugger=0;

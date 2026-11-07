@@ -703,3 +703,8 @@ obtienen de imagesUrls de su API oficial, sin analizar páginas HTML. Se guardan
 en games/artwork y se reutilizan sin conexión. Los GIF animados muestran su
 primer fotograma. La lista inferior conserva selección, rueda y teclado.
 Las imágenes son opcionales: su ausencia o un error no impide cargar el juego.
+
+El botón Uninstall elimina la versión instalada seleccionada de games y su
+marca Installed, también sin conexión. Las otras versiones del juego, los
+estados guardados, las imágenes y los metadatos del catálogo se conservan.
+Se puede instalar otra vez desde el catálogo al volver a estar conectado.

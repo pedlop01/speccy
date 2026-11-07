@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdio>
 #include <atomic>
+#include <sys/stat.h>
 #include "../catalog_load.h"
 #include "../catalog_art.h"
 #include "catalog_art_fixture.h"
@@ -81,6 +82,19 @@ int main(int argc,char **argv) {
     auto downloaded=live.Install(download,false,progress);printf("Live ZXArt: %s, %zu variants, downloaded %s\n",found.games[0].title.c_str(),files.size(),downloaded.c_str());
     remove(downloaded.c_str());rmdir(ROMDirectory(downloaded).c_str());remove((root+"/live/catalog.json").c_str());rmdir((root+"/live/zxart/"+std::to_string(download.game)).c_str());rmdir((root+"/live/zxart").c_str());rmdir((root+"/live").c_str());
   }
+  // Uninstall affects only the selected installed file; other versions and
+  // browsing metadata survive. A failed metadata save restores the game file.
+  auto catalogPath=root+"/catalog.json";assert(rename(catalogPath.c_str(),(catalogPath+".backup").c_str())==0);
+  assert(mkdir(catalogPath.c_str(),0700)==0);
+  Reject([&](){library.Uninstall(file);});assert(library.Installed(file) && Read(path,100)==before);
+  assert(rmdir(catalogPath.c_str())==0);assert(rename((catalogPath+".backup").c_str(),catalogPath.c_str())==0);
+  library.Uninstall(file);assert(!al_filename_exists(path.c_str()) && !library.Installed(file));
+  assert(library.Installed(zipFile) && library.Installed(game) && library.CachedFiles(game).size()==2);
+  Library afterUninstall(root,fake);assert(!afterUninstall.Installed(file) && afterUninstall.Installed(zipFile));
+  library.Uninstall(file); // Repeated removal is harmless.
+  library.Uninstall(zipFile);assert(!library.Installed(game) && library.Cached("",0,false,true).games.empty());
+  assert(library.Cached("Alpha",0,false,false).games.size()==1);
+  auto reinstalled=library.Install(file,false,p);assert(reinstalled==path && library.Installed(file));
   remove(path.c_str());remove(zipPath.c_str());rmdir(ROMDirectory(path).c_str());rmdir(ROMDirectory(zipPath).c_str());remove((root+"/catalog.json").c_str());rmdir((root+"/zxart/1").c_str());rmdir((root+"/zxart").c_str());assert(rmdir(root.c_str())==0);
   puts("Catalog: pagination/search/sort, versions, safe cache paths, checksums, cancellation, offline reuse, ZIP validation and transactional loading passed");
 }

@@ -27,7 +27,7 @@ public:
     if(!font || !events)throw std::runtime_error("Cannot allocate game catalog resources");
     al_register_event_source(events.get(),al_get_display_event_source(display.get()));al_register_event_source(events.get(),al_get_display_event_source(parent));
     al_register_event_source(events.get(),al_get_keyboard_event_source());al_register_event_source(events.get(),al_get_mouse_event_source());
-    enum Kind{Search,Versions,Artwork,Install};
+    enum Kind{Search,Versions,Artwork,Install,Uninstall};
     struct Request {Kind kind=Search;unsigned generation=0,page=0;std::string query;bool descending=false,offline=false,installed=false;Game game;GameCatalog::File file;};
     struct Result {Request request;Page page;std::vector<GameCatalog::File> files;std::string path,error;std::vector<std::string> artwork;std::set<std::uint64_t> installedGames;std::set<std::string> installedFiles;bool cached=false;};
     Progress progress;std::future<Result> job;bool busy=false,pending=false,closing=false,dirty=true;
@@ -43,6 +43,11 @@ public:
     auto search=[&](double delay){Request r;r.kind=Search;r.query=query;r.page=0;r.offline=offline;r.installed=installedOnly;r.descending=descending;selected=selectedFile=-1;files.clear();artwork.clear();selectedArt=0;fileFirst=gameFirst=0;request(r,delay);};
     auto loadVersions=[&](unsigned index){if(index>=page.games.size())return;selected=index;if(index<gameFirst)gameFirst=index;if(index>=gameFirst+19)gameFirst=index-18;selectedFile=-1;files.clear();artwork.clear();selectedArt=0;fileFirst=0;Request r;r.kind=Versions;r.game=page.games[index];r.offline=offline || installedOnly;request(r,0);};
     auto activate=[&](){if(selected<0 || selectedFile<0 || size_t(selectedFile)>=files.size() || !files[selectedFile].supported)return;Request r;r.kind=Install;r.game=page.games[selected];r.file=files[selectedFile];r.offline=offline || installedOnly;request(r,0);};
+    auto uninstall=[&](){
+      if(selected<0 || selectedFile<0 || size_t(selectedFile)>=files.size() || !installedFiles.count(library.Key(files[selectedFile])))return;
+      Request r;r.kind=Uninstall;r.game=page.games[selected];r.file=files[selectedFile];r.offline=offline;
+      r.installed=installedOnly;r.query=query;r.page=page.page;r.descending=descending;request(r,0);
+    };
     auto changePage=[&](int direction){if((busy && current.kind==Install) || pending)return;int number=int(page.page)+direction;if(number<0 || size_t(number)*PageSize>=page.total)return;
       Request r;r.kind=Search;r.query=query;r.page=number;r.offline=offline;r.installed=installedOnly;r.descending=descending;selected=selectedFile=-1;files.clear();artwork.clear();selectedArt=0;gameFirst=0;request(r,0);};
     auto scale=[&](){return std::max(0.01f,std::min(al_get_display_width(display.get())/1080.f,al_get_display_height(display.get())/730.f));};
@@ -63,6 +68,17 @@ public:
             artwork.clear();selectedArt=0;
             for(const auto &path:result.artwork){Bitmap bitmap(LoadCatalogArtwork(path),al_destroy_bitmap);if(bitmap)artwork.push_back(std::move(bitmap));}
           }
+          else if(result.request.kind==Uninstall && result.error.empty()) {
+            message="Uninstalled: "+result.request.file.name;
+            files=std::move(result.files);fileFirst=0;selectedFile=files.empty()?-1:0;
+            if(result.request.offline || result.request.installed)files.erase(std::remove_if(files.begin(),files.end(),[&](const GameCatalog::File &file){return !installedFiles.count(library.Key(file));}),files.end());
+            selectedFile=files.empty()?-1:0;
+            if(result.request.installed) {
+              page=std::move(result.page);gameFirst=0;selected=-1;
+              for(unsigned i=0;i<page.games.size();++i)if(page.games[i].id==result.request.game.id)selected=i;
+              if(selected<0){files.clear();selectedFile=-1;artwork.clear();}
+            }
+          }
           else if(!result.path.empty()){chosen.path=result.path;chosen.model=result.request.file.model;chosen.type=result.request.file.type;closing=true;}
           dirty=true;
         }else if(!closing && !pending){message="Cancelled";dirty=true;}
@@ -70,12 +86,15 @@ public:
       if(closing && !busy){try{library.SetOffline(offline);}catch(const std::exception &e){if(chosen.path.empty())message=e.what();}return chosen;}
       if(!closing && !busy && pending && now>=due) {
         current=next;pending=false;busy=true;progress.cancel=false;progress.received=0;progress.total=0;Request r=current;
-        message=r.kind==Search?(r.offline || r.installed?"Loading local library...":"Searching ZXArt..."):r.kind==Versions?"Loading versions...":r.kind==Artwork?"Loading artwork...":"Checking / downloading game...";
+        message=r.kind==Search?(r.offline || r.installed?"Loading local library...":"Searching ZXArt..."):r.kind==Versions?"Loading versions...":r.kind==Artwork?"Loading artwork...":r.kind==Uninstall?"Uninstalling game...":"Checking / downloading game...";
         job=std::async(std::launch::async,[&library,&progress,r](){Result result;result.request=r;
           try {
             if(r.kind==Search){if(r.offline || r.installed){result.page=library.Cached(r.query,r.page,r.descending,r.installed);result.cached=true;}else result.page=library.Search(r.query,r.page,r.descending,progress);}
             else if(r.kind==Versions){result.files=r.offline?library.CachedFiles(r.game):library.Versions(r.game,progress);if(r.offline)result.cached=true;}
             else if(r.kind==Artwork)result.artwork=library.Artwork(r.game,r.offline,progress);
+            else if(r.kind==Uninstall){library.Uninstall(r.file);result.files=library.CachedFiles(r.game);
+              if(r.installed){result.page=library.Cached(r.query,r.page,r.descending,true);
+                if(result.page.games.empty() && result.page.total)result.page=library.Cached(r.query,unsigned((result.page.total-1)/PageSize),r.descending,true);}}
             else result.path=library.Install(r.file,r.offline,progress);
           }catch(const std::exception &e){result.error=e.what();if(r.kind==Search && !progress.cancel){result.page=library.Cached(r.query,r.page,r.descending,r.installed);if(result.page.games.empty() && result.page.total)result.page=library.Cached(r.query,0,r.descending,r.installed);result.cached=true;result.error="Network unavailable. Showing cached games. "+result.error;}
             if(r.kind==Versions && !progress.cancel)result.files=library.CachedFiles(r.game);}
@@ -127,7 +146,9 @@ public:
         button(20,629,110,"Previous",false,page.page>0 && !busy);button(145,629,110,"Next",false,(size_t(page.page)+1)*PageSize<page.total && !busy);
         al_draw_text(font.get(),muted,275,640,0,("Page "+std::to_string(page.page+1)+" / "+std::to_string(std::max<size_t>(1,(page.total+PageSize-1)/PageSize))).c_str());
         bool allowed=selectedFile>=0 && size_t(selectedFile)<files.size() && files[selectedFile].supported && (!busy || current.kind==Artwork) && !pending;
-        button(640,636,260,selectedFile>=0 && size_t(selectedFile)<files.size() && installedFiles.count(library.Key(files[selectedFile]))?"Load installed game":"Install & load",true,allowed);
+        button(640,636,170,selectedFile>=0 && size_t(selectedFile)<files.size() && installedFiles.count(library.Key(files[selectedFile]))?"Load installed game":"Install & load",true,allowed);
+        button(822,636,84,"Uninstall",false,selectedFile>=0 && size_t(selectedFile)<files.size() &&
+            installedFiles.count(library.Key(files[selectedFile])) && (!busy || current.kind==Artwork) && !pending);
         button(916,636,144,busy?"Cancel task":"Close",false);
         std::string status=closing?"Cancelling network request...":message;
         if(busy && current.kind==Install){size_t received=progress.received,total=progress.total;status+=" "+std::to_string(received/1024)+" KB";if(total)status+=" / "+std::to_string(total/1024)+" KB";}
@@ -173,7 +194,8 @@ public:
           else if(x>=992)selectedArt=(selectedArt+1)%artwork.size();
         }
         else if(x>=650 && x<1050 && y>=418 && y<568){unsigned index=fileFirst+unsigned((y-418)/25);if(index<files.size()){selectedFile=index;searchFocus=false;fileFocus=true;}}
-        else if(y>=629 && y<666){if(x>=20 && x<130)changePage(-1);else if(x>=145 && x<255)changePage(1);else if(x>=640 && x<900 && (!busy || current.kind==Artwork) && !pending)activate();
+        else if(y>=629 && y<666){if(x>=20 && x<130)changePage(-1);else if(x>=145 && x<255)changePage(1);else if(x>=640 && x<810 && (!busy || current.kind==Artwork) && !pending)activate();
+          else if(x>=822 && x<906 && (!busy || current.kind==Artwork) && !pending)uninstall();
           else if(x>=916 && x<1060){if(busy){++generation;progress.cancel=true;pending=false;message="Cancelling...";}else{closing=true;pending=false;}}}
       }
     }
