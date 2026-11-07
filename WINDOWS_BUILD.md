@@ -150,3 +150,8 @@ helper includes it in the Windows SDK; if reusing an older SDK, rerun
 unified installed library work in both Linux and Windows builds. itch.io
 opens the creator page in the default browser; ZXArt/ZXInfo downloads use
 the existing HTTPS cache.
+
+Monitor synchronization uses the Windows monitor containing the emulator window
+and the active mode reported by EnumDisplaySettingsExW. It needs no additional
+Windows SDK packages. The Linux build additionally uses XRandR/X11 for refresh
+discovery; those libraries are excluded from the Windows cross-build.

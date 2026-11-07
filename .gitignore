@@ -42,3 +42,5 @@ catalog-sources-tests
 
 raster-tests
 topcat-tests
+
+monitor-sync-tests

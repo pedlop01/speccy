@@ -13,6 +13,8 @@
 #include "tape_view.h"
 #include "screen_view.h"
 #include "playback.h"
+#include "monitor_sync.h"
+#include "monitor_refresh.h"
 #include "save_gallery.h"
 #include "choice_dialog.h"
 #include "disk_view.h"
@@ -116,6 +118,7 @@ enum MenuId {
   MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW,
   MENU_CATALOG=510,
   MENU_DEBUG=520,MENU_DEBUG_SHOW,MENU_DEBUG_STEP,MENU_DEBUG_FRAME,
+  MENU_SYNC_MONITOR=540,
   MENU_INPUT=550,MENU_JOYSTICK_MODE,MENU_JOY_NONE,MENU_JOY_KEMPSTON,MENU_JOY_SINCLAIR1,MENU_JOY_SINCLAIR2,
   MENU_JOY_KEYBOARD,MENU_JOY_GAMEPAD,MENU_JOY_CONTROLLER,MENU_JOY_AUTO,MENU_JOY_PAD1,MENU_JOY_PAD2,MENU_JOY_PAD3,MENU_JOY_PAD4
 };
@@ -206,6 +209,7 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       ALLEGRO_END_OF_MENU,
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&Settings", MENU_SETTINGS),
+      {"Sync speed to &monitor", MENU_SYNC_MONITOR, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
       ALLEGRO_START_OF_MENU("&Input", MENU_INPUT),
         ALLEGRO_START_OF_MENU("Joystick &interface", MENU_JOYSTICK_MODE),
           {"&None", MENU_JOY_NONE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -374,7 +378,23 @@ int main(int argc, char *argv[]) {
   Playback playback(machine);
   playback.SetSpeed(preferences.playbackSpeed);
   unique_ptr<ALLEGRO_FONT, decltype(&al_destroy_font)> rewindFont(al_create_builtin_font(), al_destroy_font);
-  double lastRefresh = al_get_time();
+  double lastRefresh = al_get_time(), nextMonitorCheck = 0;
+  MonitorSync monitorSync;
+  bool syncEnabled=preferences.syncMonitor;
+  MonitorPacer syncPacer;
+  MonitorVSync monitorVSync;
+  auto configureSync = [&]() {
+    const auto candidate=MonitorSync::Choose(syncEnabled?MonitorRefresh(display.get()):0,machine.Configuration().timing);
+    const auto previous=monitorSync.Configuration();
+    if(candidate.active==previous.active && candidate.refresh==previous.refresh && candidate.fps==previous.fps && candidate.ratio==previous.ratio)return false;
+    monitorSync.Configure(candidate);machine.DiscardAudio();
+    if(candidate.active)monitorVSync.Configure(display.get(),0);
+    else monitorVSync.Restore();
+    syncPacer.Reset(al_get_time(),candidate);
+    al_set_timer_speed(refreshTimer.get(),candidate.active?1.0/candidate.fps:0.02);
+    return true;
+  };
+  configureSync();
   SaveStates::Store savedGames(SaveStates::Directory());
   SaveGallery saveGallery;
   machine.EnableRewind();
@@ -394,6 +414,10 @@ int main(int argc, char *argv[]) {
       size_t slash = machine.tapePath.find_last_of("/\\");
       title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
     }
+    if(syncEnabled) {
+      if(monitorSync.Configuration().active){char label[64];snprintf(label,sizeof(label)," [Monitor sync %.2f FPS]",monitorSync.Configuration().fps);title+=label;}
+      else title+=" [Monitor sync unavailable]";
+    }
     if (playback.Rewinding()) title += " [Rewinding]";
     if (playback.paused) title += " [Paused]";
     if (playback.Speed() != 1) title += " [Speed " + playback.SpeedText() + "]";
@@ -412,6 +436,7 @@ int main(int argc, char *argv[]) {
       int index=id-MENU_JOY_PAD1;
       flags(id,ALLEGRO_MENU_ITEM_CHECKBOX|(controllers.controller==index?ALLEGRO_MENU_ITEM_CHECKED:0));
     }
+    flags(MENU_SYNC_MONITOR,ALLEGRO_MENU_ITEM_CHECKBOX|(syncEnabled?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_DEBUG_SHOW,ALLEGRO_MENU_ITEM_CHECKBOX|(debugView.IsOpen()?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX | (playback.paused ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_SPEED_UP, playback.Speed() == 16 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
@@ -461,6 +486,7 @@ int main(int argc, char *argv[]) {
     preferences.maximized = screenView.WindowMaximized();
     preferences.fullscreen = screenView.Fullscreen(display.get());
     preferences.filter = static_cast<int>(screenView.filter);
+    preferences.syncMonitor = syncEnabled;
     preferences.playbackSpeed = playback.Speed();
     preferences.cpuMultiplier = machine.CPUMultiplier();
     preferences.fastLoad = machine.fastLoad;
@@ -496,14 +522,16 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < 3; ++i) {
       void *fragment = al_get_audio_stream_fragment(stream.get());
       if (!fragment) break;
-      playback.ReadAudio(static_cast<short *>(fragment), SAMPLES_PER_FRAME);
+      if(monitorSync.Configuration().active)monitorSync.Read(static_cast<short *>(fragment),SAMPLES_PER_FRAME);
+      else playback.ReadAudio(static_cast<short *>(fragment), SAMPLES_PER_FRAME);
       if (!al_set_audio_stream_fragment(stream.get(), fragment)) return false;
     }
     return true;
   };
   auto restartAudio = [&]() {
     // Drop every queued sample from the previous machine state.
-    playback.DiscardAudio();
+    playback.DiscardAudio();monitorSync.Reset();
+    syncPacer.Reset(al_get_time(),monitorSync.Configuration());
     if (stream) {
       al_unregister_event_source(events.get(), al_get_audio_stream_event_source(stream.get()));
       stream.reset();
@@ -615,6 +643,14 @@ int main(int argc, char *argv[]) {
         break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_SYNC_MONITOR:
+            syncEnabled=!syncEnabled;configureSync();ReleaseInput(machine);resetAudio=true;savePreferences();
+            if(syncEnabled && !monitorSync.Configuration().active) {
+              al_set_audio_stream_playing(stream.get(),false);
+              al_show_native_message_box(display.get(),"Gomas","Monitor synchronization unavailable",
+                  "Cannot detect a compatible refresh rate. This option requires a refresh rate whose integer divisor is within 5% of the Spectrum frame rate (for example 50, 100 or 144 Hz).",nullptr,ALLEGRO_MESSAGEBOX_WARN);
+            }
+            break;
           case MENU_JOY_NONE:case MENU_JOY_KEMPSTON:case MENU_JOY_SINCLAIR1:case MENU_JOY_SINCLAIR2:
             joystickInput.mode=static_cast<JoystickMode>(event.user.data1-MENU_JOY_NONE);
             ReleaseInput(machine);savePreferences();break;
@@ -808,6 +844,7 @@ int main(int argc, char *argv[]) {
                 "F8: normal speed (1x). Hold F9: VHS rewind at 4x, up to 10 seconds of history.\n"
                 "CPU > Frequency: give the Z80 more cycles at the normal video/AY/tape rate.\n"
                 "Use the model clock (1x) for timing-sensitive games and real-time tape loading.\n"
+                "Settings > Sync speed to monitor: adjust playback (up to 5%) for an even display cadence.\n"
                 "Settings > Input: None / Kempston / Sinclair joystick; optional arrows + Right Ctrl.\n"
                 "Settings > ROM: choose a ROM and the startup default.\n"
                 "Tape > Fast load: instant loading (default).\n"
@@ -839,6 +876,10 @@ int main(int argc, char *argv[]) {
       std::string token=machine.tapePath+":"+std::to_string(machine.SessionGeneration())+":"+std::to_string(machine.deck.Offset())+":"+std::to_string(machine.deck.SelectionCount());
       if(token!=lastChoice){lastChoice=token;chooseTape();}
     }else lastChoice.clear();
+    if(al_get_time()>=nextMonitorCheck || resetAudio) {
+      nextMonitorCheck=al_get_time()+1;
+      if(configureSync())resetAudio=true;
+    }
     if (resetAudio && !restartAudio()) {
       fprintf(stderr, "Cannot restart audio stream\n"); return 1;
     }
@@ -853,6 +894,7 @@ int main(int argc, char *argv[]) {
     ApplyJoystick(machine);
     if (playback.TickRewind(now - lastRefresh)) { ReleaseInput(machine); tapeView.NewTape(); }
     lastRefresh = now;
+    if(monitorSync.Configuration().active)monitorSync.Tick(machine,playback);
     screenView.SettleWindow(display.get(), now);
     screenView.RememberWindow(display.get());
     updateUI();
@@ -871,7 +913,23 @@ int main(int argc, char *argv[]) {
           "%.1fs left - release F9 to resume", machine.RewindSeconds());
       al_draw_filled_rectangle(x, y + 29, x + 250 * std::min(1.0, machine.RewindSeconds() / 10), y + 32, al_map_rgb(130, 205, 245));
     }
+    if(monitorSync.Configuration().active) {
+      // Wake before the chosen retrace, then let the driver align the swap.
+      // Timer fallback is retained for backends without a retrace wait API.
+      if(syncPacer.CanWait()) {
+        const bool waited=al_wait_for_vsync();syncPacer.WaitResult(al_get_time(),waited);
+      }
+      if(!syncPacer.CanWait()) {
+        const double remaining=syncPacer.Remaining(al_get_time());if(remaining>0)al_rest(remaining);
+      }
+    }
     al_flip_display();
+    if(monitorSync.Configuration().active) {
+      const double finished=al_get_time();syncPacer.Presented(finished);
+      al_stop_timer(refreshTimer.get());
+      al_set_timer_speed(refreshTimer.get(),syncPacer.Delay(finished));
+      al_start_timer(refreshTimer.get());
+    }
     if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);debugView.Draw(machine,playback.paused);}
   }
   playback.EndRewind();

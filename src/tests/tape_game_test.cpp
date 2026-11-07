@@ -3,15 +3,18 @@
 #include <set>
 #include <unistd.h>
 #include "../emulator.h"
+#include "../monitor_sync.h"
 
 // Full BASIC LOAD "", six ROM loads, trainer answers and keyboard game start.
 // It also checks the machine frame loop disables the ROM trap in pulse mode.
-static void Cobra(bool fast,const char *path="cobra.tap") {
+static void Cobra(bool fast,const char *path="cobra.tap",bool synchronized=false) {
   SpectrumMachine machine;
   std::string error;
   assert(machine.LoadROM(FindROM("48.rom"), error));
   assert(machine.Open(path, error));
   machine.SetFastLoad(fast);
+  Playback playback(machine);MonitorSync sync;
+  sync.Configure(MonitorSync::Choose(144,machine.Configuration().timing));
   int finished = -1;
   std::set<unsigned> screens;
   for (int frame = 0; frame < 30000; ++frame) {
@@ -31,7 +34,8 @@ static void Cobra(bool fast,const char *path="cobra.tap") {
       key(finished + 700, 0, 0);
       key(finished + 1100, 0, 0); // Keyboard option, allowing menu intro to finish.
     }
-    machine.Frame();
+    if(synchronized){sync.Tick(machine,playback);short samples[1000];sync.Read(samples,1000);}
+    else machine.Frame();
     if (finished < 0 && machine.deck.CurrentBlock() == machine.deck.Blocks().size()) {
       finished = frame;
       if (fast) assert(frame < 1000);
@@ -46,7 +50,7 @@ static void Cobra(bool fast,const char *path="cobra.tap") {
     if (finished >= 0 && frame == finished + 2000) {
       assert(screens.size() > 30); // Gameplay changes, not a static menu/loading image.
       printf("Cobra %s (%s): loaded at frame %d; %zu changing gameplay frames\n",path,
-          fast ? "fast" : "pulses", finished, screens.size());
+          synchronized ? "monitor sync 48 FPS" : fast ? "fast" : "pulses", finished, screens.size());
       return;
     }
   }
@@ -55,6 +59,7 @@ static void Cobra(bool fast,const char *path="cobra.tap") {
 
 int main() {
   Cobra(true);
+  Cobra(true,"cobra.tap",true);
   Cobra(false);
   std::ifstream input("cobra.tap",std::ios::binary);
   std::vector<unsigned char> tap((std::istreambuf_iterator<char>(input)),{});assert(!tap.empty());

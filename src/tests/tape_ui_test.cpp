@@ -210,6 +210,17 @@ int main() {
       };
       Check(checked(MENU_JOY_SINCLAIR2) && checked(MENU_JOY_KEYBOARD) && !checked(MENU_JOY_GAMEPAD),
           "Saved joystick settings did not restore at startup");
+      Menu(MENU_SYNC_MONITOR);Wait(200);
+      // Headless displays may report no compatible refresh. Dismiss the real
+      // informational dialog; the requested preference still persists.
+      if(Window warning=FindWindow(x,DefaultRootWindow(x),"Gomas")) {
+        XSetInputFocus(x,warning,RevertToParent,CurrentTime);shortcut(XK_Return);
+      }
+      Check(Until([&](){return checked(MENU_SYNC_MONITOR) && ROMPreferences::Read(configPath).syncMonitor;},2000),
+          "Monitor synchronization did not enable/persist");
+      Menu(MENU_SYNC_MONITOR);
+      Check(Until([&](){return !checked(MENU_SYNC_MONITOR) && !ROMPreferences::Read(configPath).syncMonitor;},1000),
+          "Monitor synchronization did not disable/persist");
       for(int id:{MENU_JOY_KEMPSTON,MENU_JOY_SINCLAIR1,MENU_JOY_SINCLAIR2,MENU_JOY_NONE}) {
         Menu(id);
         Check(Until([&](){return checked(id) && ROMPreferences::Read(configPath).joystickMode==id-MENU_JOY_NONE;},1000),

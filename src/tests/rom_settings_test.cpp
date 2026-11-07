@@ -28,7 +28,7 @@ int main() {
   setenv("GOMAS_CONFIG", config.c_str(), 1);
   assert(ROMSettingsPath() == AbsoluteROMPath(config));
   auto preferences = ROMPreferences::Read(config);
-  assert(preferences.restoreLast && preferences.lastROM.empty());
+  assert(preferences.restoreLast && preferences.lastROM.empty() && !preferences.syncMonitor);
   SpectrumMachine machine;
   std::string error, notice;
   assert(LoadStartupROM(machine, preferences, "", false, executable, error, notice));
@@ -45,22 +45,24 @@ int main() {
   restored.joystickMode=3;restored.joystickKeyboard=true;restored.gamepad=false;restored.controller=2;
   restored.windowWidth = 1280; restored.windowHeight = 960;
   restored.filter = 3; restored.fullscreen = true; restored.maximized = true;
+  restored.syncMonitor = true;
   restored.playbackSpeed = 0.25; restored.cpuMultiplier = 4; restored.fastLoad = false;
   assert(restored.Save(config, error));
   auto view = ROMPreferences::Read(config);
   assert(view.joystickMode==3 && view.joystickKeyboard && !view.gamepad && view.controller==2);
   assert(view.windowWidth == 1280 && view.windowHeight == 960 && view.filter == 3);
   assert(view.fullscreen && view.maximized && !view.fastLoad);
+  assert(view.syncMonitor);
   assert(view.playbackSpeed == 0.25 && view.cpuMultiplier == 4);
   // Invalid or partially written values use safe defaults, not arbitrary sizes
   // or unsupported clock/speed values. Old ROM-only files remain compatible.
   std::string malformed = folder + "bad.ini";
   { std::ofstream out(malformed);
     out << "[view]\nwidth=999999999999999999999\nheight=-5\nfilter=4\nfullscreen=yes\n"
-        << "[emulation]\nspeed=nan\ncpu_multiplier=3\nfast_load=2\n"; }
+        << "[emulation]\nspeed=nan\ncpu_multiplier=3\nfast_load=2\nsync_monitor=invalid\n"; }
   auto bad = ROMPreferences::Read(malformed);
   assert(bad.windowWidth == 640 && bad.windowHeight == 480 && bad.filter == 0 && !bad.fullscreen);
-  assert(bad.playbackSpeed == 1 && bad.cpuMultiplier == 1 && bad.fastLoad);
+  assert(bad.playbackSpeed == 1 && bad.cpuMultiplier == 1 && bad.fastLoad && !bad.syncMonitor);
   { std::ofstream out(malformed); out << "[view]\nwidth=640\nheight=451\n"; }
   auto legacy = ROMPreferences::Read(malformed);
   assert(legacy.windowWidth == 640 && legacy.windowHeight == 480);

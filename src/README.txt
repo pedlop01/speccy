@@ -6,7 +6,8 @@ Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
 allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, allegro_image-5, giflib, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
-nlohmann_json y expat. El catálogo usa HTTPS con certificados verificados y un hilo de
+nlohmann_json y expat. En Linux también se necesitan libXrandR y libX11 para
+consultar el refresco del monitor. El catálogo usa HTTPS con certificados verificados y un hilo de
 trabajo; compilar/enlazar con soporte pthread (incluido en el Makefile).
 No necesita acodec.
 
@@ -823,3 +824,38 @@ Prueba opcional del juego (no se distribuye su TAP): make -C bin topcat-tests,
 y desde bin ejecutar ./topcat-tests /ruta/al/Top_Cat_in_Beverly_Hills_Cats.tap.
 Usa la versión ZXArt de MD5 2c6da90b3f5de817ad112fcbcff4d259 y comprueba que
 16 poses consecutivas al caminar no alternan con el fondo sin sprite.
+
+Sincronizar velocidad con el monitor
+-------------------------------------
+Settings > Sync speed to monitor es una casilla desactivada por defecto. Se
+guarda en settings.ini (emulation/sync_monitor). Al activarla se consulta el
+monitor que contiene el centro de la ventana y se elige el divisor entero más
+cercano a los FPS del Spectrum. A 144 Hz son tres refrescos por frame: 48 FPS.
+La consulta Linux usa XRandR y conserva los decimales del modo actual; Windows
+usa el monitor de la ventana. El título muestra los FPS de destino.
+
+Se admite un cambio máximo del 5%: 50, 100 y 144 Hz suelen ser compatibles;
+60 o 120 Hz no lo son con este límite. Si no se detecta una frecuencia compatible,
+la opción queda solicitada pero inactiva y el título indica «unavailable».
+Se vuelve a comprobar al cambiar de monitor, refresco o modelo de Spectrum.
+El emulador no cambia los modos de vídeo del escritorio.
+
+Este modo cambia la velocidad global, no la frecuencia interna del Z80: ULA,
+AY y cinta conservan sus relojes y relaciones. Se ejecutan los frames desde el
+reloj de presentación; el audio no hace avanzar la CPU por adelantado. Se
+remuestrea cada bloque de audio para que acompañe el ritmo nuevo, con un ajuste
+suave y acotado para absorber la deriva entre el DAC y el monitor. A 144 Hz el
+juego y la música van aproximadamente un 4% más lentos (el tono también baja).
+F6/F7 y CPU > Frequency siguen siendo ajustes independientes.
+
+La presentación solicita la espera vertical del backend y usa plazos absolutos
+si el driver no ofrece una espera real. En OpenGL se conserva/restaura el
+intervalo de intercambio anterior para evitar una doble espera. El compositor
+o el driver pueden limitar la sincronización efectiva; pantalla completa puede
+dar un resultado distinto al de una ventana. Al desactivar la casilla se
+restaura el camino original de audio/presentación.
+
+monitor-sync-tests comprueba divisores, límite, todos los modelos, remuestreo,
+velocidades 0.25x-16x, pausa/reset, deriva, colas acotadas y esperas verticales
+que regresan antes de tiempo. tape-game-tests carga Cobra también a 48 FPS.
+La prueba de interfaz activa/desactiva la casilla y comprueba su persistencia.

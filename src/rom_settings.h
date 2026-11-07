@@ -33,7 +33,7 @@ struct ROMPreferences {
   std::string lastROM;
   bool lastCustom48 = false;
   int windowWidth = 640, windowHeight = 480, filter = 0;
-  bool fullscreen = false, maximized = false, fastLoad = true;
+  bool fullscreen = false, maximized = false, fastLoad = true, syncMonitor = false;
   double playbackSpeed = 1;
   unsigned cpuMultiplier = 1;
   int joystickMode=0,controller=-1;
@@ -73,6 +73,7 @@ struct ROMPreferences {
     result.filter = Integer(config.get(), "view", "filter", 0, 0, 3);
     result.fullscreen = Integer(config.get(), "view", "fullscreen", 0, 0, 1);
     result.maximized = Integer(config.get(), "view", "maximized", 0, 0, 1);
+    result.syncMonitor = Integer(config.get(), "emulation", "sync_monitor", 0, 0, 1);
     result.fastLoad = Integer(config.get(), "emulation", "fast_load", 1, 0, 1);
     int clock = Integer(config.get(), "emulation", "cpu_multiplier", 1, 1, 4);
     if (clock == 1 || clock == 2 || clock == 4) result.cpuMultiplier = clock;
@@ -120,6 +121,7 @@ struct ROMPreferences {
     number("view", "filter", filter); number("view", "fullscreen", fullscreen);
     number("view", "maximized", maximized);
     number("emulation", "fast_load", fastLoad);
+    number("emulation", "sync_monitor", syncMonitor);
     number("emulation", "cpu_multiplier", cpuMultiplier);
     al_set_config_value(config.get(), "emulation", "speed", SpeedValue(playbackSpeed).c_str());
     number("input","joystick",joystickMode);number("input","keyboard_joystick",joystickKeyboard);
