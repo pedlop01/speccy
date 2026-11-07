@@ -10,7 +10,7 @@
 
 class ChoiceDialog {
 public:
-  static int Show(ALLEGRO_DISPLAY *parent,const std::vector<std::string> &options) {
+  static int Show(ALLEGRO_DISPLAY *parent,const std::vector<std::string> &options,const char *title="Gomas - Choose TZX route",const char *heading="CHOOSE A TAPE ROUTE",unsigned initial=0) {
     if(options.empty())return -1;
     struct Target{ALLEGRO_DISPLAY *parent;~Target(){al_set_target_backbuffer(parent);}}target{parent};
     int old=al_get_new_display_flags(),flags=ALLEGRO_WINDOWED|ALLEGRO_GENERATE_EXPOSE_EVENTS;
@@ -19,16 +19,16 @@ public:
 #endif
     al_set_new_display_flags(flags);
     std::unique_ptr<ALLEGRO_DISPLAY,decltype(&al_destroy_display)> display(al_create_display(640,400),al_destroy_display);al_set_new_display_flags(old);
-    if(!display)return -1;al_set_window_title(display.get(),"Gomas - Choose TZX route");
+    if(!display)return -1;al_set_window_title(display.get(),title);
     std::unique_ptr<ALLEGRO_FONT,decltype(&al_destroy_font)> font(al_create_builtin_font(),al_destroy_font);
     std::unique_ptr<ALLEGRO_EVENT_QUEUE,decltype(&al_destroy_event_queue)> events(al_create_event_queue(),al_destroy_event_queue);if(!font || !events)return -1;
     al_register_event_source(events.get(),al_get_display_event_source(display.get()));al_register_event_source(events.get(),al_get_display_event_source(parent));
     al_register_event_source(events.get(),al_get_keyboard_event_source());al_register_event_source(events.get(),al_get_mouse_event_source());
-    unsigned selected=0,first=0;bool dirty=true;double click=-1;unsigned clickRow=0;
+    unsigned selected=std::min<unsigned>(initial,options.size()-1),first=0;bool dirty=true;double click=-1;unsigned clickRow=0;
     while(true) {
       if(selected<first)first=selected;if(selected>=first+11)first=selected-10;
       if(dirty){al_set_target_backbuffer(display.get());al_clear_to_color(al_map_rgb(15,19,26));
-        al_draw_text(font.get(),al_map_rgb(232,239,247),20,18,0,"CHOOSE A TAPE ROUTE");
+        al_draw_text(font.get(),al_map_rgb(232,239,247),20,18,0,heading);
         for(unsigned row=0;row<11 && first+row<options.size();++row){unsigned index=first+row;float y=55+row*25;
           al_draw_filled_rectangle(16,y,624,y+23,index==selected?al_map_rgb(34,52,68):al_map_rgb(23,31,43));
           al_draw_text(font.get(),al_map_rgb(232,239,247),25,y+7,0,options[index].substr(0,72).c_str());}

@@ -143,3 +143,10 @@ cover menus/dialogs, audio, resizing/fullscreen, ROM lookup, repeated save/load,
 settings updates and catalog HTTPS/install/uninstall.
 
 `test` and `test-ui` remain native Linux tests; the latter requires X11/XTest.
+
+The catalog also uses Expat for the public itch.io RSS feed. The dependency
+helper includes it in the Windows SDK; if reusing an older SDK, rerun
+`python3 tools/windows_deps.py` before building. The source selector and
+unified installed library work in both Linux and Windows builds. itch.io
+opens the creator page in the default browser; ZXArt/ZXInfo downloads use
+the existing HTTPS cache.

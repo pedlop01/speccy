@@ -18,7 +18,7 @@ ALLEGRO_SHA256 = '2590fe08df5f7f881ad8c280d2c11453671bbff282aed30237c47c70a44cdb
 ALLEGRO_DEPS = ('https://github.com/liballeg/allegro5/releases/download/5.2.10.1/'
                 'allegro_deps-x86_64-w64-mingw32-gcc-14.2.0-posix-seh-1.15.0.zip')
 ALLEGRO_DEPS_SHA256 = '3c05fa14b15099187a81b73f85b36e4c06593f7d41fa67096a65fd1851731d19'
-ROOTS = ['libarchive', 'zlib', 'curl', 'openssl', 'nlohmann-json', 'giflib', 'crt', 'headers', 'winpthreads']
+ROOTS = ['libarchive', 'zlib', 'curl', 'openssl', 'nlohmann-json', 'giflib', 'expat', 'crt', 'headers', 'winpthreads']
 
 
 def download(url, target, digest=None):

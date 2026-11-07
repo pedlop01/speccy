@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS ?= -O2 -std=c++11
-PACKAGES = allegro-5 allegro_audio-5 allegro_dialog-5 allegro_font-5 allegro_primitives-5 allegro_image-5 libarchive zlib libcurl libcrypto nlohmann_json
+PACKAGES = allegro-5 allegro_audio-5 allegro_dialog-5 allegro_font-5 allegro_primitives-5 allegro_image-5 libarchive zlib libcurl libcrypto nlohmann_json expat
 CPPFLAGS += $(shell pkg-config --cflags $(PACKAGES))
 LDLIBS += $(shell pkg-config --libs $(PACKAGES)) -pthread -lgif
 SOURCES = ../src/main.cpp ../src/z80.cpp ../src/ula.cpp
@@ -12,7 +12,8 @@ all: gomas
 gomas: $(SOURCES) $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
 
-test: joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+test: catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	./catalog-sources-tests
 	./joystick-tests
 	./ula-tests
 	./floating-bus-tests
@@ -71,7 +72,7 @@ tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/tests/catalog_art_fixture.h 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean: clean-windows
-	rm -f *.o gomas joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	rm -f *.o gomas catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
 
 paging-tests: ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -137,7 +138,7 @@ WIN_ABI_FLAGS ?= $(if $(wildcard $(WIN_SYSROOT)/gomas-sdk.json),-mcrtdll=msvcrt-
 WIN_CXXFLAGS ?= $(CXXFLAGS) $(WIN_ABI_FLAGS)
 WIN_CPPFLAGS ?= -DNOMINMAX
 WIN_LDFLAGS ?=
-WIN_LDLIBS ?= -pthread -lgif
+WIN_LDLIBS ?= -pthread -lgif -lshell32
 WIN_OUTPUT = windows/gomas.exe
 
 .PHONY: windows windows-check clean-windows
@@ -198,3 +199,6 @@ test-windows-build:
 
 joystick-tests: ../src/tests/joystick_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/joystick_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+catalog-sources-tests: ../src/tests/catalog_sources_test.cpp ../src/tests/catalog_art_fixture.h ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/catalog_sources_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)

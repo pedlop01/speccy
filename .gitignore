@@ -37,3 +37,5 @@ debug-tests
 __pycache__/
 
 joystick-tests
+
+catalog-sources-tests

@@ -13,7 +13,7 @@ inline ALLEGRO_BITMAP *LoadCatalogArtwork(const std::string &path) {
     struct Flags {int value=al_get_new_bitmap_flags();~Flags(){al_set_new_bitmap_flags(value);}} flags;
     al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP);
     ALLEGRO_BITMAP *bitmap=nullptr;
-    if(type=="png")bitmap=al_load_bitmap(path.c_str());
+    if(type!="gif")bitmap=al_load_bitmap(path.c_str());
     else {
       int error=0;
       auto close=[](GifFileType *file){int error=0;DGifCloseFile(file,&error);};

@@ -6,7 +6,7 @@ Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
 allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, allegro_image-5, giflib, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
-nlohmann_json. El catálogo usa HTTPS con certificados verificados y un hilo de
+nlohmann_json y expat. El catálogo usa HTTPS con certificados verificados y un hilo de
 trabajo; compilar/enlazar con soporte pthread (incluido en el Makefile).
 No necesita acodec.
 
@@ -614,9 +614,9 @@ https://github.com/fuse-emulator/fuse/blob/master/machines/specplus3.c
 
 Catálogo de juegos y biblioteca local
 --------------------------------------
-File > Game catalog... abre el catálogo de ZXArt.ee. La primera versión usa
-su API pública de juegos: buscador, orden A-Z/Z-A, páginas y lista de versiones
-por juego. Selecciona un título y un archivo compatible (formato y 48K/128K/+2/+3)
+File > Game catalog... abre un catálogo con selector Source: ZXArt, ZXInfo / ZXDB,
+itch.io discovery o All sources. Conserva la última fuente elegida. Incluye
+buscador, orden A-Z/Z-A, páginas y lista de versiones por juego. Selecciona un título y un archivo compatible (formato y 48K/128K/+2/+3)
 y pulsa Install & load. Los archivos ofrecidos por el catálogo que requieren
 hardware no soportado se muestran deshabilitados. No todos los títulos tienen
 una descarga compatible disponible.
@@ -627,7 +627,8 @@ La rueda desplaza las listas; Tab cambia de panel, flechas recorren las listas,
 Enter busca o carga y Escape cierra. El emulador queda pausado mientras se navega.
 Una descarga y apertura válidas sustituyen la sesión; un fallo conserva la anterior.
 
-Los archivos se guardan en games/zxart/<juego>/<versión-archivo>/<nombre>.
+Los archivos se guardan en games/<fuente>/<juego>/<versión-archivo>/<nombre>.
+Las instalaciones previas de ZXArt conservan sus rutas y siguen disponibles.
 En el proyecto, games queda junto a roms; si esa ubicación no está disponible se
 usa el directorio de datos del usuario, subdirectorio games. GOMAS_GAMES_DIR
 permite elegir otra ubicación. games/catalog.json guarda los metadatos visitados,
@@ -650,16 +651,37 @@ LOAD automáticamente usando el teclado de la ROM. En 128K/+2/+3 se usa Loader.
 Se respeta Fast load; con reproducción real se pulsa Play automáticamente.
 Los discos arrancan a través del Loader del +3. Las preguntas de un juego y las
 rutas interactivas TZX siguen siendo decisiones del usuario. En juegos con varios
-archivos, el catálogo permite elegir cada versión/archivo ofrecido por ZXArt.
+archivos, el catálogo permite elegir cada versión/archivo ofrecido por la fuente.
+
+ZXInfo usa su API v5 y aporta descargas de Spectrum Computing y World of
+Spectrum. Los enlaces /pub de World of Spectrum tienen una alternativa en su
+mirror de Internet Archive si falla el servidor original. No se añade un catálogo
+WoS separado: comparte los identificadores ZXDB con ZXInfo. All sources agrupa
+las coincidencias por ID ZXDB (no por título), muestra las versiones de ambas
+fuentes y mantiene el orden global por páginas. Mientras quedan fuentes por
+recorrer, el total aproximado lleva ~. Si una fuente falla, se muestran las demás
+con un aviso. Installed reúne las instalaciones de todas las fuentes.
+
+itch.io discovery consulta el feed público de juegos ZX Spectrum: es una
+selección destacada, no todo el catálogo de la tienda. Permite buscar y ordenar
+esa selección, ver portada/precio y abrir la página del creador con Open source
+page. No descarga compras ni archivos automáticamente desde itch.io; esos juegos
+se pueden abrir con File > Open después de descargarlos desde su página.
+Los metadatos y las imágenes consultadas quedan disponibles offline.
 
 catalog-tests usa respuestas de prueba sin red para verificar búsqueda, orden,
 páginas, versiones, rutas, checksum, cancelación, archivos ZIP, reutilización
 offline y carga transaccional. Prueba también el arranque de Cobra en los cuatro
 modelos. catalog-tests --live es una comprobación opcional de consulta y descarga
 real; la suite normal no necesita Internet. test-ui abre el catálogo con una
-biblioteca aislada, busca y carga una versión instalada sin contactar con ZXArt.
+biblioteca aislada, cambia de fuente, busca y carga una versión instalada sin red.
+catalog-sources-tests comprueba combinación de fuentes, paginación, IDs, mirrors,
+RSS, fallos parciales y compatibilidad con las instalaciones previas. Su opción
+--live prueba ZXInfo, descarga e imágenes y el feed de itch.io.
 
 Referencias de la integración:
+https://github.com/zxinfo-api/zxinfo-api-v5
+https://itch.io/docs/creators/faq#can-i-get-an-rss-feed-of-games
 https://github.com/moroz1999/zxart-api-bridge
 https://hype.retroscene.org/blog/898.html
 https://curl.se/libcurl/c/CURLOPT_XFERINFOFUNCTION.html

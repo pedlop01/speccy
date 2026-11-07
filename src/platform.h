@@ -6,11 +6,13 @@
 #include <allegro5/allegro.h>
 #include <cstdio>
 #include <ctime>
+#include <cerrno>
 #include <cstring>
 #include <string>
 #include <vector>
 #ifdef _WIN32
 #include <windows.h>
+#include <shellapi.h>
 #include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -19,6 +21,9 @@
 #include <random>
 #else
 #include <unistd.h>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <thread>
 #endif
 
 namespace Platform {
@@ -110,6 +115,16 @@ inline std::string Executable() {
   ALLEGRO_PATH *path=al_get_standard_path(ALLEGRO_EXENAME_PATH);
   if(!path)return "";
   std::string result=al_path_cstr(path,ALLEGRO_NATIVE_PATH_SEP);al_destroy_path(path);return result;
+}
+inline bool OpenURL(const std::string &url) {
+#ifdef _WIN32
+  auto text=Wide(url);return !text.empty() && reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr,L"open",text.c_str(),nullptr,nullptr,SW_SHOWNORMAL))>32;
+#else
+  pid_t pid;char command[]="xdg-open";char *arguments[]={command,const_cast<char *>(url.c_str()),nullptr};
+  int result=posix_spawnp(&pid,command,nullptr,nullptr,arguments,environ);
+  if(result)return false;
+  std::thread([pid](){int status;while(waitpid(pid,&status,0)<0 && errno==EINTR){};}).detach();return true;
+#endif
 }
 inline bool LocalTime(const std::time_t *stamp,std::tm *result) {
 #ifdef _WIN32
