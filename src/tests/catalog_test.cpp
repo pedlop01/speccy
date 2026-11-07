@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <atomic>
 #include "../catalog_load.h"
+#include "../catalog_art.h"
+#include "catalog_art_fixture.h"
 using namespace GameCatalog;
 static Json GameRow(unsigned id,const std::string &title){return Json{{"id",id},{"title",title},{"year",1986},{"legalStatus","allowed"}};}
 static Json Reply(const char *key,Json rows,unsigned total){return Json{{"responseStatus","success"},{"totalAmount",total},{"responseData",{{key,rows}}}};}
@@ -35,6 +37,30 @@ int main(int argc,char **argv) {
   auto absent=file;absent.id=99;Reject([&](){offline.Install(absent,true,p);});assert(!al_filename_exists(offline.Path(absent).c_str()));
   auto zipFile=versions[1];assert(zipFile.type=="zip");broken=false;auto zipPath=library.Install(zipFile,false,p);assert(ValidateTape(tap) && Read(zipPath,65536)==zip);
   auto zipUpdate=zipFile;zipUpdate.md5=MD5(Bytes(zip.size(),0));invalidZip=true;Reject([&](){library.Install(zipUpdate,false,p);});assert(Read(zipPath,65536)==zip);
+  // API artwork is optional, bounded, cached separately, and reused offline.
+  auto artRoot=root+"/art-test";unsigned imageCalls=0;
+  auto artRow=GameRow(8,"Illustrated");artRow["imagesUrls"]={"https://zxart.ee/zximages/one","https://zxart.ee/screenshot/two","https://elsewhere.invalid/a","https://zxart.ee/zximages/bad"};
+  Fetcher artFetch=[&](const std::string &url,size_t limit,Progress &)->Bytes{
+    if(url.find("/api/")!=std::string::npos)return Data(Reply("zxProd",Json::array({artRow}),1));
+    assert(limit==4*1024*1024);++imageCalls;
+    return url.find("/one")!=std::string::npos?PreviewPNG():url.find("/two")!=std::string::npos?PreviewGIF():Bytes{1,2,3};
+  };
+  Library illustrations(artRoot,artFetch);auto illustrated=illustrations.Search("",0,false,p).games[0];
+  assert(illustrated.images.size()==3);
+  auto pictures=illustrations.Artwork(illustrated,false,p);assert(pictures.size()==2 && imageCalls==3);
+  Library artOffline(artRoot,artFetch);auto localGame=artOffline.Cached("",0,false,false).games[0];
+  assert(localGame.images==illustrated.images && artOffline.Artwork(localGame,true,p)==pictures && imageCalls==3);
+  p.cancel=true;Reject([&](){illustrations.Artwork(illustrated,false,p);});p.cancel=false;
+  auto oversized=PreviewPNG();oversized[16]=127;Reject([&](){ArtworkType(oversized);});
+  assert(al_init_image_addon());
+  for(const auto &picture:pictures) {
+    auto *bitmap=LoadCatalogArtwork(picture);assert(bitmap && al_get_bitmap_width(bitmap)==1 && al_get_bitmap_height(bitmap)==1);
+    unsigned char r,g,b;al_unmap_rgb(al_get_pixel(bitmap,0,0),&r,&g,&b);
+    if(TapeFiles::Extension(picture,".png"))assert(r==220 && g==50 && b==60);
+    else assert(r==40 && g==200 && b==110);
+    al_destroy_bitmap(bitmap);remove(picture.c_str());
+  }
+  remove((artRoot+"/catalog.json").c_str());rmdir((artRoot+"/artwork").c_str());rmdir(artRoot.c_str());
   // Auto-start goes through real ROM input and returns a complete, transactional session.
   SpectrumMachine machine;std::string error;assert(machine.LoadROM(FindROM("48.rom"),error));auto core=machine.CaptureState();
   assert(GameCatalog::Load(machine,path,MachineModel::Spectrum48,error));assert(machine.tape==tap && machine.FrameCounter()>=580);
@@ -49,6 +75,9 @@ int main(int argc,char **argv) {
   if(argc>1 && std::string(argv[1])=="--live"){
     Library live(root+"/live");Progress progress;auto found=live.Search("Rick Dangerous 2",0,false,progress);assert(!found.games.empty());auto files=live.Versions(found.games[0],progress);assert(!files.empty());
     const auto &download=*std::find_if(files.begin(),files.end(),[](const GameCatalog::File &f){return f.supported && (f.type=="tap" || f.type=="tzx");});
+    auto artwork=live.Artwork(found.games[0],false,progress);assert(!artwork.empty());
+    for(const auto &path:artwork){auto *image=LoadCatalogArtwork(path);assert(image);al_destroy_bitmap(image);remove(path.c_str());}
+    rmdir((root+"/live/artwork").c_str());
     auto downloaded=live.Install(download,false,progress);printf("Live ZXArt: %s, %zu variants, downloaded %s\n",found.games[0].title.c_str(),files.size(),downloaded.c_str());
     remove(downloaded.c_str());rmdir(ROMDirectory(downloaded).c_str());remove((root+"/live/catalog.json").c_str());rmdir((root+"/live/zxart/"+std::to_string(download.game)).c_str());rmdir((root+"/live/zxart").c_str());rmdir((root+"/live").c_str());
   }

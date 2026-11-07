@@ -1,8 +1,8 @@
 CXX ?= g++
 CXXFLAGS ?= -O2 -std=c++11
-PACKAGES = allegro-5 allegro_audio-5 allegro_dialog-5 allegro_font-5 allegro_primitives-5 libarchive zlib libcurl libcrypto nlohmann_json
+PACKAGES = allegro-5 allegro_audio-5 allegro_dialog-5 allegro_font-5 allegro_primitives-5 allegro_image-5 libarchive zlib libcurl libcrypto nlohmann_json
 CPPFLAGS += $(shell pkg-config --cflags $(PACKAGES))
-LDLIBS += $(shell pkg-config --libs $(PACKAGES)) -pthread
+LDLIBS += $(shell pkg-config --libs $(PACKAGES)) -pthread -lgif
 SOURCES = ../src/main.cpp ../src/z80.cpp ../src/ula.cpp
 HEADERS = $(wildcard ../src/*.h ../src/*.hpp)
 
@@ -66,7 +66,7 @@ machine-config-tests: ../src/tests/machine_config_test.cpp ../src/ula.cpp ../src
 test-ui: tape-ui-tests
 	./tape-ui-tests
 
-tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/main.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/tests/catalog_art_fixture.h ../src/main.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean:
@@ -117,7 +117,7 @@ formats-tests: ../src/tests/formats_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEA
 new-media-tests: ../src/tests/new_media_test.cpp ../src/tests/formats_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/new_media_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
 
-catalog-tests: ../src/tests/catalog_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+catalog-tests: ../src/tests/catalog_test.cpp ../src/tests/catalog_art_fixture.h ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/catalog_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
 
 debug-tests: ../src/tests/debug_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)

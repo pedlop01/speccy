@@ -5,7 +5,7 @@ El núcleo procede de YASS (referencia incluida en ../yass).
 Compilar y ejecutar
 ------------------
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
-allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
+allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, allegro_image-5, giflib, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
 nlohmann_json. El catálogo usa HTTPS con certificados verificados y un hilo de
 trabajo; compilar/enlazar con soporte pthread (incluido en el Makefile).
 No necesita acodec.
@@ -694,3 +694,12 @@ debug-tests verifica que pasos individuales y frames producen el mismo estado
 en 48K/128K/+2/+3, incluyendo interrupciones, audio, overclock, cinta, AY,
 disquetera y retroceso. test-ui prueba apertura pausada, botones de paso,
 navegación RAM sin cambios en la máquina y cierre independiente.
+
+Imágenes del catálogo
+---------------------
+El panel derecho muestra las imágenes del juego arriba y las versiones abajo.
+Las flechas permiten recorrer hasta cuatro imágenes publicadas por ZXArt. Se
+obtienen de imagesUrls de su API oficial, sin analizar páginas HTML. Se guardan
+en games/artwork y se reutilizan sin conexión. Los GIF animados muestran su
+primer fotograma. La lista inferior conserva selección, rueda y teclado.
+Las imágenes son opcionales: su ausencia o un error no impide cargar el juego.

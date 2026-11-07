@@ -73,13 +73,34 @@ inline std::string Directory(const std::string &executable){if(const char *path=
   auto dir=ROMDirectory(executable);if(al_filename_exists((dir+"../roms").c_str()) && access((dir+"..").c_str(),W_OK)==0)return dir+"../games";
   std::unique_ptr<ALLEGRO_PATH,decltype(&al_destroy_path)> path(al_get_standard_path(ALLEGRO_USER_DATA_PATH),al_destroy_path);
   if(!path)return "games";al_append_path_component(path.get(),"games");return al_path_cstr(path.get(),ALLEGRO_NATIVE_PATH_SEP);}
-struct Game {std::uint64_t id=0;std::string title,year,status;};
+struct Game {std::uint64_t id=0;std::string title,year,status;std::vector<std::string> images;};
 struct File {std::uint64_t game=0,release=0,id=0;std::string name,type,year,publisher,releaseType,md5;size_t size=0;MachineModel model=MachineModel::Spectrum48;bool supported=true;};
 struct Page {std::vector<Game> games;size_t total=0;unsigned page=0;};
 constexpr unsigned PageSize=30;
-inline Json Encode(const Game &g){return Json{{"id",g.id},{"title",g.title},{"year",g.year},{"status",g.status}};}
+inline Json Encode(const Game &g){return Json{{"id",g.id},{"title",g.title},{"year",g.year},{"status",g.status},{"images",g.images}};}
 inline Json Encode(const File &f){return Json{{"game",f.game},{"release",f.release},{"id",f.id},{"name",f.name},{"type",f.type},{"year",f.year},{"publisher",f.publisher},{"releaseType",f.releaseType},{"md5",f.md5},{"size",f.size},{"model",unsigned(f.model)},{"supported",f.supported}};}
-inline Game DecodeGame(const Json &j){Game g;g.id=Id(j,"id");g.title=Text(j,"title");g.year=Text(j,"year");g.status=Text(j,"status");if(g.title.empty())throw std::runtime_error("Catalog game has no title");return g;}
+inline bool ArtworkURL(const std::string &url) {
+  return url.size()<2048 && (url.find("https://zxart.ee/zximages/")==0 || url.find("https://zxart.ee/screenshot/")==0);
+}
+inline void ReadImages(Game &game,const Json &j,const char *key) {
+  auto it=j.find(key);if(it==j.end() || !it->is_array())return;
+  for(const auto &item:*it)if(item.is_string() && game.images.size()<4){auto url=item.get<std::string>();
+    if(ArtworkURL(url) && std::find(game.images.begin(),game.images.end(),url)==game.images.end())game.images.push_back(url);}
+}
+inline Game DecodeGame(const Json &j){Game g;g.id=Id(j,"id");g.title=Text(j,"title");g.year=Text(j,"year");g.status=Text(j,"status");ReadImages(g,j,"images");if(g.title.empty())throw std::runtime_error("Catalog game has no title");return g;}
+// Reject oversized canvases before handing image data to a decoder.
+inline std::string ArtworkType(const Bytes &bytes) {
+  unsigned w=0,h=0;std::string type;
+  if(bytes.size()>=24 && !memcmp(bytes.data(),"\x89PNG\r\n\x1a\n",8) && !memcmp(bytes.data()+12,"IHDR",4)) {
+    auto big=[&](unsigned n){return unsigned(bytes[n])<<24 | unsigned(bytes[n+1])<<16 | unsigned(bytes[n+2])<<8 | bytes[n+3];};
+    w=big(16);h=big(20);type="png";
+  }else if(bytes.size()>=13 && (!memcmp(bytes.data(),"GIF87a",6) || !memcmp(bytes.data(),"GIF89a",6))) {
+    w=bytes[6]|unsigned(bytes[7])<<8;h=bytes[8]|unsigned(bytes[9])<<8;type="gif";
+  }
+  if(!w || !h || w>2048 || h>2048 || bytes.size()>4*1024*1024)throw std::runtime_error("Unsupported or oversized catalog artwork");
+  return type;
+}
+
 inline bool Format(const std::string &type){return type=="tap" || type=="tzx" || type=="sna" || type=="z80" || type=="szx" || type=="slt" || type=="dsk" || type=="zip";}
 inline File DecodeFile(const Json &j){File f;f.game=Id(j,"game");f.release=Id(j,"release");f.id=Id(j,"id");f.name=Text(j,"name");f.type=Lower(Text(j,"type"));f.year=Text(j,"year");f.publisher=Text(j,"publisher");f.releaseType=Text(j,"releaseType");f.md5=Lower(Text(j,"md5"));
   f.size=j.value("size",size_t(0));unsigned model=j.value("model",0u);f.supported=j.value("supported",true);
@@ -122,7 +143,7 @@ public:
     std::string term=query;for(auto &c:term)if(c==';' || c=='/' || c==':' || c=='=')c=' ';
     auto response=Get("export:zxProd/language:eng/start:"+std::to_string(page*PageSize)+"/limit:"+std::to_string(PageSize)+"/order:title,"+(descending?"desc":"asc")+"/filter:zxProdCategory=92177;zxProdStatus=allowed,allowedzxart,unknown,recovered"+(query.empty()?"":";zxProdAjaxSearch="+Escape(term))+"/",progress);
     Page out;out.page=page;out.total=response.value("totalAmount",size_t(0));const auto &rows=response.at("responseData").at("zxProd");if(!rows.is_array() || rows.size()>PageSize)throw std::runtime_error("Invalid catalog page");
-    for(const auto &row:rows){Game g;g.id=Id(row,"id");g.title=Text(row,"title");g.year=Text(row,"year");g.status=Text(row,"legalStatus");if(g.title.empty())continue;out.games.push_back(g);games[g.id]=g;}
+    for(const auto &row:rows){Game g;g.id=Id(row,"id");g.title=Text(row,"title");g.year=Text(row,"year");g.status=Text(row,"legalStatus");ReadImages(g,row,"imagesUrls");if(g.title.empty())continue;out.games.push_back(g);games[g.id]=g;}
     Save();return out;
   }
   std::vector<File> Versions(const Game &game,Progress &progress) {
@@ -154,6 +175,26 @@ public:
     }
     std::stable_sort(out.begin(),out.end(),[](const File &a,const File &b){auto rank=[](const File &f){return (f.supported?0:100)+(f.releaseType=="original"?0:20)+(f.type=="tzx"?0:f.type=="tap"?1:f.type=="sna"?2:f.type=="z80"?3:f.type=="zip"?10:5);};return rank(a)<rank(b);});
     games[game.id]=game;files[game.id]=out;Save();return out;
+  }
+  std::vector<std::string> Artwork(const Game &game,bool localOnly,Progress &progress) {
+    std::vector<std::string> paths;
+    for(const auto &url:game.images) {
+      if(progress.cancel)throw std::runtime_error("Cancelled");
+      if(!ArtworkURL(url))continue;
+      Bytes key(url.begin(),url.end());auto base=root+"/artwork/"+MD5(key);
+      bool found=false;
+      for(const char *type:{"png","gif"})try{auto path=base+"."+type;auto bytes=Read(path,4*1024*1024);
+        if(ArtworkType(bytes)==type){paths.push_back(path);found=true;break;}
+      }catch(const std::exception &){}
+      if(found || localOnly)continue;
+      try {
+        auto bytes=fetch(url,4*1024*1024,progress);auto type=ArtworkType(bytes);
+        if(progress.cancel)throw std::runtime_error("Cancelled");
+        if(!al_make_directory((root+"/artwork").c_str()))throw std::runtime_error("Cannot create artwork cache");
+        auto path=base+"."+type;AtomicWrite(path,bytes);paths.push_back(path);
+      }catch(const std::exception &){if(progress.cancel)throw; /* Artwork never prevents game loading. */}
+    }
+    return paths;
   }
   std::string Install(const File &file,bool localOnly,Progress &progress) {
     if(progress.cancel)throw std::runtime_error("Cancelled");
