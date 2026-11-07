@@ -37,6 +37,32 @@ int main() {
   assert(preferences.Save(config, error));
   auto restored = ROMPreferences::Read(config);
   assert(restored.restoreLast && restored.lastCustom48 && restored.lastROM == alternative);
+  // Full frontend configuration survives an atomic save/read round trip.
+  restored.windowWidth = 1280; restored.windowHeight = 960;
+  restored.filter = 3; restored.fullscreen = true; restored.maximized = true;
+  restored.playbackSpeed = 0.25; restored.cpuMultiplier = 4; restored.fastLoad = false;
+  assert(restored.Save(config, error));
+  auto view = ROMPreferences::Read(config);
+  assert(view.windowWidth == 1280 && view.windowHeight == 960 && view.filter == 3);
+  assert(view.fullscreen && view.maximized && !view.fastLoad);
+  assert(view.playbackSpeed == 0.25 && view.cpuMultiplier == 4);
+  // Invalid or partially written values use safe defaults, not arbitrary sizes
+  // or unsupported clock/speed values. Old ROM-only files remain compatible.
+  std::string malformed = folder + "bad.ini";
+  { std::ofstream out(malformed);
+    out << "[view]\nwidth=999999999999999999999\nheight=-5\nfilter=4\nfullscreen=yes\n"
+        << "[emulation]\nspeed=nan\ncpu_multiplier=3\nfast_load=2\n"; }
+  auto bad = ROMPreferences::Read(malformed);
+  assert(bad.windowWidth == 640 && bad.windowHeight == 480 && bad.filter == 0 && !bad.fullscreen);
+  assert(bad.playbackSpeed == 1 && bad.cpuMultiplier == 1 && bad.fastLoad);
+  { std::ofstream out(malformed); out << "[view]\nwidth=640\nheight=451\n"; }
+  auto legacy = ROMPreferences::Read(malformed);
+  assert(legacy.windowWidth == 640 && legacy.windowHeight == 480);
+  { std::ofstream out(malformed); out << "[view]\nwidth=1280\nheight=931\n"; }
+  assert(ROMPreferences::Read(malformed).windowHeight == 960);
+  { std::ofstream out(malformed); out << "[view]\nsize_version=1\nwidth=640\nheight=451\n"; }
+  assert(ROMPreferences::Read(malformed).windowHeight == 451);
+  unlink(malformed.c_str());
   char *cwd = al_get_current_directory(); assert(cwd);
   std::string originalDirectory = cwd; al_free(cwd);
   assert(al_change_directory("/tmp"));

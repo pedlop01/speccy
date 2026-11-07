@@ -121,7 +121,8 @@ int main() {
   int configFd = mkstemp(configPath);
   if (configFd < 0) return 1;
   close(configFd);
-  unlink(configPath);
+  { std::ofstream config(configPath);
+    config << "[view]\nwidth=640\nheight=451\nfilter=2\nfullscreen=0\n"; }
   const char *oldConfig = getenv("GOMAS_CONFIG");
   bool hadConfig = oldConfig != nullptr;
   std::string savedConfig = oldConfig ? oldConfig : "";
@@ -150,6 +151,20 @@ int main() {
       Wait(100);
       // A settled menu must not be rebuilt by every refresh tick. Allegro's
       // CHECKBOX flag is immutable; requesting it on plain items loops forever.
+      Check(Until([&]() { return renderedWidth.load() == 640 && renderedHeight.load() == 480 &&
+          ScreenView::Viewport(renderedWidth.load(), renderedHeight.load()).scale == 2 &&
+          (observedMenuFlags[MENU_FILTER_SCANLINES_STRONG].load() & ALLEGRO_MENU_ITEM_CHECKED); }, 2000),
+          "Saved 2x window/filter did not restore at startup (native menu reduced the drawable area)");
+      Wait(400); // Native menu mapping must not shrink the drawable later.
+      Check(renderedWidth.load() == 640 && renderedHeight.load() == 480,
+          "Native menu shrank the restored 2x window after mapping");
+      Menu(MENU_FULLSCREEN);
+      Check(Until([&]() { return observedMenuFlags[MENU_FULLSCREEN].load() & ALLEGRO_MENU_ITEM_CHECKED; }, 2000),
+          "Fullscreen did not activate");
+      Menu(MENU_FULLSCREEN);
+      Check(Until([&]() { return renderedWidth.load() == 640 && renderedHeight.load() == 480; }, 2000),
+          "Fullscreen did not restore the saved window dimensions");
+      Menu(MENU_FILTER_NONE); Wait(150);
       unsigned settledWrites = menuFlagWrites.load();
       Wait(250);
       Check(menuFlagWrites.load() == settledWrites, "Idle refresh keeps rebuilding the native ROM menu");
@@ -507,6 +522,15 @@ int main() {
       XSetInputFocus(x,mainWindow,RevertToParent,CurrentTime);shortcut(XK_F5);
       Check(Until([&](){return !checked(MENU_PAUSE);},1000),"Could not resume after debugging");
       puts("Native debugger: pause, instruction/frame steps, RAM navigation, read-only inspection and Escape passed");
+      // Leave a deliberately different setup and verify what normal exit writes.
+      Menu(MENU_VIEW_4X); Menu(MENU_FILTER_GRID); Menu(MENU_CPU_CLOCK_2X);
+      Menu(MENU_SPEED_NORMAL); Menu(MENU_SPEED_DOWN);
+      Check(Until([&]() { return checked(MENU_VIEW_4X) && checked(MENU_FILTER_GRID) &&
+          checked(MENU_CPU_CLOCK_2X) && speedIs(0.5); }, 2000), "Final settings were not applied");
+      if (checked(MENU_FAST_LOAD)) Menu(MENU_FAST_LOAD);
+      Menu(MENU_FULLSCREEN);
+      Check(Until([&]() { return checked(MENU_FULLSCREEN); }, 2000), "Final fullscreen was not applied");
+
       passed = true;
     } catch (const std::exception &error) {
       failure = error.what(); fprintf(stderr,"UI failure: %s\n",failure.c_str());
@@ -537,6 +561,12 @@ int main() {
   char *arguments[] = {app, tape, nullptr};
   int result = GomasApplicationMain(2, arguments);
   input.join();
+  auto finalSettings = ROMPreferences::Read(configPath);
+  if (passed && !(finalSettings.windowWidth == 1280 && finalSettings.windowHeight == 960 &&
+      finalSettings.fullscreen && finalSettings.filter == 3 && finalSettings.playbackSpeed == 0.5 &&
+      finalSettings.cpuMultiplier == 2 && !finalSettings.fastLoad)) {
+    passed = false; failure = "Normal exit did not persist the final view/emulation configuration";
+  }
   unlink(configPath);
   SaveStates::Store saves(savesPath);
   for(unsigned i=0;i<SaveStates::SlotCount;++i) unlink(saves.Path(i).c_str());

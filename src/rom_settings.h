@@ -3,6 +3,7 @@
 
 #include <allegro5/allegro.h>
 #include <cstdio>
+#include <cerrno>
 #include <cstdlib>
 #include <memory>
 #include <unistd.h>
@@ -31,6 +32,19 @@ struct ROMPreferences {
   bool restoreLast = true;
   std::string lastROM;
   bool lastCustom48 = false;
+  int windowWidth = 640, windowHeight = 480, filter = 0;
+  bool fullscreen = false, maximized = false, fastLoad = true;
+  double playbackSpeed = 1;
+  unsigned cpuMultiplier = 1;
+
+  static int Integer(ALLEGRO_CONFIG *config, const char *section, const char *key,
+      int fallback, int minimum, int maximum) {
+    const char *value = al_get_config_value(config, section, key);
+    if (!value || !*value) return fallback;
+    char *end = nullptr; errno = 0;
+    long parsed = std::strtol(value, &end, 10);
+    return errno || *end || parsed < minimum || parsed > maximum ? fallback : int(parsed);
+  }
 
   static ROMPreferences Read(const std::string &path) {
     ROMPreferences result;
@@ -44,7 +58,33 @@ struct ROMPreferences {
     if (rom) result.lastROM = rom;
     const char *custom = al_get_config_value(config.get(), "startup", "last_custom48");
     result.lastCustom48 = custom && std::string(custom) == "1";
+    result.windowWidth = Integer(config.get(), "view", "width", 640, 320, 7680);
+    result.windowHeight = Integer(config.get(), "view", "height", 480, 240, 4320);
+    // Older settings captured GTK's menu-reduced initial height. Repair only
+    // the known 2x/4x widths, once; arbitrary sizes from the new schema stay exact.
+    if (!Integer(config.get(), "view", "size_version", 0, 0, 1)) {
+      int height = result.windowWidth / 320 * 240;
+      if ((result.windowWidth == 640 || result.windowWidth == 1280) &&
+          result.windowHeight < height && result.windowHeight >= height - 64)
+        result.windowHeight = height;
+    }
+    result.filter = Integer(config.get(), "view", "filter", 0, 0, 3);
+    result.fullscreen = Integer(config.get(), "view", "fullscreen", 0, 0, 1);
+    result.maximized = Integer(config.get(), "view", "maximized", 0, 0, 1);
+    result.fastLoad = Integer(config.get(), "emulation", "fast_load", 1, 0, 1);
+    int clock = Integer(config.get(), "emulation", "cpu_multiplier", 1, 1, 4);
+    if (clock == 1 || clock == 2 || clock == 4) result.cpuMultiplier = clock;
+    const char *speed = al_get_config_value(config.get(), "emulation", "speed");
+    for (double allowed : {0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0}) {
+      if (speed && std::string(speed) == SpeedValue(allowed)) result.playbackSpeed = allowed;
+    }
     return result;
+  }
+
+  static std::string SpeedValue(double value) {
+    if (value == 0.25) return "0.25";
+    if (value == 0.5) return "0.5";
+    return std::to_string(static_cast<unsigned>(value));
   }
 
   void Remember(const std::string &path, bool custom48) {
@@ -66,6 +106,16 @@ struct ROMPreferences {
     al_set_config_value(config.get(), "startup", "rom", restoreLast ? "last" : "48k");
     al_set_config_value(config.get(), "startup", "last_rom", lastROM.c_str());
     al_set_config_value(config.get(), "startup", "last_custom48", lastCustom48 ? "1" : "0");
+    auto number = [&](const char *section, const char *key, int value) {
+      al_set_config_value(config.get(), section, key, std::to_string(value).c_str());
+    };
+    number("view", "size_version", 1);
+    number("view", "width", windowWidth); number("view", "height", windowHeight);
+    number("view", "filter", filter); number("view", "fullscreen", fullscreen);
+    number("view", "maximized", maximized);
+    number("emulation", "fast_load", fastLoad);
+    number("emulation", "cpu_multiplier", cpuMultiplier);
+    al_set_config_value(config.get(), "emulation", "speed", SpeedValue(playbackSpeed).c_str());
     // Create beside the destination so rename stays on the same filesystem.
     std::string pattern = path + ".XXXXXX";
     std::vector<char> temporaryNameBuffer(pattern.begin(), pattern.end());

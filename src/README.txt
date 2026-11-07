@@ -103,8 +103,13 @@ Settings > ROM > ZX Spectrum 48K permite cargar directamente la ROM de 48K.
 128K inglés/español, +2 y +3 también se pueden seleccionar.
 
 Las preferencias se guardan en el directorio de configuración de usuario de
-Gomas (normalmente ~/.config/gomas/settings.ini en Linux). Las rutas de las ROMs
-se guardan absolutas para poder restaurarlas desde otro directorio. Un archivo
+Gomas (normalmente ~/.config/gomas/settings.ini en Linux). Al salir se guardan
+automáticamente el tamaño de ventana, pantalla completa/maximizada, filtro,
+velocidad global, frecuencia de CPU y carga rápida. Se recuperan al arrancar;
+pausa y rebobinado son temporales. Los snapshots conservan sus propios ajustes
+de máquina al abrirlos. Si no hay configuración válida se usan los valores por
+defecto (ventana 2x, sin filtro, velocidad y CPU 1x, carga rápida activada).
+Las rutas de las ROMs se guardan absolutas para poder restaurarlas desde otro directorio. Un archivo
 inválido o una selección cancelada no sustituye la preferencia anterior. Si una
 ROM guardada desaparece, se arranca con 48K y se conserva su ruta por si vuelve
 a estar disponible. Un --rom inválido produce un error, sin sustituirse por otra

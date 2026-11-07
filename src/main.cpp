@@ -283,6 +283,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   if (!notice.empty()) fprintf(stderr, "%s\n", notice.c_str());
+  // Apply defaults before opening media: snapshots can restore their own CPU
+  // and tape state, while ordinary tapes inherit the saved preferences.
+  machine.SetCPUMultiplier(preferences.cpuMultiplier);
+  machine.SetFastLoad(preferences.fastLoad);
   if (!tapePath.empty() && !machine.Open(tapePath, error)) {
     fprintf(stderr, "%s\n", error.c_str());
     return 1;
@@ -303,11 +307,15 @@ int main(int argc, char *argv[]) {
 #endif
   al_set_new_display_flags(displayFlags);
   al_set_new_display_option(ALLEGRO_VSYNC, 0, ALLEGRO_SUGGEST);
-  unique_ptr<ALLEGRO_DISPLAY, DisplayDeleter> display(al_create_display(640, 480));
+  unique_ptr<ALLEGRO_DISPLAY, DisplayDeleter> display(al_create_display(preferences.windowWidth, preferences.windowHeight));
   if (!display || !InstallMenu(display.get())) {
     fprintf(stderr, "Cannot create display/menu\n");
     return 1;
   }
+  // GTK attaches the native menu to the initial toplevel, reducing its client
+  // area. Resize after attaching it, using the saved drawable dimensions.
+  if (!al_resize_display(display.get(), preferences.windowWidth, preferences.windowHeight))
+    fprintf(stderr, "Cannot restore window dimensions\n");
   al_set_new_bitmap_flags(ALLEGRO_VIDEO_BITMAP);
   unique_ptr<ALLEGRO_BITMAP, decltype(&al_destroy_bitmap)> bitmap(
       al_create_bitmap(320, 240), al_destroy_bitmap);
@@ -333,7 +341,14 @@ int main(int argc, char *argv[]) {
   DiskView diskView;
   DebugView debugView;
   ScreenView screenView;
+  screenView.filter = static_cast<ScreenFilter>(preferences.filter);
+  screenView.SetWindowDefaults(preferences.windowWidth, preferences.windowHeight, preferences.maximized);
+  if (preferences.maximized && !al_set_display_flag(display.get(), ALLEGRO_MAXIMIZED, true))
+    fprintf(stderr, "Cannot restore maximized window\n");
+  if (preferences.fullscreen && !screenView.SetFullscreen(display.get(), true))
+    fprintf(stderr, "Cannot restore fullscreen mode\n");
   Playback playback(machine);
+  playback.SetSpeed(preferences.playbackSpeed);
   unique_ptr<ALLEGRO_FONT, decltype(&al_destroy_font)> rewindFont(al_create_builtin_font(), al_destroy_font);
   double lastRefresh = al_get_time();
   SaveStates::Store savedGames(SaveStates::Directory());
@@ -407,6 +422,15 @@ int main(int argc, char *argv[]) {
     flags(MENU_TAPE_REWIND, loaded ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
   };
   auto savePreferences = [&]() {
+    screenView.RememberWindow(display.get());
+    preferences.windowWidth = screenView.WindowWidth();
+    preferences.windowHeight = screenView.WindowHeight();
+    preferences.maximized = screenView.WindowMaximized();
+    preferences.fullscreen = screenView.Fullscreen(display.get());
+    preferences.filter = static_cast<int>(screenView.filter);
+    preferences.playbackSpeed = playback.Speed();
+    preferences.cpuMultiplier = machine.CPUMultiplier();
+    preferences.fastLoad = machine.fastLoad;
     string settingsError;
     if (!preferences.Save(settingsPath, settingsError)) {
       bool playing = al_get_audio_stream_playing(stream.get());
@@ -780,6 +804,7 @@ int main(int argc, char *argv[]) {
     const double now = al_get_time();
     if (playback.TickRewind(now - lastRefresh)) { ReleaseKeys(ula); tapeView.NewTape(); }
     lastRefresh = now;
+    screenView.RememberWindow(display.get());
     updateUI();
     al_set_target_backbuffer(display.get());
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
@@ -799,5 +824,7 @@ int main(int argc, char *argv[]) {
     al_flip_display();
     if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);debugView.Draw(machine,playback.paused);}
   }
+  playback.EndRewind();
+  savePreferences();
   return 0;
 }

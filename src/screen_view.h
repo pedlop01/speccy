@@ -24,25 +24,42 @@ public:
     return {std::floor((width - 320 * scale) / 2),
             std::floor((height - 240 * scale) / 2), scale};
   }
+  void RememberWindow(ALLEGRO_DISPLAY *display) {
+    if (Fullscreen(display)) return;
+    windowMaximized = (al_get_display_flags(display) & ALLEGRO_MAXIMIZED) != 0;
+    if (!windowMaximized) {
+      windowWidth = al_get_display_width(display);
+      windowHeight = al_get_display_height(display);
+    }
+  }
+  int WindowWidth() const { return windowWidth; }
+  int WindowHeight() const { return windowHeight; }
+  bool WindowMaximized() const { return windowMaximized; }
+  void SetWindowDefaults(int width, int height, bool maximized) {
+    windowWidth = width; windowHeight = height; windowMaximized = maximized;
+  }
   bool Fullscreen(ALLEGRO_DISPLAY *display) const {
     return (al_get_display_flags(display) & ALLEGRO_FULLSCREEN_WINDOW) != 0;
   }
   bool SetFullscreen(ALLEGRO_DISPLAY *display, bool enabled) {
     if (Fullscreen(display) == enabled) return true;
     if (enabled) {
-      windowWidth = al_get_display_width(display);
-      windowHeight = al_get_display_height(display);
+      RememberWindow(display);
     }
     // Keep the desktop's resolution and existing display/bitmap/audio resources.
     if (!al_set_display_flag(display, ALLEGRO_FULLSCREEN_WINDOW, enabled)) return false;
-    return enabled || al_resize_display(display, windowWidth, windowHeight);
+    if (enabled) return true;
+    if (windowMaximized) return al_set_display_flag(display, ALLEGRO_MAXIMIZED, true);
+    return al_resize_display(display, windowWidth, windowHeight);
   }
   bool SetScale(ALLEGRO_DISPLAY *display, int scale) {
     if (scale != 2 && scale != 4) return false;
     if (!SetFullscreen(display, false)) return false;
     if (al_get_display_flags(display) & ALLEGRO_MAXIMIZED)
       if (!al_set_display_flag(display, ALLEGRO_MAXIMIZED, false)) return false;
-    return al_resize_display(display, 320 * scale, 240 * scale);
+    bool resized = al_resize_display(display, 320 * scale, 240 * scale);
+    if (resized) { windowWidth = 320 * scale; windowHeight = 240 * scale; windowMaximized = false; }
+    return resized;
   }
   bool IsScale(ALLEGRO_DISPLAY *display, int scale) const {
     return !Fullscreen(display) && al_get_display_width(display) == 320 * scale &&
@@ -103,5 +120,6 @@ public:
   }
 private:
   int windowWidth = 640, windowHeight = 480;
+  bool windowMaximized = false;
 };
 #endif
