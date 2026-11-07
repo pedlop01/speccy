@@ -736,3 +736,8 @@ está en bin/windows-static; conservar curl-ca-bundle.crt y añadir las ROMs.
 Solo se importan DLLs del sistema Windows. make -C bin clean-windows limpia
 ambos directorios Windows; make -C bin clean también incluye esa limpieza.
 Se conservan el SDK, la caché de descargas, las ROMs y los archivos personales.
+
+El catálogo Windows usa el almacén de certificados del propio Windows; el
+archivo curl-ca-bundle.crt es opcional y añade certificados de confianza.
+Los errores de conexión se muestran en la lista vacía y en el pie de ventana.
+Si Offline está activado y no hay juegos locales, se indica cómo volver online.

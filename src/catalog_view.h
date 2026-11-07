@@ -32,7 +32,7 @@ public:
     struct Result {Request request;Page page;std::vector<GameCatalog::File> files;std::string path,error;std::vector<std::string> artwork;std::set<std::uint64_t> installedGames;std::set<std::string> installedFiles;bool cached=false;};
     Progress progress;std::future<Result> job;bool busy=false,pending=false,closing=false,dirty=true;
     bool offline=library.Offline(),installedOnly=false,descending=false,searchFocus=true,fileFocus=false;
-    std::string query,message;Page page;std::vector<GameCatalog::File> files;
+    std::string query,message,searchError;Page page;std::vector<GameCatalog::File> files;
     using Bitmap=std::unique_ptr<ALLEGRO_BITMAP,decltype(&al_destroy_bitmap)>;
     std::vector<Bitmap> artwork;unsigned selectedArt=0;
     const unsigned visibleFiles=6;
@@ -40,7 +40,7 @@ public:
     std::set<std::uint64_t> installedGames=library.InstalledGames();std::set<std::string> installedFiles=library.InstalledFiles();
     double due=0,lastDraw=0,lastClick=-1;int clickedGame=-1;
     auto request=[&](Request r,double delay){r.generation=++generation;next=std::move(r);pending=true;due=al_get_time()+delay;if(busy)progress.cancel=true;dirty=true;};
-    auto search=[&](double delay){Request r;r.kind=Search;r.query=query;r.page=0;r.offline=offline;r.installed=installedOnly;r.descending=descending;selected=selectedFile=-1;files.clear();artwork.clear();selectedArt=0;fileFirst=gameFirst=0;request(r,delay);};
+    auto search=[&](double delay){searchError.clear();Request r;r.kind=Search;r.query=query;r.page=0;r.offline=offline;r.installed=installedOnly;r.descending=descending;selected=selectedFile=-1;files.clear();artwork.clear();selectedArt=0;fileFirst=gameFirst=0;request(r,delay);};
     auto loadVersions=[&](unsigned index){if(index>=page.games.size())return;selected=index;if(index<gameFirst)gameFirst=index;if(index>=gameFirst+19)gameFirst=index-18;selectedFile=-1;files.clear();artwork.clear();selectedArt=0;fileFirst=0;Request r;r.kind=Versions;r.game=page.games[index];r.offline=offline || installedOnly;request(r,0);};
     auto activate=[&](){if(selected<0 || selectedFile<0 || size_t(selectedFile)>=files.size() || !files[selectedFile].supported)return;Request r;r.kind=Install;r.game=page.games[selected];r.file=files[selectedFile];r.offline=offline || installedOnly;request(r,0);};
     auto uninstall=[&](){
@@ -60,7 +60,7 @@ public:
         Result result=job.get();busy=false;
         if(!closing && result.request.generation==generation) {
           installedGames=std::move(result.installedGames);installedFiles=std::move(result.installedFiles);message=result.error;
-          if(result.request.kind==Search){page=std::move(result.page);gameFirst=0;if(result.cached && message.empty())message="Offline catalog: games cached from previous visits.";}
+          if(result.request.kind==Search){searchError=result.error;page=std::move(result.page);gameFirst=0;if(result.cached && message.empty())message="Offline catalog: games cached from previous visits.";}
           else if(result.request.kind==Versions){files=std::move(result.files);if(result.request.offline)files.erase(std::remove_if(files.begin(),files.end(),[&](const GameCatalog::File &file){return !installedFiles.count(library.Key(file));}),files.end());fileFirst=0;selectedFile=files.empty()?-1:0;if(files.empty() && message.empty())message="No compatible download is available for this game.";
             Request r;r.kind=Artwork;r.game=result.request.game;r.offline=result.request.offline;request(r,0);
           }
@@ -96,7 +96,7 @@ public:
               if(r.installed){result.page=library.Cached(r.query,r.page,r.descending,true);
                 if(result.page.games.empty() && result.page.total)result.page=library.Cached(r.query,unsigned((result.page.total-1)/PageSize),r.descending,true);}}
             else result.path=library.Install(r.file,r.offline,progress);
-          }catch(const std::exception &e){result.error=e.what();if(r.kind==Search && !progress.cancel){result.page=library.Cached(r.query,r.page,r.descending,r.installed);if(result.page.games.empty() && result.page.total)result.page=library.Cached(r.query,0,r.descending,r.installed);result.cached=true;result.error="Network unavailable. Showing cached games. "+result.error;}
+          }catch(const std::exception &e){result.error=e.what();if(r.kind==Search && !progress.cancel){result.page=library.Cached(r.query,r.page,r.descending,r.installed);if(result.page.games.empty() && result.page.total)result.page=library.Cached(r.query,0,r.descending,r.installed);result.cached=true;result.error="Cannot load online catalog: "+result.error+(result.page.games.empty()?". No cached games available.":". Showing cached games.");}
             if(r.kind==Versions && !progress.cancel)result.files=library.CachedFiles(r.game);}
           result.installedGames=library.InstalledGames();result.installedFiles=library.InstalledFiles();return result;
         });dirty=true;
@@ -117,7 +117,20 @@ public:
           al_draw_filled_rounded_rectangle(20,y,620,y+24,3,3,al_map_rgb(int(index)==selected?34:23,int(index)==selected?52:31,int(index)==selected?68:43));
           al_draw_text(font.get(),white,30,y+8,0,cut(game.title,installed?54:63).c_str());if(installed)al_draw_text(font.get(),green,610,y+8,ALLEGRO_ALIGN_RIGHT,"Installed");
         }
-        if(page.games.empty() && !busy)al_draw_text(font.get(),muted,35,140,0,offline || installedOnly?"No cached games match this search.":"No games match this search.");
+        if(page.games.empty() && !busy && !pending) {
+          al_draw_text(font.get(),searchError.empty()?muted:al_map_rgb(255,170,150),35,140,0,
+              searchError.empty()?(offline || installedOnly?"No cached games match this search.":"No games match this search."):"Could not load the online catalog");
+          if(!searchError.empty()) {
+            auto remaining=searchError;
+            for(unsigned line=0;line<7 && !remaining.empty();++line) {
+              size_t count=std::min<size_t>(68,remaining.size());
+              if(count<remaining.size()){auto space=remaining.rfind(' ',count);if(space!=std::string::npos && space>0)count=space;}
+              auto text=cut(remaining,count);if(text.empty())break;
+              al_draw_text(font.get(),muted,35,166+line*14,0,text.c_str());remaining.erase(0,text.size());
+              while(!remaining.empty() && remaining[0]==' ')remaining.erase(0,1);
+            }
+          }else if(offline || installedOnly)al_draw_text(font.get(),muted,35,166,0,"Turn Offline off and select All games to browse ZXArt.");
+        }
         al_draw_filled_rounded_rectangle(640,94,1060,623,5,5,al_map_rgb(23,31,43));
         if(selected>=0 && size_t(selected)<page.games.size()) {
           const auto &game=page.games[selected];al_draw_text(font.get(),white,656,110,0,cut(game.title,48).c_str());al_draw_text(font.get(),muted,656,132,0,(game.year+"  |  ZXArt #"+std::to_string(game.id)).c_str());

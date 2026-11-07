@@ -57,8 +57,8 @@ inside `.windows-sdk/static-work`.
 
 An import-table check rejects third-party DLL dependencies in the static EXE.
 Windows system DLLs (graphics, audio, networking and the Windows C runtime) are
-still used. Keep `curl-ca-bundle.crt` beside the EXE for catalog HTTPS, and supply
-ROMs separately. Copy the `windows-static` folder to Windows; do not reuse an
+still used. Windows HTTPS uses the native trusted certificate store. The bundled
+`curl-ca-bundle.crt` is optional additional trust material; ROMs remain separate. Copy the `windows-static` folder to Windows; do not reuse an
 older shared-build folder with stale DLLs.
 
 `make -C bin clean` cleans Linux outputs AND generated files in both Windows
@@ -106,8 +106,11 @@ default target uses shared-library metadata.
 `windows-bundle` follows DLL imports recursively with the cross-toolchain's
 `objdump`, copying required dependency DLLs beside `bin/windows/gomas.exe`.
 It also copies dependency license files available in the SDK and a public CA
-bundle from the host. The Windows catalog explicitly uses that CA bundle when
-present, keeping HTTPS certificate verification enabled.
+bundle from the host. The Windows catalog uses the Windows trusted certificate
+store, with the optional bundle added when readable. It reads that bundle using
+Allegro's UTF-8 file API and passes its contents to curl, supporting accented
+installation paths. Certificate and hostname verification remain enabled.
+Connection errors are displayed in the empty game list as well as the footer.
 
 Copy the **whole** `bin/windows` directory to a Windows computer, then add your
 ROMs in a `roms` directory beside the EXE:

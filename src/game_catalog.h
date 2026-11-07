@@ -41,6 +41,8 @@ inline std::string Escape(const std::string &value){static const char hex[]="012
 inline Bytes Http(const std::string &url,size_t limit,Progress &progress) {
   static const bool initialized=curl_global_init(CURL_GLOBAL_DEFAULT)==CURLE_OK;if(!initialized)throw std::runtime_error("Cannot initialize HTTPS");
   std::unique_ptr<CURL,decltype(&curl_easy_cleanup)> curl(curl_easy_init(),curl_easy_cleanup);if(!curl)throw std::runtime_error("Cannot create HTTPS request");
+  char details[CURL_ERROR_SIZE] = {};
+  curl_easy_setopt(curl.get(),CURLOPT_ERRORBUFFER,details);
   struct Transfer{Bytes bytes;size_t limit;Progress *progress;bool oversized=false;};Transfer transfer;transfer.limit=limit;transfer.progress=&progress;
   auto write=+[](char *data,size_t size,size_t count,void *user)->size_t{
     auto &t=*static_cast<Transfer *>(user);if(size && count>SIZE_MAX/size)return 0;size_t n=size*count;
@@ -52,8 +54,25 @@ inline Bytes Http(const std::string &url,size_t limit,Progress &progress) {
   };
   curl_easy_setopt(curl.get(),CURLOPT_URL,url.c_str());curl_easy_setopt(curl.get(),CURLOPT_PROTOCOLS_STR,"https");curl_easy_setopt(curl.get(),CURLOPT_REDIR_PROTOCOLS_STR,"https");
 #ifdef _WIN32
+  // MSYS2's compiled-in certificate paths do not exist on a normal Windows
+  // installation. Use Windows trust without weakening peer/hostname checks.
+  curl_easy_setopt(curl.get(),CURLOPT_SSL_OPTIONS,long(CURLSSLOPT_NATIVE_CA));
+  curl_easy_setopt(curl.get(),CURLOPT_CAINFO,static_cast<const char *>(nullptr));
+  curl_easy_setopt(curl.get(),CURLOPT_CAPATH,static_cast<const char *>(nullptr));
   const std::string certificates=ROMDirectory(Platform::Executable())+"curl-ca-bundle.crt";
-  if(al_filename_exists(certificates.c_str()))curl_easy_setopt(curl.get(),CURLOPT_CAINFO,certificates.c_str());
+  std::unique_ptr<ALLEGRO_FILE,decltype(&al_fclose)> pem(al_fopen(certificates.c_str(),"rb"),al_fclose);
+  if(pem) {
+    const auto size=al_fsize(pem.get());
+    if(size>0 && size<=4*1024*1024) {
+      std::vector<char> bytes(static_cast<size_t>(size));
+      if(al_fread(pem.get(),bytes.data(),bytes.size())==bytes.size()) {
+        // Read through Allegro's UTF-8 file API, so accented Windows paths do
+        // not depend on OpenSSL's narrow-path fopen implementation.
+        curl_blob blob={bytes.data(),bytes.size(),CURL_BLOB_COPY};
+        curl_easy_setopt(curl.get(),CURLOPT_CAINFO_BLOB,&blob);
+      }
+    }
+  }
 #endif
   curl_easy_setopt(curl.get(),CURLOPT_FOLLOWLOCATION,1L);curl_easy_setopt(curl.get(),CURLOPT_MAXREDIRS,4L);curl_easy_setopt(curl.get(),CURLOPT_CONNECTTIMEOUT,8L);curl_easy_setopt(curl.get(),CURLOPT_TIMEOUT,40L);
   curl_easy_setopt(curl.get(),CURLOPT_LOW_SPEED_LIMIT,128L);curl_easy_setopt(curl.get(),CURLOPT_LOW_SPEED_TIME,15L);curl_easy_setopt(curl.get(),CURLOPT_NOSIGNAL,1L);
@@ -61,7 +80,7 @@ inline Bytes Http(const std::string &url,size_t limit,Progress &progress) {
   curl_easy_setopt(curl.get(),CURLOPT_WRITEFUNCTION,write);curl_easy_setopt(curl.get(),CURLOPT_WRITEDATA,&transfer);curl_easy_setopt(curl.get(),CURLOPT_XFERINFOFUNCTION,update);curl_easy_setopt(curl.get(),CURLOPT_XFERINFODATA,&progress);curl_easy_setopt(curl.get(),CURLOPT_NOPROGRESS,0L);
   CURLcode result=curl_easy_perform(curl.get());long status=0;curl_easy_getinfo(curl.get(),CURLINFO_RESPONSE_CODE,&status);
   if(progress.cancel)throw std::runtime_error("Cancelled");if(transfer.oversized)throw std::runtime_error("Download exceeds the supported size limit");
-  if(result!=CURLE_OK)throw std::runtime_error(std::string("Network error: ")+curl_easy_strerror(result));
+  if(result!=CURLE_OK)throw std::runtime_error(std::string("Network error: ")+(details[0]?details:curl_easy_strerror(result)));
   if(status!=200)throw std::runtime_error("ZXArt returned HTTP "+std::to_string(status));return transfer.bytes;
 }
 inline std::string MD5(const Bytes &bytes){unsigned char digest[EVP_MAX_MD_SIZE];unsigned size=0;

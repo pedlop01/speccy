@@ -66,7 +66,7 @@ def main():
             pending.append(destination)
             print('Bundled', name, flush=True)
     # curl/OpenSSL's MSYS2 installation path does not exist on Windows. Ship a
-    # public trust bundle and have the emulator explicitly use it there.
+    # optional public trust bundle in addition to Windows' native CA store.
     certificates = ssl.get_default_verify_paths().cafile
     if certificates:
         shutil.copyfile(certificates, output / 'curl-ca-bundle.crt')
