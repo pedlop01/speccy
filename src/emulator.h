@@ -240,6 +240,7 @@ public:
     for(unsigned reg=0;reg<16;++reg) {candidate->ula.ay.Select(reg);candidate->ula.ay.Write(image.ay[reg]);}
     candidate->ula.ay.Select(image.selectedAY);
     auto state=candidate->CaptureState();state.registers=image.registers;
+    state.ula.screenRGB.clear(); // External snapshots carry RAM, not a scanned image.
     state.memory.ram=image.ram;state.memory.paging=image.paging;state.memory.pagingPlus3=image.pagingPlus3;
     state.ula.frameTStates=image.frameTStates;
     state.ula.line=image.frameTStates/state.ula.timing.tstatesPerLine;

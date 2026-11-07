@@ -58,7 +58,7 @@ inline void NormalizeROM(ROMSet &rom) {
   }
   rom.name=std::string(HardwareFor(rom.model).name)+" (embedded ROM)";rom.fastLoadCompatible=false;rom.fastLoadPage=-1;
 }
-inline void WriteCore(Writer &w,const SpectrumMachine::State &s,unsigned version=2) {
+inline void WriteCore(Writer &w,const SpectrumMachine::State &s,unsigned version=3) {
   w.u64(s.frame); w.u32(s.tstates); w.u32(s.multiplier); w.u32(s.clockPhase);
 #define REG(field) w.u16(s.registers.field)
   REG(AF);REG(BC);REG(DE);REG(HL);REG(IX);REG(IY);REG(SP);REG(PC);REG(IR);REG(XX);
@@ -102,8 +102,9 @@ inline void WriteCore(Writer &w,const SpectrumMachine::State &s,unsigned version
   w.blob(f.command);w.blob(f.buffer);w.blob(f.result);w.u32(f.position);w.u32(f.sector);
   w.u32(f.ready);w.u32(f.unit);w.u32(f.head);w.u32(f.endSector);w.u32(f.ncode);w.u32(f.st0);w.u32(f.st1);w.u32(f.st2);w.u32(f.lastR);w.u32(f.formatCount);
   w.u8(f.motor);w.u8(f.deleted);w.u8(f.multi);w.u8(static_cast<unsigned>(f.phase));
+  if(version>=3)w.blob(u.screenRGB);
 }
-inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model,unsigned version=2) {
+inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model,unsigned version=3) {
   SpectrumMachine::State s{}; s.model=model; s.ula.timing=HardwareFor(model).timing;
   s.frame=r.u64();s.tstates=r.u32();s.multiplier=r.u32();s.clockPhase=r.u32();
 #define REG(field) s.registers.field=r.u16()
@@ -158,6 +159,10 @@ inline SpectrumMachine::State ReadCore(Reader &r,MachineModel model,unsigned ver
     Disks::Controller controller;if(!controller.RestoreState(f))throw std::runtime_error("Invalid saved disk controller");
     if(model!=MachineModel::Plus3 && (s.memory.pagingPlus3 || f.drives[0].image || f.drives[1].image))throw std::runtime_error("Disks require Spectrum +3");
   }
+  if(version>=3) {
+    u.screenRGB=r.blob(320*240*3);
+    if(!u.screenRGB.empty() && u.screenRGB.size()!=320*240*3)throw std::runtime_error("Invalid saved raster");
+  }
   const auto &t=u.timing;
   if(s.registers.IM>2 || s.tstates>1024 || (s.multiplier!=1 && s.multiplier!=2 && s.multiplier!=4) ||
       s.clockPhase>=s.multiplier || s.memory.ram.size()!=hardware.memory.RAMBytes() ||
@@ -182,13 +187,13 @@ inline std::vector<unsigned char> Encode(const Record &record) {
   if(payload.bytes.size()>MaxFile) throw std::runtime_error("Saved state is too large");
   Writer file;
   const unsigned char magic[8]={'G','O','M','A','S','S','T',0};file.raw(magic,8);
-  file.u32(2);file.u32(payload.bytes.size());file.u64(ROMFingerprint(payload.bytes.data(),payload.bytes.size()));
+  file.u32(3);file.u32(payload.bytes.size());file.u64(ROMFingerprint(payload.bytes.data(),payload.bytes.size()));
   file.raw(payload.bytes.data(),payload.bytes.size());return file.bytes;
 }
 inline Record Decode(const std::vector<unsigned char> &file) {
   Reader header{file}; const unsigned char magic[8]={'G','O','M','A','S','S','T',0};
   for(auto v:magic) if(header.u8()!=v) throw std::runtime_error("Not a Gomas saved state");
-  unsigned version=header.u32();if(version!=1 && version!=2) throw std::runtime_error("Unsupported saved-state version");
+  unsigned version=header.u32();if(version!=1 && version!=2 && version!=3) throw std::runtime_error("Unsupported saved-state version");
   auto size=header.u32();auto hash=header.u64();
   if(size>MaxFile || size!=file.size()-header.pos || ROMFingerprint(file.data()+header.pos,size)!=hash)
     throw std::runtime_error("Saved-state checksum or size is invalid");

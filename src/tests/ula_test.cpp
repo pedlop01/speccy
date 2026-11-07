@@ -31,21 +31,25 @@ int main() {
   TestULA ula;
   ula.SetBitmap(bitmap);
   assert(ula.Present() && !ula.GetIsDirty());
+  bool irq = false;
   write(ula, 0x5800, 0x0A); // Red ink, blue paper.
   write(ula, 0x4000, 0x80);
+  assert(!ula.GetIsDirty()); // Writes affect RAM; the beam paints the screen.
+  ula.AddCycles(TSTATES_PER_FRAME, irq);
   assert(ula.GetIsDirty() && ula.Present() && !ula.GetIsDirty());
   pixel(bitmap, 32, 24, 215, 0, 0);
   pixel(bitmap, 33, 24, 0, 0, 215);
   write(ula, 0x5800, 0x4A); // BRIGHT also updates existing pixels.
+  ula.AddCycles(TSTATES_PER_FRAME, irq);
   assert(ula.Present());
   pixel(bitmap, 32, 24, 255, 0, 0);
   pixel(bitmap, 33, 24, 0, 0, 255);
   write(ula, 0x5AFF, 0x04); // Last attribute and last pixel, nonlinear VRAM layout.
   write(ula, 0x57FF, 0x01);
+  ula.AddCycles(TSTATES_PER_FRAME, irq);
   assert(ula.Present());
   pixel(bitmap, 287, 215, 0, 215, 0);
 
-  bool irq = false;
   ula.IOWrite(0xFE, 7);
   ula.AddCycles(TSTATES_PER_FRAME - 1, irq);
   assert(!irq);

@@ -106,6 +106,7 @@ void ULA::AddCycles(unsigned int cycles, bool& IRQ) {
       }
     }
     ay.Advance(step);
+    RenderScreen(dwFrameTStates, dwFrameTStates + step);
     dwFrameTStates += step;
     dwScanLineTStates += step;
     cycles -= step;
@@ -133,7 +134,7 @@ void ULA::ScanLine(bool& IRQ) {
     if (dwFrameCount >= 16) {    // each 16 full frames
       dwFrameCount = 0;         // reset frame counter
       blinkState = !blinkState; // invert blink
-      UpdateBlink();            // update screen content
+      // The new FLASH phase is sampled by the next frame's screen fetches.
     }
   }
 
@@ -178,54 +179,41 @@ void ULA::SelectScreen(const unsigned char *memory) {
   const unsigned char *selected = memory ? memory : data;
   if (displayMemory == selected) return;
   displayMemory = selected;
-  for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
 }
 
-void ULA::MemoryWrite(unsigned int address, unsigned char value) {
-  if (displayMemory == data) DisplayWrite(address, value);
-}
+// RAM writes only change the source for future ULA fetches. Repainting here
+// exposes temporary sprite erasure and retroactively changes scanned pixels.
+void ULA::MemoryWrite(unsigned int, unsigned char) {}
+void ULA::DisplayWrite(unsigned int, unsigned char) {}
 
-void ULA::DisplayWrite(unsigned int address, unsigned char value) {
-  unsigned int ink;
-  unsigned int paper;
-  unsigned int row;
-  unsigned int column;
-  unsigned char attr;
-
-  address &= 0x3FFF;
-  if(address > 0x1AFF)
-    return;
-
+void ULA::RenderByte(unsigned y, unsigned column) {
+  const unsigned offset = ((y & 0xC0) << 5) | ((y & 7) << 8) |
+                          ((y & 0x38) << 2) | column;
+  const unsigned char bits = displayMemory[offset];
+  const unsigned char attr = displayMemory[0x1800 + (y / 8) * 32 + column];
+  unsigned ink = dwColorTable[((attr & 0x40) >> 3) | (attr & 7)];
+  unsigned paper = dwColorTable[(attr & 0x78) >> 3];
+  if ((attr & 0x80) && blinkState) std::swap(ink, paper);
+  for (unsigned x = 0; x < 8; ++x)
+    PutPixel(32 + column * 8 + x, 24 + y, (bits & (0x80 >> x)) ? ink : paper);
   isDirty = true;
-  if(address < 0x1800) {  // Bitmap graphics
+}
 
-    row = (address >> 5);
-    row = ((row & 0xC0) |
-           ((row & 0x38) >> 3) |
-           ((row & 0x07) << 3));
-
-    column = (address & 0x001F) * 8;
-
-    // Get the attribute
-    attr = displayMemory[0x1800 + ((row >> 3) << 5) + (address & 0x001F)];
-
-    if((attr & 0x80) && blinkState) {
-      paper = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
-      ink = dwColorTable[(attr & 0x78) >> 3];
-    } else {
-      paper = dwColorTable[(attr & 0x78) >> 3];
-      ink   = dwColorTable[((attr & 0x40) >> 3) | (attr & 0x07)];
-    }
-
-    for (unsigned int p = 0; p < 8; p++) {
-      bool is_ink = (value & (0x01 << (7 - p)));
-
-      PutPixel(column + p + 32, row + 24, is_ink ? ink : paper);
-
-    }
-  } else {
-    // Redraw affected "character block"
-    UpdateChar(address - 0x1800);
+void ULA::RenderScreen(unsigned from, unsigned to) {
+  // Eight pixels take four ULA T-states. Sample each byte/attribute pair at
+  // its display position, using the selected bank at that instant. CPU bus
+  // accesses are still instruction-granular; this does not add contention.
+  const unsigned first = timing.firstDisplayTstate;
+  const unsigned end = first + 191 * timing.tstatesPerLine + 128;
+  if (to <= first || from >= end) return;
+  from = std::max(from, first) - first;
+  to = std::min(to, end) - first;
+  const unsigned lastRow = (to - 1) / timing.tstatesPerLine;
+  for (unsigned y = from / timing.tstatesPerLine; y <= lastRow; ++y) {
+    const unsigned row = y * timing.tstatesPerLine;
+    const unsigned x = from > row ? from - row : 0;
+    for (unsigned column = (x + 3) / 4; column < 32 && row + column * 4 < to; ++column)
+      RenderByte(y, column);
   }
 }
 
@@ -350,6 +338,7 @@ ULA::State ULA::CaptureState() const {
   memcpy(state.keys, keyMatrix, sizeof(keyMatrix));
   memcpy(state.frameAudio, FrameAudio, sizeof(FrameAudio));
   memcpy(state.pendingAudio, pendingAudio, sizeof(pendingAudio));
+  state.screenRGB = CaptureRGB();
   return state;
 }
 
@@ -374,12 +363,20 @@ void ULA::RestoreState(const State &state) {
   memcpy(keyMatrix, state.keys, sizeof(keyMatrix));
   memcpy(FrameAudio, state.frameAudio, sizeof(FrameAudio));
   memcpy(pendingAudio, state.pendingAudio, sizeof(pendingAudio));
-  // Rebuild presentation from the selected RAM bank, saved FLASH phase and
-  // per-line border; never copy Allegro resources or the external bank pointer.
-  for (unsigned y = 0; y < 240; ++y)
-    for (unsigned x = 0; x < 320; ++x)
-      PutPixel(x, y, dwCurrentScanLineBackColor[y] == 0xFFFFFFFF ? 0 : dwCurrentScanLineBackColor[y]);
-  for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
+  if (state.screenRGB.size() == 320 * 240 * 3) {
+    // RAM may already hold the next sprite update; keep what the ULA saw.
+    for (unsigned y = 0; y < 240; ++y)
+      for (unsigned x = 0; x < 320; ++x) {
+        const auto *rgb = &state.screenRGB[(y * 320 + x) * 3];
+        PutPixel(x, y, unsigned(rgb[0]) << 24 | unsigned(rgb[1]) << 16 | unsigned(rgb[2]) << 8);
+      }
+  } else {
+    // External snapshots and old saves have no raster. Seed them from RAM.
+    for (unsigned y = 0; y < 240; ++y)
+      for (unsigned x = 0; x < 320; ++x)
+        PutPixel(x, y, dwCurrentScanLineBackColor[y] == 0xFFFFFFFF ? 0 : dwCurrentScanLineBackColor[y]);
+    for (unsigned ch = 0; ch < 32 * 24; ++ch) UpdateChar(ch);
+  }
   isDirty = true;
 }
 

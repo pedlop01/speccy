@@ -284,9 +284,10 @@ de bus con contención completa.
 
 Límites actuales
 ----------------
-No es una emulación de ULA precisa por t-state: las escrituras de vídeo se aplican
-al ejecutarse la instrucción y el borde se representa por scanline. No hay
-contención de memoria ni ajuste de eventos de E/S dentro de una instrucción.
+La ULA muestrea bitmap y atributos siguiendo el barrido, un byte de ocho píxeles
+cada cuatro t-states. Las escrituras y la selección de pantalla afectan solo a
+los siguientes muestreos; el borde se representa por scanline. No hay contención
+de memoria ni ajuste de accesos de memoria/E/S dentro de una instrucción.
 El reloj de audio gobierna el avance del núcleo según los Hz del modelo; se emula
 el beeper del bit 4, la señal de cassette y el AY en 128K/+2, sin la contribución
 analógica de MIC. La carga rápida solo actúa en la página ROM reconocida. La reproducción por pulsos
@@ -315,7 +316,8 @@ Vídeo y audio por modelo (tarea 6)
 ----------------------------------
 La ULA lee el banco de pantalla seleccionado, independientemente del mapa CPU.
 Bitmap, atributos, FLASH y bus flotante usan la misma fuente; cambiar de pantalla
-redibuja toda la imagen y las escrituras ocultas no la modifican. Se conserva el
+afecta a los siguientes bytes que lee la ULA, conservando las zonas ya barridas.
+Las escrituras ocultas no modifican la imagen mostrada. Se conserva el
 recorte 320x240, situado respecto al inicio de pantalla del perfil. El borde
 sigue siendo por scanline, sin contención ni cambios por t-state.
 
@@ -502,7 +504,8 @@ por lo que se puede recuperar en otra sesión aunque los originales se hayan
 movido. Al cargar se recuperan el modelo, RAM, CPU, frecuencia, vídeo, AY, audio
 pendiente y posición exacta de cinta. La pausa, velocidad global y filtros de
 View mantienen los valores actuales. Se inicia un historial de retroceso nuevo.
-El formato propio GSS versión 2 (compatible con lectura de partidas v1) incluye límites y comprobación de integridad;
+El formato propio GSS versión 3 (compatible con lectura de partidas v1/v2) conserva
+también los píxeles ya barridos, además de la RAM, e incluye límites y comprobación de integridad;
 un fallo de lectura conserva la sesión actual. El guardado sustituye la casilla
 mediante un archivo temporal para proteger el guardado anterior si falla la escritura.
 
@@ -793,3 +796,30 @@ La detección distingue crucetas digitales de sticks que anuncian simultáneamen
 capacidades digitales y analógicas (DirectInput). Solo se usa el primer stick
 analógico de movimiento; se ignoran el stick derecho y los gatillos/deslizadores.
 También se reconocen los botones de cruceta de XInput por sus nombres.
+
+Barrido de vídeo y sprites (Top Cat)
+-----------------------------------
+La presentación anterior dibujaba directamente al escribir la RAM de pantalla.
+Un juego que borrase sprites después de pasar el haz podía aparecer sin ellos
+en la imagen enviada a Allegro al final del frame. Se reprodujo en la copia TAP
+48K de Top Cat in Beverly Hills Cats instalada desde ZXArt, durante la partida.
+Ahora AddCycles dibuja bitmap y atributos al alcanzar su posición de barrido;
+una escritura posterior no cambia retroactivamente lo que ya se vio. Los cambios
+de atributo dentro de un carácter y la pantalla alternativa 128K siguen la misma
+regla. FLASH se aplica al barrer el siguiente frame, sin repintar el anterior.
+
+El historial mantiene los píxeles barridos dentro del mismo límite de 10 segundos.
+GSS v3 también los guarda para restaurar exactamente la imagen, aunque la RAM
+ya contenga el siguiente borrado. Los snapshots externos y GSS antiguos, que
+no contienen ese raster, comienzan con una imagen reconstruida desde RAM.
+
+raster-tests comprueba escrituras antes/después del haz, cambios de atributos,
+cambio de banco a mitad de línea, restauración y avance en bloques o instrucciones
+en los cuatro modelos. No se han añadido todavía contención ni ciclos de bus
+individuales: los accesos de CPU siguen resolviéndose por instrucción.
+Referencia de fases por modelo: https://github.com/fuse-emulator/fuse/blob/master/spectrum.c
+
+Prueba opcional del juego (no se distribuye su TAP): make -C bin topcat-tests,
+y desde bin ejecutar ./topcat-tests /ruta/al/Top_Cat_in_Beverly_Hills_Cats.tap.
+Usa la versión ZXArt de MD5 2c6da90b3f5de817ad112fcbcff4d259 y comprueba que
+16 poses consecutivas al caminar no alternan con el fondo sin sprite.

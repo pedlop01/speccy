@@ -47,8 +47,14 @@ int main() {
     auto bytes=SaveStates::Encode(record);
     for(size_t n:{size_t(0),size_t(12),size_t(24),bytes.size()-1})Reject(std::vector<unsigned char>(bytes.begin(),bytes.begin()+n));
     auto corrupt=bytes;corrupt.back()^=1;Reject(corrupt);
-    corrupt=bytes;corrupt[8]=3;Reject(corrupt);
-    auto invalid=record;invalid.core.multiplier=3;Reject(SaveStates::Encode(invalid));
+    corrupt=bytes;corrupt[8]=255;Reject(corrupt);
+    SaveStates::Writer oldCore;SaveStates::WriteCore(oldCore,record.core,2);
+    SaveStates::Reader oldReader{oldCore.bytes};auto oldState=SaveStates::ReadCore(oldReader,record.rom.model,2);
+    assert(oldReader.pos==oldCore.bytes.size() && oldState.ula.screenRGB.empty());
+    SpectrumMachine legacy;assert(legacy.ImportSession(record.rom,record.tape,record.tapePath,oldState,error));
+    assert(legacy.ula.CaptureRGB().size()==320*240*3);
+    auto invalid=record;invalid.core.ula.screenRGB.resize(17);Reject(SaveStates::Encode(invalid));
+    invalid=record;invalid.core.multiplier=3;Reject(SaveStates::Encode(invalid));
     invalid=record;invalid.core.deck.remaining=0xffffffffu;Reject(SaveStates::Encode(invalid));
     invalid=record;invalid.core.ula.audioIndex=960;invalid.core.ula.frameTStates=0;invalid.core.ula.line=0;invalid.core.ula.lineTStates=0;
     Reject(SaveStates::Encode(invalid));

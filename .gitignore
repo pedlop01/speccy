@@ -39,3 +39,6 @@ __pycache__/
 joystick-tests
 
 catalog-sources-tests
+
+raster-tests
+topcat-tests

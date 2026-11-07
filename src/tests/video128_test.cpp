@@ -27,14 +27,18 @@ int main() {
   ula.Configure(rom.model);
   assert(memory.Configure(rom, error));
   ula.SetBitmap(bitmap);
+  bool irq = false;
   memory.Write(0x5800, 0x0A); memory.Write(0x4000, 0x80); // Red ink, blue paper.
   io.Write(0x7FFD, 7);
   memory.Write(0xD800, 0x54); memory.Write(0xC000, 0x80); // Bright green ink/red paper.
   memory.Write(0xDAFF, 4); memory.Write(0xD7FF, 1);
+  ula.AddCycles(70908, irq);
   assert(ula.Present()); pixel(bitmap, 32, 24, 215, 0, 0); // Hidden writes must not repaint.
   assert(!ula.GetIsDirty());
   io.Write(0x7FFD, 0x08); // Display 7 while CPU sees bank 0 at C000.
   assert(memory.RAMBank(2) == 0 && memory.ScreenBank() == 7);
+  assert(!ula.GetIsDirty()); // Bank switching does not repaint scanned pixels.
+  ula.AddCycles(70908, irq);
   assert(ula.GetIsDirty() && ula.Present());
   pixel(bitmap, 32, 24, 0, 255, 0); pixel(bitmap, 33, 24, 255, 0, 0);
   pixel(bitmap, 287, 215, 0, 215, 0);
@@ -42,12 +46,13 @@ int main() {
   assert(!ula.GetIsDirty());
   io.Write(0x7FFD, 0x0F);
   memory.Write(0xC000, 0x40);
+  ula.AddCycles(70908, irq);
   assert(ula.Present()); pixel(bitmap, 32, 24, 255, 0, 0); pixel(bitmap, 33, 24, 0, 255, 0);
   memory.Write(0xD800, 0xD4); // FLASH and BRIGHT on bank 7.
-  bool irq = false;
   ula.AddCycles(70908 * 16, irq);
   assert(ula.Present()); pixel(bitmap, 32, 24, 0, 255, 0); pixel(bitmap, 33, 24, 255, 0, 0);
   io.Write(0x7FFD, 0);
+  ula.AddCycles(70908, irq);
   assert(ula.Present()); pixel(bitmap, 32, 24, 0, 0, 215);
 
   // Exhaust fetch slots and blanking in both screen banks, independently of CPU bank.

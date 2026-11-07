@@ -12,7 +12,8 @@ all: gomas
 gomas: $(SOURCES) $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
 
-test: catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+test: raster-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	./raster-tests
 	./catalog-sources-tests
 	./joystick-tests
 	./ula-tests
@@ -72,7 +73,7 @@ tape-ui-tests: ../src/tests/tape_ui_test.cpp ../src/tests/catalog_art_fixture.h 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean: clean-windows
-	rm -f *.o gomas catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	rm -f *.o gomas raster-tests topcat-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
 
 paging-tests: ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -202,3 +203,10 @@ joystick-tests: ../src/tests/joystick_test.cpp ../src/ula.cpp ../src/z80.cpp $(H
 
 catalog-sources-tests: ../src/tests/catalog_sources_test.cpp ../src/tests/catalog_art_fixture.h ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/catalog_sources_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+raster-tests: ../src/tests/raster_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/raster_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+# Optional fixture test: run with the downloaded ZXArt 48K Top Cat TAP path.
+topcat-tests: ../src/tests/topcat_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/topcat_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)

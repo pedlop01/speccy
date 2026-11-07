@@ -99,6 +99,8 @@ class ULA : public ULAMemory, public ULAIO {
     std::int64_t audioSum;
     double dcAverage;
     void PutPixel(unsigned int x, unsigned int y, unsigned int color);
+    void RenderScreen(unsigned from, unsigned to);
+    void RenderByte(unsigned y, unsigned column);
 
   public:
     struct State {
@@ -112,6 +114,8 @@ class ULA : public ULAMemory, public ULAIO {
       unsigned int frameAudioCount, audioPhase, audioIndex;
       std::int64_t audioSum;
       double dcAverage;
+      // Preserve pixels already scanned, independently of the current RAM.
+      std::vector<unsigned char> screenRGB;
     };
     State CaptureState() const;
     std::vector<unsigned char> CaptureRGB() const;
