@@ -741,3 +741,33 @@ El catálogo Windows usa el almacén de certificados del propio Windows; el
 archivo curl-ca-bundle.crt es opcional y añade certificados de confianza.
 Los errores de conexión se muestran en la lista vacía y en el pie de ventana.
 Si Offline está activado y no hay juegos locales, se indica cómo volver online.
+
+Joystick Kempston y Sinclair
+---------------------------
+Settings > Input > Joystick interface: None, Kempston, Sinclair 1 (6-0),
+Sinclair 2 (1-5). None mantiene el comportamiento anterior y es el valor inicial.
+Kempston usa decodificación parcial A5: 0x1F, 0x5F, 0x9F y 0xDF son alias
+(se ignora el byte alto). Navy Moves, por ejemplo, lee 0xDF. Bits activos:
+derecha=1, izquierda=2, abajo=4, arriba=8, disparo=16; los bits altos son cero.
+Sinclair 1 usa 6/7/8/9/0 para izquierda/derecha/abajo/arriba/disparo;
+Sinclair 2 usa 1/2/3/4/5 con el mismo orden. Elegir también esa opción en el juego.
+
+Keyboard joystick asigna los cursores del PC y Right Ctrl a movimiento/disparo.
+Mientras está activado con una interfaz elegida, los cursores dejan de generar
+CAPS SHIFT+5/6/7/8. Con None o Keyboard joystick desactivado conservan esa función.
+El resto del teclado sigue funcionando y las teclas numéricas físicas se mezclan
+con Sinclair, sin soltarse al liberar el joystick y viceversa.
+
+Use gamepad permite usar un mando físico: primer stick de dos ejes y crucetas
+digitales, zona muerta del 25%, y los dos primeros botones para disparar.
+Controller permite Automatic (primer mando) o uno de los cuatro primeros mandos,
+por orden de conexión. No incluye todavía remapeo libre de ejes/botones.
+La selección de interfaz y fuentes de entrada se guardan en settings.ini.
+Se liberan entradas al perder foco, pausar, rebobinar y abrir ventanas modales.
+Después de esas acciones, volver a centrar/soltar el mando para reactivarlo.
+Las conexiones y desconexiones se actualizan sin reiniciar el emulador.
+
+La detección distingue crucetas digitales de sticks que anuncian simultáneamente
+capacidades digitales y analógicas (DirectInput). Solo se usa el primer stick
+analógico de movimiento; se ignoran el stick derecho y los gatillos/deslizadores.
+También se reconocen los botones de cruceta de XInput por sus nombres.

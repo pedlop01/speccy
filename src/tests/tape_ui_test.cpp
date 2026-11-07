@@ -120,6 +120,22 @@ static void CursorKeys() {
   Check(ula.CaptureState().keys[3]==16,"Arrow release lost physical digit 5");
   ReleaseKeys(ula);key(ALLEGRO_KEY_RIGHT,true);key(ALLEGRO_KEY_RIGHT,false);
   auto state=ula.CaptureState();for(auto row:state.keys)Check(!row,"Focus release left host keys held");
+  SpectrumMachine machine;
+  joystickInput.keyboard=true;
+  for(auto mode:{JoystickMode::Kempston,JoystickMode::Sinclair1,JoystickMode::Sinclair2}) {
+    joystickInput.mode=mode;ReleaseInput(machine);
+    for(int code:{ALLEGRO_KEY_UP,ALLEGRO_KEY_RIGHT,ALLEGRO_KEY_RCTRL}) {
+      ALLEGRO_EVENT event{};event.type=ALLEGRO_EVENT_KEY_DOWN;event.keyboard.keycode=code;
+      ReadKeyboard(event,&machine.ula);
+    }
+    ApplyJoystick(machine);
+    if(mode==JoystickMode::Kempston)Check(machine.io.Read(0xab1f)==25,"Keyboard did not reach Kempston port");
+    else Check((~machine.io.Read(mode==JoystickMode::Sinclair1?0xeffe:0xf7fe)&31)==
+        (mode==JoystickMode::Sinclair1?11:26),"Keyboard did not reach Sinclair matrix");
+    ReleaseInput(machine);Check(joystickInput.State()==0,"Release retained a joystick direction");
+  }
+  joystickInput.mode=JoystickMode::Disabled;joystickInput.keyboard=false;ReleaseInput(machine);
+
 }
 int main() {
   CursorKeys();
@@ -130,7 +146,7 @@ int main() {
   if (configFd < 0) return 1;
   close(configFd);
   { std::ofstream config(configPath);
-    config << "[view]\nsize_version=1\nwidth=640\nheight=451\nfilter=2\nfullscreen=0\n"; }
+    config << "[view]\nsize_version=1\nwidth=640\nheight=451\nfilter=2\nfullscreen=0\n[input]\njoystick=3\nkeyboard_joystick=1\ngamepad=0\ncontroller=-1\n"; }
   const char *oldConfig = getenv("GOMAS_CONFIG");
   bool hadConfig = oldConfig != nullptr;
   std::string savedConfig = oldConfig ? oldConfig : "";
@@ -192,6 +208,17 @@ int main() {
         XTestFakeKeyEvent(x, XKeysymToKeycode(x, symbol), True, 0);
         XTestFakeKeyEvent(x, XKeysymToKeycode(x, symbol), False, 0); XFlush(x);
       };
+      Check(checked(MENU_JOY_SINCLAIR2) && checked(MENU_JOY_KEYBOARD) && !checked(MENU_JOY_GAMEPAD),
+          "Saved joystick settings did not restore at startup");
+      for(int id:{MENU_JOY_KEMPSTON,MENU_JOY_SINCLAIR1,MENU_JOY_SINCLAIR2,MENU_JOY_NONE}) {
+        Menu(id);
+        Check(Until([&](){return checked(id) && ROMPreferences::Read(configPath).joystickMode==id-MENU_JOY_NONE;},1000),
+            "Joystick interface did not change or persist");
+      }
+      Menu(MENU_JOY_KEYBOARD);Menu(MENU_JOY_GAMEPAD);
+      Check(Until([&](){auto settings=ROMPreferences::Read(configPath);return !checked(MENU_JOY_KEYBOARD) &&
+          checked(MENU_JOY_GAMEPAD) && !settings.joystickKeyboard && settings.gamepad;},1000),
+          "Joystick input source toggles did not persist");
       Menu(MENU_PAUSE);
       Check(Until([&]() { return checked(MENU_PAUSE); }, 1000), "CPU Pause did not respond");
       SaveStates::Store saves(savesPath);

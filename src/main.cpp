@@ -20,6 +20,7 @@
 #include "catalog_load.h"
 #include "debug_view.h"
 #include "rom_settings.h"
+#include "joystick_input.h"
 
 #include "z80.h"
 #include "bus.hpp"
@@ -29,7 +30,8 @@
 
 using namespace std;
 
-static std::array<bool, ALLEGRO_KEY_MAX> hostKeys{};
+static JoystickInput joystickInput;
+static auto &hostKeys=joystickInput.keys;
 
 void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
   bool keyEvent = false;
@@ -92,17 +94,7 @@ void ReadKeyboard(const ALLEGRO_EVENT &ev, ULA* ula) {
       case ALLEGRO_KEY_RSHIFT: ula->PressKey(3, 8, keyDown); break;
       case ALLEGRO_KEY_SPACE:  ula->PressKey(3, 9, keyDown); break;
     }
-    if(key==ALLEGRO_KEY_LSHIFT || (key>=ALLEGRO_KEY_5 && key<=ALLEGRO_KEY_8) ||
-        key==ALLEGRO_KEY_LEFT || key==ALLEGRO_KEY_DOWN || key==ALLEGRO_KEY_UP || key==ALLEGRO_KEY_RIGHT) {
-      // Spectrum cursors are CAPS SHIFT + 5/6/7/8. Merge the host keys so
-      // releasing one arrow does not release a held Shift or another cursor.
-      bool cursor=hostKeys[ALLEGRO_KEY_LEFT] || hostKeys[ALLEGRO_KEY_DOWN] || hostKeys[ALLEGRO_KEY_UP] || hostKeys[ALLEGRO_KEY_RIGHT];
-      ula->PressKey(3,0,hostKeys[ALLEGRO_KEY_LSHIFT] || cursor);
-      ula->PressKey(0,4,hostKeys[ALLEGRO_KEY_5] || hostKeys[ALLEGRO_KEY_LEFT]);
-      ula->PressKey(0,5,hostKeys[ALLEGRO_KEY_6] || hostKeys[ALLEGRO_KEY_DOWN]);
-      ula->PressKey(0,6,hostKeys[ALLEGRO_KEY_7] || hostKeys[ALLEGRO_KEY_UP]);
-      ula->PressKey(0,7,hostKeys[ALLEGRO_KEY_8] || hostKeys[ALLEGRO_KEY_RIGHT]);
-    }
+    joystickInput.ApplyKeyboard(*ula);
   }
 }
 
@@ -123,7 +115,9 @@ enum MenuId {
   MENU_DISK=490,MENU_DISK_A_INSERT,MENU_DISK_A_EJECT,MENU_DISK_A_SAVE,MENU_DISK_A_PROTECT,
   MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW,
   MENU_CATALOG=510,
-  MENU_DEBUG=520,MENU_DEBUG_SHOW,MENU_DEBUG_STEP,MENU_DEBUG_FRAME
+  MENU_DEBUG=520,MENU_DEBUG_SHOW,MENU_DEBUG_STEP,MENU_DEBUG_FRAME,
+  MENU_INPUT=550,MENU_JOYSTICK_MODE,MENU_JOY_NONE,MENU_JOY_KEMPSTON,MENU_JOY_SINCLAIR1,MENU_JOY_SINCLAIR2,
+  MENU_JOY_KEYBOARD,MENU_JOY_GAMEPAD,MENU_JOY_CONTROLLER,MENU_JOY_AUTO,MENU_JOY_PAD1,MENU_JOY_PAD2,MENU_JOY_PAD3,MENU_JOY_PAD4
 };
 
 // Menu IDs map to canonical ROM sets, independently of registry ordering.
@@ -212,6 +206,23 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       ALLEGRO_END_OF_MENU,
     ALLEGRO_END_OF_MENU,
     ALLEGRO_START_OF_MENU("&Settings", MENU_SETTINGS),
+      ALLEGRO_START_OF_MENU("&Input", MENU_INPUT),
+        ALLEGRO_START_OF_MENU("Joystick &interface", MENU_JOYSTICK_MODE),
+          {"&None", MENU_JOY_NONE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"&Kempston", MENU_JOY_KEMPSTON, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Sinclair &1 (6-0)", MENU_JOY_SINCLAIR1, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Sinclair &2 (1-5)", MENU_JOY_SINCLAIR2, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        ALLEGRO_END_OF_MENU,
+        {"&Keyboard joystick (arrows + Right Ctrl)", MENU_JOY_KEYBOARD, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        {"Use &gamepad", MENU_JOY_GAMEPAD, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        ALLEGRO_START_OF_MENU("&Controller", MENU_JOY_CONTROLLER),
+          {"Automatic (first connected)", MENU_JOY_AUTO, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Controller 1", MENU_JOY_PAD1, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Controller 2", MENU_JOY_PAD2, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Controller 3", MENU_JOY_PAD3, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+          {"Controller 4", MENU_JOY_PAD4, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+        ALLEGRO_END_OF_MENU,
+      ALLEGRO_END_OF_MENU,
       ALLEGRO_START_OF_MENU("&ROM", MENU_ROM),
         {"&Open ROM...", MENU_LOAD_ROM, 0, nullptr},
         {"Open &custom 48K ROM...", MENU_CUSTOM_ROM, 0, nullptr},
@@ -244,10 +255,17 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
 }
 
 void ReleaseKeys(ULA &ula) {
-  hostKeys.fill(false);
+  joystickInput.Release();
   for (unsigned row = 0; row < 4; ++row)
     for (unsigned col = 0; col < 10; ++col) ula.PressKey(row, col, false);
 }
+
+void ApplyJoystick(SpectrumMachine &machine) {
+  joystickInput.ApplyKeyboard(machine.ula);
+  machine.io.kempstonEnabled=joystickInput.mode==JoystickMode::Kempston;
+  machine.io.kempstonState=joystickInput.State();
+}
+void ReleaseInput(SpectrumMachine &machine) {ReleaseKeys(machine.ula);ApplyJoystick(machine);}
 
 int main(int argc, char *argv[]) {
   const char *usage = "Usage: gomas [game.tap|tzx|sna|z80|zip [system.rom]] [--rom system.rom] [--custom-48-rom system.rom]";
@@ -301,6 +319,12 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Cannot initialize keyboard, mouse, audio or native dialogs\n");
     return 1;
   }
+  JoystickHost controllers;
+  controllers.gamepad=preferences.gamepad;controllers.controller=preferences.controller;
+  joystickInput.mode=static_cast<JoystickMode>(preferences.joystickMode);
+  joystickInput.keyboard=preferences.joystickKeyboard;
+  ReleaseInput(machine);
+  bool windowFocused=true;
   int displayFlags = ALLEGRO_WINDOWED | ALLEGRO_RESIZABLE;
 #ifdef ALLEGRO_GTK_TOPLEVEL
   displayFlags |= ALLEGRO_GTK_TOPLEVEL;
@@ -356,6 +380,7 @@ int main(int argc, char *argv[]) {
   machine.EnableRewind();
   ula.SetBitmap(bitmap.get());
   al_register_event_source(events.get(), al_get_keyboard_event_source());
+  if(controllers.Available())al_register_event_source(events.get(),al_get_joystick_event_source());
   al_register_event_source(events.get(), al_get_mouse_event_source());
   al_register_event_source(events.get(), al_get_display_event_source(display.get()));
   al_register_event_source(events.get(), al_get_default_menu_event_source());
@@ -379,6 +404,14 @@ int main(int argc, char *argv[]) {
     auto flags = [&](int id, int value) {
       if (al_get_menu_item_flags(menu, id) != value) al_set_menu_item_flags(menu, id, value);
     };
+    for(int id=MENU_JOY_NONE;id<=MENU_JOY_SINCLAIR2;++id)
+      flags(id,ALLEGRO_MENU_ITEM_CHECKBOX|(int(joystickInput.mode)==id-MENU_JOY_NONE?ALLEGRO_MENU_ITEM_CHECKED:0));
+    flags(MENU_JOY_KEYBOARD,ALLEGRO_MENU_ITEM_CHECKBOX|(joystickInput.keyboard?ALLEGRO_MENU_ITEM_CHECKED:0));
+    flags(MENU_JOY_GAMEPAD,ALLEGRO_MENU_ITEM_CHECKBOX|(controllers.gamepad?ALLEGRO_MENU_ITEM_CHECKED:0));
+    for(int id=MENU_JOY_AUTO;id<=MENU_JOY_PAD4;++id) {
+      int index=id-MENU_JOY_PAD1;
+      flags(id,ALLEGRO_MENU_ITEM_CHECKBOX|(controllers.controller==index?ALLEGRO_MENU_ITEM_CHECKED:0));
+    }
     flags(MENU_DEBUG_SHOW,ALLEGRO_MENU_ITEM_CHECKBOX|(debugView.IsOpen()?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX | (playback.paused ? ALLEGRO_MENU_ITEM_CHECKED : 0));
     flags(MENU_SPEED_UP, playback.Speed() == 16 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
@@ -431,6 +464,8 @@ int main(int argc, char *argv[]) {
     preferences.playbackSpeed = playback.Speed();
     preferences.cpuMultiplier = machine.CPUMultiplier();
     preferences.fastLoad = machine.fastLoad;
+    preferences.joystickMode=int(joystickInput.mode);preferences.joystickKeyboard=joystickInput.keyboard;
+    preferences.gamepad=controllers.gamepad;preferences.controller=controllers.controller;
     string settingsError;
     if (!preferences.Save(settingsPath, settingsError)) {
       bool playing = al_get_audio_stream_playing(stream.get());
@@ -447,7 +482,7 @@ int main(int argc, char *argv[]) {
     savePreferences();
   };
   auto viewResult = [&](bool success) {
-    ReleaseKeys(ula);
+    ReleaseInput(machine);
     if (!success) {
       bool playing = al_get_audio_stream_playing(stream.get());
       al_set_audio_stream_playing(stream.get(), false);
@@ -482,7 +517,7 @@ int main(int argc, char *argv[]) {
   auto stateAction = [&](int action) {
     const bool playing = al_get_audio_stream_playing(stream.get());
     al_set_audio_stream_playing(stream.get(), false);
-    ReleaseKeys(ula);
+    ReleaseInput(machine);
     bool loaded = false;
     std::string stateError;
     if (action == MENU_QUICK_SAVE) savedGames.Save(SaveStates::QuickSlot, machine, stateError);
@@ -493,7 +528,7 @@ int main(int argc, char *argv[]) {
     }
     if (!stateError.empty())
       al_show_native_message_box(display.get(), "Gomas", "Saved game", stateError.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
-    ReleaseKeys(ula);
+    ReleaseInput(machine);
     if (loaded) { tapeView.NewTape(); playback.DiscardAudio(); }
     else al_set_audio_stream_playing(stream.get(), playing);
     return loaded;
@@ -502,10 +537,10 @@ int main(int argc, char *argv[]) {
   auto chooseTape=[&]() {
     std::vector<std::string> options;for(const auto &option:machine.deck.Options())options.push_back(option.label);
     if(options.empty())return;
-    bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+    bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseInput(machine);
     int selected=ChoiceDialog::Show(display.get(),options);
     if(selected>=0){if(!machine.ChooseTape(selected))al_show_native_message_box(display.get(),"Gomas","Cannot choose TZX route","The selected route contains invalid or unsupported data.",nullptr,ALLEGRO_MESSAGEBOX_ERROR);else tapeView.NewTape();}
-    ReleaseKeys(ula);al_set_audio_stream_playing(stream.get(),playing);updateUI();
+    ReleaseInput(machine);al_set_audio_stream_playing(stream.get(),playing);updateUI();
   };
   updateUI();
   if (!restartAudio()) { fprintf(stderr, "Cannot start audio stream\n"); return 1; }
@@ -539,7 +574,9 @@ int main(int argc, char *argv[]) {
     switch (event.type) {
       case ALLEGRO_EVENT_DISPLAY_CLOSE: running = false; break;
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
-      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); resetAudio = playback.EndRewind(); break;
+      case ALLEGRO_EVENT_JOYSTICK_CONFIGURATION: controllers.Reconfigure();ReleaseInput(machine);break;
+      case ALLEGRO_EVENT_DISPLAY_SWITCH_IN: windowFocused=true;break;
+      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: windowFocused=false;ReleaseInput(machine); resetAudio = playback.EndRewind(); break;
       case ALLEGRO_EVENT_KEY_DOWN:
         if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) &&
             (event.keyboard.keycode == ALLEGRO_KEY_S || event.keyboard.keycode == ALLEGRO_KEY_L)) {
@@ -547,13 +584,13 @@ int main(int argc, char *argv[]) {
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F2 || event.keyboard.keycode == ALLEGRO_KEY_F3) {
           resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_F2 ? MENU_QUICK_SAVE : MENU_QUICK_LOAD); updateUI();
         } else if(event.keyboard.keycode==ALLEGRO_KEY_F12){
-          if(debugView.IsOpen())debugView.Close();else if(debugView.Show(events.get())){playback.paused=true;ReleaseKeys(ula);resetAudio=true;}updateUI();
+          if(debugView.IsOpen())debugView.Close();else if(debugView.Show(events.get())){playback.paused=true;ReleaseInput(machine);resetAudio=true;}updateUI();
         } else if(event.keyboard.keycode==ALLEGRO_KEY_F10 || event.keyboard.keycode==ALLEGRO_KEY_F4){
-          playback.paused=true;ReleaseKeys(ula);machine.DiscardAudio();
+          playback.paused=true;ReleaseInput(machine);machine.DiscardAudio();
           if(event.keyboard.keycode==ALLEGRO_KEY_F10)debugView.RecordStep(machine.StepInstruction());else{machine.Frame();debugView.RecordFrame();}
           resetAudio=true;updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F5) {
-          playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; updateUI();
+          playback.paused = !playback.paused; ReleaseInput(machine); resetAudio = true; updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F6) {
           resetAudio = playback.IncreaseSpeed(); updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F7) {
@@ -561,7 +598,7 @@ int main(int argc, char *argv[]) {
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F8) {
           resetAudio = playback.NormalSpeed(); updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F9) {
-          if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseKeys(ula); resetAudio = true; updateUI(); }
+          if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseInput(machine); resetAudio = true; updateUI(); }
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F11) {
           viewResult(screenView.SetFullscreen(display.get(), !screenView.Fullscreen(display.get())));
           updateUI();
@@ -578,18 +615,25 @@ int main(int argc, char *argv[]) {
         break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_JOY_NONE:case MENU_JOY_KEMPSTON:case MENU_JOY_SINCLAIR1:case MENU_JOY_SINCLAIR2:
+            joystickInput.mode=static_cast<JoystickMode>(event.user.data1-MENU_JOY_NONE);
+            ReleaseInput(machine);savePreferences();break;
+          case MENU_JOY_KEYBOARD:joystickInput.keyboard=!joystickInput.keyboard;ReleaseInput(machine);savePreferences();break;
+          case MENU_JOY_GAMEPAD:controllers.gamepad=!controllers.gamepad;ReleaseInput(machine);savePreferences();break;
+          case MENU_JOY_AUTO:case MENU_JOY_PAD1:case MENU_JOY_PAD2:case MENU_JOY_PAD3:case MENU_JOY_PAD4:
+            controllers.controller=event.user.data1-MENU_JOY_PAD1;ReleaseInput(machine);savePreferences();break;
           case MENU_DEBUG_SHOW:
             if(debugView.IsOpen())debugView.Close();
-            else if(debugView.Show(events.get())){playback.paused=true;ReleaseKeys(ula);resetAudio=true;}
+            else if(debugView.Show(events.get())){playback.paused=true;ReleaseInput(machine);resetAudio=true;}
             else al_show_native_message_box(display.get(),"Gomas","Debugger","Cannot open debugger window.",nullptr,ALLEGRO_MESSAGEBOX_ERROR);
             break;
           case MENU_DEBUG_STEP:case MENU_DEBUG_FRAME:
-            playback.paused=true;ReleaseKeys(ula);machine.DiscardAudio();
+            playback.paused=true;ReleaseInput(machine);machine.DiscardAudio();
             if(event.user.data1==MENU_DEBUG_STEP)debugView.RecordStep(machine.StepInstruction());else{machine.Frame();debugView.RecordFrame();}
             resetAudio=true;break;
 
           case MENU_CATALOG: {
-            bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+            bool playing=al_get_audio_stream_playing(stream.get());al_set_audio_stream_playing(stream.get(),false);ReleaseInput(machine);
             try {
               GameCatalog::Library library(GameCatalog::Directory(executablePath));CatalogView browser;auto choice=browser.Show(display.get(),library);
               if(!choice.path.empty()){
@@ -599,7 +643,7 @@ int main(int argc, char *argv[]) {
                 }else al_show_native_message_box(display.get(),"Gomas","Cannot load game",error.c_str(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);
               }
             }catch(const std::exception &e){al_show_native_message_box(display.get(),"Gomas","Game catalog",e.what(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);}
-            ReleaseKeys(ula);if(!resetAudio)al_set_audio_stream_playing(stream.get(),playing);break;
+            ReleaseInput(machine);if(!resetAudio)al_set_audio_stream_playing(stream.get(),playing);break;
           }
           case MENU_TAPE_CHOICE:chooseTape();break;
           case MENU_DISK_SHOW:diskView.Show(events.get());break;
@@ -607,7 +651,7 @@ int main(int argc, char *argv[]) {
           case MENU_DISK_A_PROTECT:case MENU_DISK_B_PROTECT:{unsigned unit=event.user.data1==MENU_DISK_A_PROTECT?0:1;auto &drive=machine.io.floppy.state.drives[unit];if(drive.image)drive.writeProtected=!drive.writeProtected;break;}
           case MENU_DISK_A_INSERT:case MENU_DISK_B_INSERT:case MENU_DISK_A_SAVE:case MENU_DISK_B_SAVE:{
             unsigned unit=event.user.data1>=MENU_DISK_B_INSERT?1:0;bool saving=event.user.data1==MENU_DISK_A_SAVE || event.user.data1==MENU_DISK_B_SAVE;
-            al_set_audio_stream_playing(stream.get(),false);ReleaseKeys(ula);
+            al_set_audio_stream_playing(stream.get(),false);ReleaseInput(machine);
             const auto path=machine.io.floppy.state.drives[unit].path;
             unique_ptr<ALLEGRO_FILECHOOSER,decltype(&al_destroy_native_file_dialog)> chooser(al_create_native_file_dialog(path.empty()?nullptr:path.c_str(),
               saving?"Save disk image":"Insert disk image",saving?"*.dsk":"*.dsk;*.DSK;*.zip;*.ZIP",saving?ALLEGRO_FILECHOOSER_SAVE:ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),al_destroy_native_file_dialog);
@@ -617,7 +661,7 @@ int main(int argc, char *argv[]) {
               if(!ok)al_show_native_message_box(display.get(),"Gomas","Disk image",error.c_str(),nullptr,ALLEGRO_MESSAGEBOX_ERROR);
               else{resetAudio=!saving;diskView.Show(events.get());tapeView.NewTape();}
             }
-            ReleaseKeys(ula);if(!resetAudio)al_set_audio_stream_playing(stream.get(),true);break;
+            ReleaseInput(machine);if(!resetAudio)al_set_audio_stream_playing(stream.get(),true);break;
           }
           case MENU_SAVE_STATE:
           case MENU_LOAD_STATE:
@@ -625,19 +669,19 @@ int main(int argc, char *argv[]) {
           case MENU_QUICK_LOAD:
             resetAudio = stateAction(event.user.data1); break;
           case MENU_PAUSE:
-            playback.paused = !playback.paused; ReleaseKeys(ula); resetAudio = true; break;
+            playback.paused = !playback.paused; ReleaseInput(machine); resetAudio = true; break;
           case MENU_SPEED_UP: resetAudio = playback.IncreaseSpeed(); break;
           case MENU_SPEED_DOWN: resetAudio = playback.DecreaseSpeed(); break;
           case MENU_SPEED_NORMAL: resetAudio = playback.NormalSpeed(); break;
           case MENU_REWIND_SECOND:
             if (playback.Rewinding()) resetAudio = playback.EndRewind();
-            else if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseKeys(ula); resetAudio = true; }
+            else if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseInput(machine); resetAudio = true; }
             break;
           case MENU_CPU_CLOCK_1X:
           case MENU_CPU_CLOCK_2X:
           case MENU_CPU_CLOCK_4X:
             machine.SetCPUMultiplier(1u << (event.user.data1 - MENU_CPU_CLOCK_1X));
-            ReleaseKeys(ula); resetAudio = true; break;
+            ReleaseInput(machine); resetAudio = true; break;
           case MENU_VIEW_2X: viewResult(screenView.SetScale(display.get(), 2)); break;
           case MENU_VIEW_4X: viewResult(screenView.SetScale(display.get(), 4)); break;
           case MENU_FULLSCREEN:
@@ -649,7 +693,7 @@ int main(int argc, char *argv[]) {
             screenView.filter = static_cast<ScreenFilter>(event.user.data1 - MENU_FILTER_NONE); break;
           case MENU_OPEN: {
             al_set_audio_stream_playing(stream.get(), false);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
                 al_create_native_file_dialog(machine.tapePath.empty() ? nullptr : machine.tapePath.c_str(),
                     "Open Spectrum game", "*.tap;*.TAP;*.tzx;*.TZX;*.sna;*.SNA;*.z80;*.Z80;*.szx;*.SZX;*.slt;*.SLT;*.dsk;*.DSK;*.zip;*.ZIP", ALLEGRO_FILECHOOSER_FILE_MUST_EXIST),
@@ -667,7 +711,7 @@ int main(int argc, char *argv[]) {
               else al_show_native_message_box(display.get(), "Gomas", "Cannot open game",
                   error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             }
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
             break;
           }
@@ -691,7 +735,7 @@ int main(int argc, char *argv[]) {
           case MENU_LOAD_ROM:
           case MENU_CUSTOM_ROM: {
             al_set_audio_stream_playing(stream.get(), false);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             bool custom = event.user.data1 == MENU_CUSTOM_ROM;
             unique_ptr<ALLEGRO_FILECHOOSER, decltype(&al_destroy_native_file_dialog)> chooser(
                 al_create_native_file_dialog(machine.systemROM.source.c_str(),
@@ -706,7 +750,7 @@ int main(int argc, char *argv[]) {
               }
               else al_show_native_message_box(display.get(), "Gomas", "Cannot activate ROM", error.c_str(), nullptr, ALLEGRO_MESSAGEBOX_ERROR);
             }
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             if (!resetAudio) al_set_audio_stream_playing(stream.get(), true);
             break;
           }
@@ -716,7 +760,7 @@ int main(int argc, char *argv[]) {
           case MENU_ROM_PLUS2:
           case MENU_ROM_PLUS3: {
             al_set_audio_stream_playing(stream.get(), false);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             const auto &profile = MenuROMProfile(event.user.data1);
             string path = profile.model == MachineModel::Spectrum48 ? Default48ROM(executablePath) :
                 FindROM(profile.files.front(), executablePath);
@@ -738,7 +782,7 @@ int main(int argc, char *argv[]) {
           }
           case MENU_ROM_INFO: {
             al_set_audio_stream_playing(stream.get(), false);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             string information = machine.systemROM.name + "\n" + machine.systemROM.source +
                 "\n\nFast load: " + (machine.CanFastLoad() ? "supported" : "not available for this ROM/tape; use tape playback") +
                 "\n\nOn startup: " + (preferences.restoreLast ? "last opened ROM (48K fallback)" : "Spectrum 48K") +
@@ -749,7 +793,7 @@ int main(int argc, char *argv[]) {
           }
           case MENU_ABOUT:
             al_set_audio_stream_playing(stream.get(), false);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             al_show_native_message_box(display.get(), "Gomas", "ZX Spectrum 48K / 128K / +2 emulator",
                 "File > Open: TAP/TZX, SNA/Z80/SZX/SLT snapshots or DSK disks, also in ZIP.\n"
                 "At the BASIC prompt, type LOAD \"\" and press Enter.\n"
@@ -764,6 +808,7 @@ int main(int argc, char *argv[]) {
                 "F8: normal speed (1x). Hold F9: VHS rewind at 4x, up to 10 seconds of history.\n"
                 "CPU > Frequency: give the Z80 more cycles at the normal video/AY/tape rate.\n"
                 "Use the model clock (1x) for timing-sensitive games and real-time tape loading.\n"
+                "Settings > Input: None / Kempston / Sinclair joystick; optional arrows + Right Ctrl.\n"
                 "Settings > ROM: choose a ROM and the startup default.\n"
                 "Tape > Fast load: instant loading (default).\n"
                 "Turn it off, enter LOAD \"\" and press Tape > Play for real-time loading.\n"
@@ -776,7 +821,7 @@ int main(int argc, char *argv[]) {
                 "F11 = fullscreen; Escape = leave fullscreen / Exit in a window.\n\n"
                 "By Pedro Lopez. Based on YASS by Fernando Marcos.\n"
                 "http://yass.speccy.org/", nullptr, 0);
-            ReleaseKeys(ula);
+            ReleaseInput(machine);
             al_set_audio_stream_playing(stream.get(), true);
             break;
         }
@@ -789,6 +834,7 @@ int main(int argc, char *argv[]) {
         break;
     }
     if (!running) break;
+    ApplyJoystick(machine);
     if(!playback.Rewinding() && machine.deck.NeedsChoice()){
       std::string token=machine.tapePath+":"+std::to_string(machine.SessionGeneration())+":"+std::to_string(machine.deck.Offset())+":"+std::to_string(machine.deck.SelectionCount());
       if(token!=lastChoice){lastChoice=token;chooseTape();}
@@ -802,7 +848,10 @@ int main(int argc, char *argv[]) {
     // Skip obsolete refresh ticks after a dialog or a slow frame. Mouse motion
     // and audio events must never trigger expensive redraws on their own.
     const double now = al_get_time();
-    if (playback.TickRewind(now - lastRefresh)) { ReleaseKeys(ula); tapeView.NewTape(); }
+    if(windowFocused && !playback.paused && !playback.Rewinding())joystickInput.Gamepad(controllers.Poll());
+    else joystickInput.SuspendGamepad();
+    ApplyJoystick(machine);
+    if (playback.TickRewind(now - lastRefresh)) { ReleaseInput(machine); tapeView.NewTape(); }
     lastRefresh = now;
     screenView.SettleWindow(display.get(), now);
     screenView.RememberWindow(display.get());

@@ -36,6 +36,8 @@ struct ROMPreferences {
   bool fullscreen = false, maximized = false, fastLoad = true;
   double playbackSpeed = 1;
   unsigned cpuMultiplier = 1;
+  int joystickMode=0,controller=-1;
+  bool joystickKeyboard=false,gamepad=true;
 
   static int Integer(ALLEGRO_CONFIG *config, const char *section, const char *key,
       int fallback, int minimum, int maximum) {
@@ -74,6 +76,10 @@ struct ROMPreferences {
     result.fastLoad = Integer(config.get(), "emulation", "fast_load", 1, 0, 1);
     int clock = Integer(config.get(), "emulation", "cpu_multiplier", 1, 1, 4);
     if (clock == 1 || clock == 2 || clock == 4) result.cpuMultiplier = clock;
+    result.joystickMode=Integer(config.get(),"input","joystick",0,0,3);
+    result.joystickKeyboard=Integer(config.get(),"input","keyboard_joystick",0,0,1);
+    result.gamepad=Integer(config.get(),"input","gamepad",1,0,1);
+    result.controller=Integer(config.get(),"input","controller",-1,-1,3);
     const char *speed = al_get_config_value(config.get(), "emulation", "speed");
     for (double allowed : {0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0}) {
       if (speed && std::string(speed) == SpeedValue(allowed)) result.playbackSpeed = allowed;
@@ -116,6 +122,8 @@ struct ROMPreferences {
     number("emulation", "fast_load", fastLoad);
     number("emulation", "cpu_multiplier", cpuMultiplier);
     al_set_config_value(config.get(), "emulation", "speed", SpeedValue(playbackSpeed).c_str());
+    number("input","joystick",joystickMode);number("input","keyboard_joystick",joystickKeyboard);
+    number("input","gamepad",gamepad);number("input","controller",controller);
     // Create beside the destination so rename stays on the same filesystem.
     std::string pattern = path + ".XXXXXX";
     std::vector<char> temporaryNameBuffer(pattern.begin(), pattern.end());

@@ -35,3 +35,5 @@ debug-tests
 /bin/windows-static/
 
 __pycache__/
+
+joystick-tests

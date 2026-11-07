@@ -120,15 +120,22 @@ class SpectrumIO : public BusComponent<0, 65536> {
 public:
   SpectrumIO(ULA &ula, SpectrumMemory &memory) : ula(ula), memory(memory) {}
   Disks::Controller floppy;
+  bool kempstonEnabled=false;
+  unsigned char kempstonState=0;
   unsigned char Read(unsigned address) override {
+    // Compatible Kempston interfaces partially decode A5, so 0xDF (Navy
+    // Moves), 0x5F and 0x9F alias 0x1F; the upper address byte is ignored.
+    const bool kempston=kempstonEnabled && !(address&0x20);
+    const unsigned char joystick=kempston?kempstonState&31:0xff;
     if(memory.IsPlus3()){
-      if((address&0xf002)==0x2000)return floppy.Status();
-      if((address&0xf002)==0x3000)return floppy.Read();
+      if((address&0xf002)==0x2000)return floppy.Status()&joystick;
+      if((address&0xf002)==0x3000)return floppy.Read()&joystick;
     }
     unsigned char value = ula.IORead(address & 0xFFFF);
+    if(kempston)value=(address&1)?joystick:value&joystick;
     if (ula.ay.Enabled() && (address & 0xC002) == 0xC000) {
       const unsigned char ayValue = ula.ay.Read();
-      return (address & 1) ? ayValue : value & ayValue;
+      return (address & 1) ? ayValue&joystick : value & ayValue;
     }
     return value;
   }

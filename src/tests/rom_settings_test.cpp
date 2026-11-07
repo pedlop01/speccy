@@ -42,11 +42,13 @@ int main() {
   auto restored = ROMPreferences::Read(config);
   assert(restored.restoreLast && restored.lastCustom48 && restored.lastROM == alternative);
   // Full frontend configuration survives an atomic save/read round trip.
+  restored.joystickMode=3;restored.joystickKeyboard=true;restored.gamepad=false;restored.controller=2;
   restored.windowWidth = 1280; restored.windowHeight = 960;
   restored.filter = 3; restored.fullscreen = true; restored.maximized = true;
   restored.playbackSpeed = 0.25; restored.cpuMultiplier = 4; restored.fastLoad = false;
   assert(restored.Save(config, error));
   auto view = ROMPreferences::Read(config);
+  assert(view.joystickMode==3 && view.joystickKeyboard && !view.gamepad && view.controller==2);
   assert(view.windowWidth == 1280 && view.windowHeight == 960 && view.filter == 3);
   assert(view.fullscreen && view.maximized && !view.fastLoad);
   assert(view.playbackSpeed == 0.25 && view.cpuMultiplier == 4);
