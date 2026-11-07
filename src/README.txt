@@ -4,6 +4,9 @@ El núcleo procede de YASS (referencia incluida en ../yass).
 
 Compilar y ejecutar
 ------------------
+La guía ../BUILD.md detalla las dependencias y los comandos para Arch Linux,
+Ubuntu y compilación cruzada para Windows.
+
 Requiere C++11, make, pkg-config y las bibliotecas de desarrollo allegro-5,
 allegro_audio-5, allegro_dialog-5, allegro_font-5, allegro_primitives-5, allegro_image-5, giflib, libarchive, zlib, libcurl, libcrypto (OpenSSL) y
 nlohmann_json y expat. En Linux también se necesitan libXrandR y libX11 para
@@ -739,7 +742,7 @@ Compilación para Windows
 -----------------------
 El mismo Makefile incluye make -C bin windows, que genera bin/windows/gomas.exe
 sin sustituir bin/gomas. Necesita MinGW-w64 con hilos POSIX y todas las bibliotecas
-compiladas para Windows. Ver ../WINDOWS_BUILD.md para requisitos, configuración
+compiladas para Windows. Ver ../BUILD.md para requisitos, configuración
 de WIN_SYSROOT, DLLs y limitaciones de validación.
 
 En Arch, después de instalar mingw-w64-gcc, make, pkgconf, python y libarchive:
@@ -750,7 +753,7 @@ En Arch, después de instalar mingw-w64-gcc, make, pkgconf, python y libarchive:
 El SDK se descarga en .windows-sdk sin modificar las bibliotecas del sistema.
 La carpeta bin/windows contiene el EXE, sus DLLs y el certificado para HTTPS;
 copiarla completa a Windows y añadir roms junto al EXE. La compilación cruzada
-ya está verificada; queda probar su ejecución en Windows.
+ya está verificada; comprobar en Windows los cambios de cada versión.
 
 Para un ejecutable Windows estático, sin DLLs de Allegro ni del runtime de C++:
 

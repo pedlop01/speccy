@@ -154,7 +154,7 @@ windows-check:
 	@"$(WIN_CXX)" -dumpmachine | grep -q mingw || { echo "WIN_CXX must target Windows (MinGW-w64)."; exit 1; }
 	@if test -f "$(WIN_SYSROOT)/gomas-sdk.json"; then test -f "$(WIN_SYSROOT)/lib/libstdc++.a" || { echo "Matching C++ runtime missing; rerun make windows-deps."; exit 1; }; fi
 	@if test -f "$(WIN_SYSROOT)/gomas-sdk.json"; then test "$$($(WIN_CXX) -dumpfullversion)" = "$(WIN_GCC_VERSION)" || { echo "Compiler and SDK GCC runtime versions differ; update the toolchain and rerun windows-deps."; exit 1; }; fi
-	@$(WIN_PKG_ENV) $(WIN_PKG_CONFIG) --print-errors --exists $(WIN_PACKAGES) || { echo "Missing Windows libraries in WIN_SYSROOT=$(WIN_SYSROOT). See WINDOWS_BUILD.md."; exit 1; }
+	@$(WIN_PKG_ENV) $(WIN_PKG_CONFIG) --print-errors --exists $(WIN_PACKAGES) || { echo "Missing Windows libraries in WIN_SYSROOT=$(WIN_SYSROOT). See BUILD.md."; exit 1; }
 	@printf '\043include <gif_lib.h>\n' | "$(WIN_CXX)" $(WIN_CPPFLAGS) -isystem "$(WIN_SYSROOT)/include" -x c++ -fsyntax-only - || { echo "Missing Windows giflib headers."; exit 1; }
 
 $(WIN_OUTPUT): $(SOURCES) $(HEADERS) Makefile $(wildcard $(WIN_SYSROOT)/gomas-sdk.json) | windows-check
