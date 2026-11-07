@@ -62,7 +62,7 @@ public:
       if(!store.Read(i,saved,slot.error)) continue;
       slot.valid=true;slot.label=saved.label;slot.image=thumbnail(saved.thumbnail);
       std::time_t stamp=static_cast<std::time_t>(saved.created);std::tm local{};char text[40];
-      if(saved.created<=std::uint64_t(std::numeric_limits<std::time_t>::max()) && localtime_r(&stamp,&local) &&
+      if(saved.created<=std::uint64_t(std::numeric_limits<std::time_t>::max()) && Platform::LocalTime(&stamp,&local) &&
           std::strftime(text,sizeof(text),"%Y-%m-%d %H:%M",&local)) slot.date=text;
       else slot.date="Unknown date";
     }

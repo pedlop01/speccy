@@ -27,3 +27,11 @@ new-media-tests
 /games/
 catalog-tests
 debug-tests
+
+/bin/windows/
+
+/.windows-sdk/
+
+/bin/windows-static/
+
+__pycache__/

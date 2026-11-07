@@ -8,7 +8,7 @@
 #include <ctime>
 #include <limits>
 #include <stdexcept>
-#include <unistd.h>
+#include "platform.h"
 #include "emulator.h"
 
 namespace SaveStates {
@@ -258,12 +258,12 @@ public:
       auto bytes=Encode(Capture(machine));Decode(bytes); // Validate before replacing any existing slot.
       if(!al_make_directory(directory.c_str())) throw std::runtime_error("Cannot create save directory");
       std::string pattern=path+".XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
-      int fd=mkstemp(name.data());if(fd<0) throw std::runtime_error("Cannot create temporary saved state");
-      temporary=name.data();FILE *file=fdopen(fd,"wb");
-      if(!file) {close(fd);throw std::runtime_error("Cannot write saved state");}
+      int fd=Platform::Temporary(name.data());if(fd<0) throw std::runtime_error("Cannot create temporary saved state");
+      temporary=name.data();FILE *file=Platform::File(fd,"wb");
+      if(!file) {Platform::Close(fd);throw std::runtime_error("Cannot write saved state");}
       bool ok=std::fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();
-      ok=(std::fflush(file)==0)&&ok;ok=(fsync(fileno(file))==0)&&ok;ok=(std::fclose(file)==0)&&ok;
-      if(!ok || std::rename(temporary.c_str(),path.c_str())!=0) throw std::runtime_error("Cannot replace saved state");
+      ok=(std::fflush(file)==0)&&ok;ok=(Platform::Sync(Platform::Descriptor(file))==0)&&ok;ok=(std::fclose(file)==0)&&ok;
+      if(!ok || Platform::Replace(temporary,path)!=0) throw std::runtime_error("Cannot replace saved state");
       error.clear();return true;
     } catch(const std::exception &e) {if(!temporary.empty()) std::remove(temporary.c_str());error=e.what();return false;}
   }

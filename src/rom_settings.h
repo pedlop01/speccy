@@ -6,7 +6,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <memory>
-#include <unistd.h>
+#include "platform.h"
 #include "emulator.h"
 
 inline std::string AbsoluteROMPath(const std::string &path) {
@@ -120,12 +120,12 @@ struct ROMPreferences {
     std::string pattern = path + ".XXXXXX";
     std::vector<char> temporaryNameBuffer(pattern.begin(), pattern.end());
     temporaryNameBuffer.push_back('\0');
-    int descriptor = mkstemp(temporaryNameBuffer.data());
+    int descriptor = Platform::Temporary(temporaryNameBuffer.data());
     if (descriptor < 0) { error = "Cannot write settings: " + path; return false; }
     std::string temporaryName = temporaryNameBuffer.data();
     ALLEGRO_FILE *temporary = al_fopen_fd(descriptor, "wb");
     if (!temporary) {
-      close(descriptor);
+      Platform::Close(descriptor);
       al_remove_filename(temporaryName.c_str());
       error = "Cannot write settings: " + path;
       return false;
@@ -133,7 +133,7 @@ struct ROMPreferences {
     bool written = al_save_config_file_f(temporary, config.get());
     written = al_fflush(temporary) && written;
     written = al_fclose(temporary) && written;
-    if (!written || std::rename(temporaryName.c_str(), path.c_str()) != 0) {
+    if (!written || Platform::Replace(temporaryName, path) != 0) {
       al_remove_filename(temporaryName.c_str());
       error = "Cannot save settings: " + path;
       return false;

@@ -11,6 +11,10 @@ static void Write(const std::string &path, const std::vector<unsigned char> &byt
 
 int main() {
   assert(al_init());
+  assert(Platform::Absolute("C:\\Games\\tape.tap") && Platform::Absolute("C:/Games/tape.tap"));
+  assert(Platform::Absolute("\\\\server\\games\\tape.tap") && Platform::Absolute("/tmp/tape.tap"));
+  assert(!Platform::Absolute("C:tape.tap") && !Platform::Absolute("tape.tap"));
+  assert(!Platform::Executable().empty());
   al_set_org_name("gomas-tests"); al_set_app_name("gomas-tests");
   auto standard = AbsoluteROMPath(FindROM("48.rom"));
   assert(!standard.empty());

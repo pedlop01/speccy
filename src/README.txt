@@ -708,3 +708,31 @@ El botón Uninstall elimina la versión instalada seleccionada de games y su
 marca Installed, también sin conexión. Las otras versiones del juego, los
 estados guardados, las imágenes y los metadatos del catálogo se conservan.
 Se puede instalar otra vez desde el catálogo al volver a estar conectado.
+
+Compilación para Windows
+-----------------------
+El mismo Makefile incluye make -C bin windows, que genera bin/windows/gomas.exe
+sin sustituir bin/gomas. Necesita MinGW-w64 con hilos POSIX y todas las bibliotecas
+compiladas para Windows. Ver ../WINDOWS_BUILD.md para requisitos, configuración
+de WIN_SYSROOT, DLLs y limitaciones de validación.
+
+En Arch, después de instalar mingw-w64-gcc, make, pkgconf, python y libarchive:
+
+  make -C bin windows-deps
+  make -C bin windows-bundle
+
+El SDK se descarga en .windows-sdk sin modificar las bibliotecas del sistema.
+La carpeta bin/windows contiene el EXE, sus DLLs y el certificado para HTTPS;
+copiarla completa a Windows y añadir roms junto al EXE. La compilación cruzada
+ya está verificada; queda probar su ejecución en Windows.
+
+Para un ejecutable Windows estático, sin DLLs de Allegro ni del runtime de C++:
+
+  make -C bin windows-deps
+  make -C bin windows-static
+
+Requiere también CMake para reconstruir libarchive estáticamente. El resultado
+está en bin/windows-static; conservar curl-ca-bundle.crt y añadir las ROMs.
+Solo se importan DLLs del sistema Windows. make -C bin clean-windows limpia
+ambos directorios Windows; make -C bin clean también incluye esa limpieza.
+Se conservan el SDK, la caché de descargas, las ROMs y los archivos personales.

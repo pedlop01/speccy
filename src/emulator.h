@@ -7,7 +7,7 @@
 #include <vector>
 #include <deque>
 #include <memory>
-#include <unistd.h>
+#include "platform.h"
 #include <cstdio>
 #include "snapshot.h"
 #include "extended_snapshot.h"
@@ -230,8 +230,7 @@ public:
       for(const auto &profile:ROMProfiles())if(profile.model==rom.model && profile.fingerprints==hashes){rom.name=profile.name;rom.fastLoadCompatible=true;rom.fastLoadPage=rom.model==MachineModel::Spectrum48?0:rom.model==MachineModel::Plus3?3:1;}
     }
     if(rom.pages.empty() || rom.model!=image.model) {
-      char exe[4096];ssize_t n=readlink("/proc/self/exe",exe,sizeof(exe)-1);
-      std::string executable=n>0?std::string(exe,n):"";
+      std::string executable=Platform::Executable();
       const char *file=image.model==MachineModel::Spectrum48?"48.rom":image.model==MachineModel::Plus2?"plus2-0.rom":image.model==MachineModel::Plus3?"plus3-0.rom":"128-0.rom";
       if(!LoadROMSet(FindROM(file,executable),rom,error))return false;
     }
@@ -271,7 +270,7 @@ public:
             if(!TapeFiles::ReadMedia(path,media,mediaName,error,member))return false;
           } else {
             std::string linked=image.externalTape;
-            if(linked.empty() || linked[0]!='/')linked=ROMDirectory(path)+linked;
+            if(!Platform::Absolute(linked))linked=ROMDirectory(path)+linked;
             if(!TapeFiles::ReadMedia(linked,media,mediaName,error))return false;
           }
           if(!ValidateTape(media)){error="Invalid tape referenced by SZX";return false;}
@@ -310,10 +309,10 @@ public:
     std::string temporary;
     try {
       auto bytes=io.floppy.state.drives[unit].image->Encode();std::string pattern=path+".XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
-      int fd=mkstemp(name.data());if(fd<0)throw std::runtime_error("Cannot create disk output");temporary=name.data();FILE *file=fdopen(fd,"wb");
-      if(!file){close(fd);throw std::runtime_error("Cannot write disk image");}
-      bool ok=fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();ok=(fflush(file)==0)&&ok;ok=(fsync(fileno(file))==0)&&ok;ok=(fclose(file)==0)&&ok;
-      if(!ok || rename(temporary.c_str(),path.c_str()))throw std::runtime_error("Cannot save disk image");
+      int fd=Platform::Temporary(name.data());if(fd<0)throw std::runtime_error("Cannot create disk output");temporary=name.data();FILE *file=Platform::File(fd,"wb");
+      if(!file){Platform::Close(fd);throw std::runtime_error("Cannot write disk image");}
+      bool ok=fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();ok=(fflush(file)==0)&&ok;ok=(Platform::Sync(Platform::Descriptor(file))==0)&&ok;ok=(fclose(file)==0)&&ok;
+      if(!ok || Platform::Replace(temporary,path))throw std::runtime_error("Cannot save disk image");
       io.floppy.state.drives[unit].path=path;io.floppy.state.drives[unit].dirty=false;error.clear();return true;
     }catch(const std::exception &e){if(!temporary.empty())remove(temporary.c_str());error=e.what();return false;}
   }

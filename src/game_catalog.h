@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <unistd.h>
+#include "platform.h"
 #include "emulator.h"
 
 namespace GameCatalog {
@@ -51,6 +51,10 @@ inline Bytes Http(const std::string &url,size_t limit,Progress &progress) {
     auto &p=*static_cast<Progress *>(user);p.received=now>0?size_t(now):0;p.total=total>0?size_t(total):0;return p.cancel?1:0;
   };
   curl_easy_setopt(curl.get(),CURLOPT_URL,url.c_str());curl_easy_setopt(curl.get(),CURLOPT_PROTOCOLS_STR,"https");curl_easy_setopt(curl.get(),CURLOPT_REDIR_PROTOCOLS_STR,"https");
+#ifdef _WIN32
+  const std::string certificates=ROMDirectory(Platform::Executable())+"curl-ca-bundle.crt";
+  if(al_filename_exists(certificates.c_str()))curl_easy_setopt(curl.get(),CURLOPT_CAINFO,certificates.c_str());
+#endif
   curl_easy_setopt(curl.get(),CURLOPT_FOLLOWLOCATION,1L);curl_easy_setopt(curl.get(),CURLOPT_MAXREDIRS,4L);curl_easy_setopt(curl.get(),CURLOPT_CONNECTTIMEOUT,8L);curl_easy_setopt(curl.get(),CURLOPT_TIMEOUT,40L);
   curl_easy_setopt(curl.get(),CURLOPT_LOW_SPEED_LIMIT,128L);curl_easy_setopt(curl.get(),CURLOPT_LOW_SPEED_TIME,15L);curl_easy_setopt(curl.get(),CURLOPT_NOSIGNAL,1L);
   curl_easy_setopt(curl.get(),CURLOPT_USERAGENT,"Gomas/1.0 (ZX Spectrum emulator; ZXArt catalog)");curl_easy_setopt(curl.get(),CURLOPT_ACCEPT_ENCODING,"");
@@ -66,12 +70,12 @@ inline std::string MD5(const Bytes &bytes){unsigned char digest[EVP_MAX_MD_SIZE]
 inline Bytes Read(const std::string &path,size_t limit){std::ifstream file(path,std::ios::binary|std::ios::ate);if(!file)throw std::runtime_error("Cached file is missing");auto size=file.tellg();
   if(size<0 || size>std::streamoff(limit))throw std::runtime_error("Cached file is too large");Bytes bytes(static_cast<size_t>(size));file.seekg(0);if(!bytes.empty())file.read(reinterpret_cast<char *>(bytes.data()),bytes.size());if(!file)throw std::runtime_error("Cannot read cached file");return bytes;}
 inline void AtomicWrite(const std::string &path,const Bytes &bytes){std::string pattern=path+".part-XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
-  int fd=mkstemp(name.data());if(fd<0)throw std::runtime_error("Cannot create game cache file");std::string temporary=name.data();FILE *file=fdopen(fd,"wb");
-  if(!file){close(fd);remove(temporary.c_str());throw std::runtime_error("Cannot write game cache file");}
-  bool ok=fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();ok=(fflush(file)==0)&&ok;ok=(fsync(fileno(file))==0)&&ok;ok=(fclose(file)==0)&&ok;
-  if(!ok || rename(temporary.c_str(),path.c_str())){remove(temporary.c_str());throw std::runtime_error("Cannot replace game cache file");}}
+  int fd=Platform::Temporary(name.data());if(fd<0)throw std::runtime_error("Cannot create game cache file");std::string temporary=name.data();FILE *file=Platform::File(fd,"wb");
+  if(!file){Platform::Close(fd);remove(temporary.c_str());throw std::runtime_error("Cannot write game cache file");}
+  bool ok=fwrite(bytes.data(),1,bytes.size(),file)==bytes.size();ok=(fflush(file)==0)&&ok;ok=(Platform::Sync(Platform::Descriptor(file))==0)&&ok;ok=(fclose(file)==0)&&ok;
+  if(!ok || Platform::Replace(temporary,path)){remove(temporary.c_str());throw std::runtime_error("Cannot replace game cache file");}}
 inline std::string Directory(const std::string &executable){if(const char *path=getenv("GOMAS_GAMES_DIR"))return path;
-  auto dir=ROMDirectory(executable);if(al_filename_exists((dir+"../roms").c_str()) && access((dir+"..").c_str(),W_OK)==0)return dir+"../games";
+  auto dir=ROMDirectory(executable);if(al_filename_exists((dir+"../roms").c_str()) && Platform::Writable(dir+".."))return dir+"../games";
   std::unique_ptr<ALLEGRO_PATH,decltype(&al_destroy_path)> path(al_get_standard_path(ALLEGRO_USER_DATA_PATH),al_destroy_path);
   if(!path)return "games";al_append_path_component(path.get(),"games");return al_path_cstr(path.get(),ALLEGRO_NATIVE_PATH_SEP);}
 struct Game {std::uint64_t id=0;std::string title,year,status;std::vector<std::string> images;};
@@ -204,13 +208,13 @@ public:
     std::string temporary;
     if(al_filename_exists(path.c_str())) {
       std::string pattern=path+".uninstall-XXXXXX";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);
-      int fd=mkstemp(name.data());if(fd<0)throw std::runtime_error("Cannot uninstall game file");close(fd);temporary=name.data();
-      if(rename(path.c_str(),temporary.c_str())){remove(temporary.c_str());throw std::runtime_error("Cannot uninstall game file");}
+      int fd=Platform::Temporary(name.data());if(fd<0)throw std::runtime_error("Cannot uninstall game file");Platform::Close(fd);temporary=name.data();
+      if(Platform::Replace(path,temporary)){remove(temporary.c_str());throw std::runtime_error("Cannot uninstall game file");}
     }
     installed.erase(found);
-    try{Save();}catch(...){installed[Key(saved)]=saved;if(!temporary.empty())rename(temporary.c_str(),path.c_str());throw;}
+    try{Save();}catch(...){installed[Key(saved)]=saved;if(!temporary.empty())Platform::Replace(temporary,path);throw;}
     if(!temporary.empty() && remove(temporary.c_str()))throw std::runtime_error("Game uninstalled, but its temporary file could not be removed");
-    rmdir(ROMDirectory(path).c_str());rmdir((root+"/zxart/"+std::to_string(saved.game)).c_str());
+    Platform::RemoveDirectory(ROMDirectory(path).c_str());Platform::RemoveDirectory((root+"/zxart/"+std::to_string(saved.game)).c_str());
   }
   std::string Install(const File &file,bool localOnly,Progress &progress) {
     if(progress.cancel)throw std::runtime_error("Cancelled");
@@ -223,11 +227,11 @@ public:
     if(progress.cancel)throw std::runtime_error("Cancelled");
     if(!al_make_directory(ROMDirectory(path).c_str()))throw std::runtime_error("Cannot create games directory");
     if(file.type=="zip") {
-      std::string pattern=path+".part-XXXXXX.zip";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);int fd=mkstemps(name.data(),4);
-      if(fd<0)throw std::runtime_error("Cannot stage ZIP download");close(fd);std::string temporary=name.data();
+      std::string pattern=path+".part-XXXXXX.zip";std::vector<char> name(pattern.begin(),pattern.end());name.push_back(0);int fd=Platform::Temporary(name.data(),4);
+      if(fd<0)throw std::runtime_error("Cannot stage ZIP download");Platform::Close(fd);std::string temporary=name.data();
       try{AtomicWrite(temporary,bytes);Bytes media;std::string name,error;if(!TapeFiles::ReadMedia(temporary,media,name,error))throw std::runtime_error(error);
         auto dot=name.find_last_of('.');Validate(media,dot==std::string::npos?"":Lower(name.substr(dot+1)));
-        if(progress.cancel)throw std::runtime_error("Cancelled");if(rename(temporary.c_str(),path.c_str()))throw std::runtime_error("Cannot install ZIP download");
+        if(progress.cancel)throw std::runtime_error("Cancelled");if(Platform::Replace(temporary,path))throw std::runtime_error("Cannot install ZIP download");
       }catch(...){remove(temporary.c_str());throw;}
     } else AtomicWrite(path,bytes);
     installed[Key(file)]=file;Save();if(progress.cancel)throw std::runtime_error("Cancelled");return path;
