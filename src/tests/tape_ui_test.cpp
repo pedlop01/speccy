@@ -215,7 +215,18 @@ int main() {
       shortcut(XK_F7);
       Check(Until([&]() { return speedIs(1) && checked(MENU_CPU_CLOCK_4X); }, 1000),
           "F7 should lower speed without rewinding CPU state");
-      shortcut(XK_F9);
+      auto rewinding = [&]() {
+        char *name = nullptr;
+        if (!XFetchName(x, mainWindow, &name) || !name) return false;
+        bool active = std::string(name).find("[Rewinding]") != std::string::npos;
+        XFree(name); return active;
+      };
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_F9), True, 0); XFlush(x);
+      Check(Until(rewinding, 1000), "Held F9 did not start reverse playback");
+      Wait(150);
+      Check(rewinding(), "Rewind stopped before F9 was released");
+      XTestFakeKeyEvent(x, XKeysymToKeycode(x, XK_F9), False, 0); XFlush(x);
+      Check(Until([&]() { return !rewinding(); }, 1000), "F9 release did not stop rewind");
       Check(Until([&]() { return checked(MENU_CPU_CLOCK_1X) && checked(MENU_PAUSE); }, 1000),
           "F9 did not rewind the CPU clock while preserving pause");
       Menu(MENU_SPEED_UP);

@@ -9,6 +9,28 @@ class Playback {
 public:
   explicit Playback(SpectrumMachine &machine) : machine(machine) {}
   bool paused = false;
+  bool Rewinding() const { return rewinding; }
+  bool BeginRewind() {
+    if (rewinding || !machine.CanRewind()) return false;
+    rewinding = true; rewindTime = 0; DiscardAudio();
+    machine.RewindPrevious(); return true;
+  }
+  bool EndRewind() {
+    if (!rewinding) return false;
+    rewinding = false; machine.DiscardAudio(); DiscardAudio(); return true;
+  }
+  bool TickRewind(double elapsed) {
+    if (!rewinding) return false;
+    // 10 emulated frames every 50 ms: about 4x reverse. Bound catch-up
+    // after a stalled window so input remains responsive.
+    rewindTime += std::max(0.0, std::min(elapsed, 0.1));
+    bool changed = false;
+    while (rewindTime >= 0.05) {
+      rewindTime -= 0.05;
+      changed = machine.RewindPrevious() || changed;
+    }
+    return changed;
+  }
   double Speed() const { return speed; }
   std::string SpeedText() const {
     if (speed == 0.25) return "0.25x";
@@ -35,7 +57,7 @@ public:
     return SetSpeed(1);
   }
   void ReadAudio(short *output, size_t count) {
-    if (paused) { std::fill(output, output + count, 0); return; }
+    if (paused || rewinding) { std::fill(output, output + count, 0); return; }
     if (speed == 1) { machine.ReadAudio(output, count); return; }
     if (speed < 1) {
       const unsigned repeats = static_cast<unsigned>(1 / speed);
@@ -65,6 +87,8 @@ public:
     }
   }
 private:
+  bool rewinding = false;
+  double rewindTime = 0;
   double speed = 1;
   unsigned repeatsLeft = 0;
   short heldSample = 0;

@@ -48,6 +48,26 @@ public:
     return !Fullscreen(display) && al_get_display_width(display) == 320 * scale &&
         al_get_display_height(display) == 240 * scale;
   }
+  // VHS tracking bands are presentation only; never alter saved ULA pixels.
+  void DrawRewind(ALLEGRO_BITMAP *bitmap, int width, int height, double time) const {
+    if (width <= 0 || height <= 0) return;
+    const auto v = Viewport(width, height);
+    for (int band = 0; band < 4; ++band) {
+      float row = std::fmod(time * 85 + band * 67, 240.0);
+      float rows = std::min(6.0f, 240 - row);
+      float shift = std::sin(time * 43 + band * 9) * 9;
+      float left = std::max(0.0f, shift), right = std::min(320.0f, 320 + shift);
+      al_draw_scaled_bitmap(bitmap, left - shift, row, right - left, rows,
+          v.x + left * v.scale, v.y + row * v.scale,
+          (right - left) * v.scale, rows * v.scale, 0);
+      al_draw_filled_rectangle(v.x, v.y + row * v.scale, v.x + 320 * v.scale,
+          v.y + (row + 1) * v.scale, al_map_rgba(220, 235, 255, 100));
+      for (int line = 2; line < rows; line += 2)
+        al_draw_filled_rectangle(v.x, v.y + (row + line) * v.scale,
+            v.x + 320 * v.scale, v.y + (row + line + 0.5f) * v.scale,
+            al_map_rgba(0, 0, 0, 120));
+    }
+  }
   void Draw(ALLEGRO_BITMAP *bitmap, int width, int height) const {
     if (width <= 0 || height <= 0) return;
     const auto v = Viewport(width, height);

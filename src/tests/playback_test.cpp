@@ -199,5 +199,29 @@ int main() {
   m.Close(); assert(!m.CanRewind());
   m.EnableRewind(false); m.Frame(); assert(m.HistorySize() == 0);
   al_destroy_bitmap(bitmap); al_uninstall_system();
+  // Held rewind silences audio, keeps pause/speed, and cannot run forward
+  // at the history limit. Release resumes from a new branch.
+  m.Reset(); Loop(m); m.EnableRewind();
+  for (unsigned i = 0; i < 600; ++i) m.Frame();
+  Playback reverse(m); reverse.paused = true; reverse.SetSpeed(2);
+  assert(reverse.BeginRewind());
+  const auto reverseStart = m.FrameCounter();
+  short silent[128]; std::fill(silent, silent + 128, 123);
+  reverse.ReadAudio(silent, 128);
+  for (short sample : silent) assert(sample == 0);
+  assert(m.FrameCounter() == reverseStart && !reverse.BeginRewind());
+  assert(!reverse.TickRewind(0.02));
+  assert(reverse.TickRewind(0.03) && m.FrameCounter() == reverseStart - 10);
+  for (int i = 0; i < 100; ++i) reverse.TickRewind(0.05);
+  assert(!m.CanRewind() && reverse.Rewinding());
+  const auto oldest = m.FrameCounter();
+  reverse.TickRewind(10); reverse.ReadAudio(silent, 128);
+  assert(m.FrameCounter() == oldest && m.HistorySize() <= 51);
+  assert(reverse.EndRewind() && !reverse.EndRewind());
+  assert(reverse.paused && reverse.Speed() == 2);
+  reverse.paused = false; reverse.ReadAudio(silent, 128);
+  assert(m.FrameCounter() > oldest);
+  m.Reset(); assert(!reverse.BeginRewind());
+
   puts("Playback: pause, 0.25x-16x ladder vs CPU overclock, exact restore of RAM/AY/video/tape/audio and bounded rewind passed");
 }

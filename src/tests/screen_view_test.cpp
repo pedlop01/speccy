@@ -44,6 +44,10 @@ int main() {
   auto small = ScreenView::Viewport(319, 239);
   assert(small.scale > 0 && small.scale < 1 && red(target, 100, 100) == 255);
   view.Draw(source, 0, 0); // Minimized/zero-area frames are harmless.
+  view.Draw(source, 640, 480);
+  view.DrawRewind(source, 640, 480, 1.25);
+  assert(red(source, 0, 0) == 255 && red(source, 319, 239) == 255);
+  view.DrawRewind(source, 0, 0, 2);
   al_destroy_bitmap(target); al_destroy_bitmap(source);
   al_shutdown_primitives_addon(); al_uninstall_system();
   puts("View: 2x/4x, integer viewport, scanline strengths, pixel grid, letterboxing and intact source passed");

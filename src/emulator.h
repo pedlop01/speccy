@@ -200,6 +200,17 @@ public:
   }
   bool CanRewind() const { return !history.empty() && history.front().frame < framesExecuted; }
   size_t HistorySize() const { return history.size(); }
+  // One stored frame at a time, for continuous reverse playback.
+  bool RewindPrevious() {
+    if (!CanRewind()) return false;
+    size_t index = history.size() - 1;
+    while (index && history[index].frame >= framesExecuted) --index;
+    State saved = history[index];
+    return RestoreState(saved);
+  }
+  double RewindSeconds() const {
+    return history.empty() ? 0 : (framesExecuted - history.front().frame) / 50.0;
+  }
   bool RewindOneSecond() {
     if (!CanRewind()) return false;
     const std::uint64_t target = framesExecuted > RewindStepFrames ? framesExecuted - RewindStepFrames : 0;

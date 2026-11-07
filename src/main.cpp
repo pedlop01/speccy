@@ -184,7 +184,7 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       {"Speed &up (F6)", MENU_SPEED_UP, 0, nullptr},
       {"Speed &down (F7)", MENU_SPEED_DOWN, 0, nullptr},
       {"&Normal speed 1x (F8)", MENU_SPEED_NORMAL, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
-      {"Rewind &1 second (F9)", MENU_REWIND_SECOND, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
+      {"Rewind / stop (hold F9)", MENU_REWIND_SECOND, ALLEGRO_MENU_ITEM_DISABLED, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       ALLEGRO_START_OF_MENU("CPU &frequency", MENU_CPU_CLOCK),
         {"Model clock (1x)", MENU_CPU_CLOCK_1X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -334,6 +334,8 @@ int main(int argc, char *argv[]) {
   DebugView debugView;
   ScreenView screenView;
   Playback playback(machine);
+  unique_ptr<ALLEGRO_FONT, decltype(&al_destroy_font)> rewindFont(al_create_builtin_font(), al_destroy_font);
+  double lastRefresh = al_get_time();
   SaveStates::Store savedGames(SaveStates::Directory());
   SaveGallery saveGallery;
   machine.EnableRewind();
@@ -352,6 +354,7 @@ int main(int argc, char *argv[]) {
       size_t slash = machine.tapePath.find_last_of("/\\");
       title += " - " + machine.tapePath.substr(slash == string::npos ? 0 : slash + 1);
     }
+    if (playback.Rewinding()) title += " [Rewinding]";
     if (playback.paused) title += " [Paused]";
     if (playback.Speed() != 1) title += " [Speed " + playback.SpeedText() + "]";
     if (machine.CPUMultiplier() != 1) title += " [CPU " + std::to_string(machine.CPUMultiplier()) + "x]";
@@ -366,7 +369,7 @@ int main(int argc, char *argv[]) {
     flags(MENU_SPEED_UP, playback.Speed() == 16 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
     flags(MENU_SPEED_DOWN, playback.Speed() == 0.25 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
     flags(MENU_SPEED_NORMAL, playback.Speed() == 1 ? ALLEGRO_MENU_ITEM_DISABLED : 0);
-    flags(MENU_REWIND_SECOND, machine.CanRewind() ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
+    flags(MENU_REWIND_SECOND, (machine.CanRewind() || playback.Rewinding()) ? 0 : ALLEGRO_MENU_ITEM_DISABLED);
     for (int id = MENU_CPU_CLOCK_1X; id <= MENU_CPU_CLOCK_4X; ++id) {
       unsigned multiplier = 1u << (id - MENU_CPU_CLOCK_1X);
       char caption[64];
@@ -504,10 +507,15 @@ int main(int argc, char *argv[]) {
     // replay its Enter/Escape/arrows into the machine after the modal closes.
     if ((event.type == ALLEGRO_EVENT_KEY_DOWN || event.type == ALLEGRO_EVENT_KEY_UP) &&
         event.keyboard.display != display.get()) continue;
+    // Any other command ends reverse playback before changing the session.
+    if (playback.Rewinding() &&
+        ((event.type == ALLEGRO_EVENT_MENU_CLICK && event.user.data1 != MENU_REWIND_SECOND) ||
+         (event.type == ALLEGRO_EVENT_KEY_DOWN && event.keyboard.keycode != ALLEGRO_KEY_F9)))
+      resetAudio = playback.EndRewind();
     switch (event.type) {
       case ALLEGRO_EVENT_DISPLAY_CLOSE: running = false; break;
       case ALLEGRO_EVENT_DISPLAY_RESIZE: al_acknowledge_resize(display.get()); break;
-      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); break;
+      case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: ReleaseKeys(ula); resetAudio = playback.EndRewind(); break;
       case ALLEGRO_EVENT_KEY_DOWN:
         if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) &&
             (event.keyboard.keycode == ALLEGRO_KEY_S || event.keyboard.keycode == ALLEGRO_KEY_L)) {
@@ -529,7 +537,7 @@ int main(int argc, char *argv[]) {
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F8) {
           resetAudio = playback.NormalSpeed(); updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F9) {
-          if (machine.RewindOneSecond()) { ReleaseKeys(ula); resetAudio = true; tapeView.NewTape(); updateUI(); }
+          if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseKeys(ula); resetAudio = true; updateUI(); }
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F11) {
           viewResult(screenView.SetFullscreen(display.get(), !screenView.Fullscreen(display.get())));
           updateUI();
@@ -540,7 +548,10 @@ int main(int argc, char *argv[]) {
           } else running = false;
         } else if (!playback.paused) ReadKeyboard(event, &ula);
         break;
-      case ALLEGRO_EVENT_KEY_UP: ReadKeyboard(event, &ula); break;
+      case ALLEGRO_EVENT_KEY_UP:
+        if (event.keyboard.keycode == ALLEGRO_KEY_F9) { resetAudio = playback.EndRewind(); updateUI(); }
+        else ReadKeyboard(event, &ula);
+        break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
           case MENU_DEBUG_SHOW:
@@ -595,7 +606,8 @@ int main(int argc, char *argv[]) {
           case MENU_SPEED_DOWN: resetAudio = playback.DecreaseSpeed(); break;
           case MENU_SPEED_NORMAL: resetAudio = playback.NormalSpeed(); break;
           case MENU_REWIND_SECOND:
-            if (machine.RewindOneSecond()) { ReleaseKeys(ula); resetAudio = true; tapeView.NewTape(); }
+            if (playback.Rewinding()) resetAudio = playback.EndRewind();
+            else if (playback.BeginRewind()) { lastRefresh = al_get_time(); ReleaseKeys(ula); resetAudio = true; }
             break;
           case MENU_CPU_CLOCK_1X:
           case MENU_CPU_CLOCK_2X:
@@ -725,7 +737,7 @@ int main(int argc, char *argv[]) {
                 "CPU > Reset: restart and rewind the current tape.\n"
                 "Debug: F12 debugger, F10 single instruction, F4 next frame (paused).\n"
                 "F5: pause the whole machine. F6/F7: double/halve playback speed (0.25x to 16x).\n"
-                "F8: normal speed (1x). F9: rewind about 1 second, with up to 10 seconds of history.\n"
+                "F8: normal speed (1x). Hold F9: VHS rewind at 4x, up to 10 seconds of history.\n"
                 "CPU > Frequency: give the Z80 more cycles at the normal video/AY/tape rate.\n"
                 "Use the model clock (1x) for timing-sensitive games and real-time tape loading.\n"
                 "Settings > ROM: choose a ROM and the startup default.\n"
@@ -753,7 +765,7 @@ int main(int argc, char *argv[]) {
         break;
     }
     if (!running) break;
-    if(machine.deck.NeedsChoice()){
+    if(!playback.Rewinding() && machine.deck.NeedsChoice()){
       std::string token=machine.tapePath+":"+std::to_string(machine.SessionGeneration())+":"+std::to_string(machine.deck.Offset())+":"+std::to_string(machine.deck.SelectionCount());
       if(token!=lastChoice){lastChoice=token;chooseTape();}
     }else lastChoice.clear();
@@ -765,11 +777,25 @@ int main(int argc, char *argv[]) {
         event.timer.count < al_get_timer_count(refreshTimer.get())) continue;
     // Skip obsolete refresh ticks after a dialog or a slow frame. Mouse motion
     // and audio events must never trigger expensive redraws on their own.
+    const double now = al_get_time();
+    if (playback.TickRewind(now - lastRefresh)) { ReleaseKeys(ula); tapeView.NewTape(); }
+    lastRefresh = now;
     updateUI();
     al_set_target_backbuffer(display.get());
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
     al_set_target_backbuffer(display.get());
     screenView.Draw(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()));
+    if (playback.Rewinding()) {
+      screenView.DrawRewind(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()), now);
+      const auto v = ScreenView::Viewport(al_get_display_width(display.get()), al_get_display_height(display.get()));
+      const float x = v.x + 12 * v.scale, y = v.y + 12 * v.scale;
+      al_draw_filled_rectangle(x - 4, y - 4, x + 260, y + 34, al_map_rgba(0, 0, 0, 210));
+      if (rewindFont) al_draw_textf(rewindFont.get(), al_map_rgb(240, 245, 255), x, y, 0,
+          "<< REWIND  %s", machine.CanRewind() ? "4x" : "HISTORY LIMIT");
+      if (rewindFont) al_draw_textf(rewindFont.get(), al_map_rgb(200, 215, 230), x, y + 16, 0,
+          "%.1fs left - release F9 to resume", machine.RewindSeconds());
+      al_draw_filled_rectangle(x, y + 29, x + 250 * std::min(1.0, machine.RewindSeconds() / 10), y + 32, al_map_rgb(130, 205, 245));
+    }
     al_flip_display();
     if ((event.timer.count & 1) == 0){tapeView.Draw(machine);diskView.Draw(machine);debugView.Draw(machine,playback.paused);}
   }

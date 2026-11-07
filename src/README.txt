@@ -42,7 +42,8 @@ CPU > Pause (F5) congela toda la máquina, incluida cinta y sonido.
 CPU > Speed up (F6) duplica la velocidad global hasta 16x.
 CPU > Speed down (F7) la divide por dos hasta 0,25x (cuatro veces más lento).
 CPU > Normal speed 1x (F8) vuelve directamente a velocidad normal.
-CPU > Rewind 1 second (F9) vuelve aproximadamente un segundo, hasta 10 segundos.
+Mantener F9 rebobina a 4x con efecto VHS, hasta 10 segundos; soltar continúa.
+CPU > Rewind / stop permite activar/desactivar el rebobinado con el ratón.
 CPU > CPU frequency permite elegir 1x/2x/4x e indica los MHz del modelo activo.
 Tape > Fast load está activado por defecto y mantiene la carga instantánea.
 Al desactivarlo se abre el reproductor y se habilitan Play, Pause y Stop.
@@ -447,12 +448,14 @@ carga, usar F6, que mantiene la relación de tiempos entre CPU y cinta.
 Las dos velocidades son independientes y se pueden combinar; el título indica
 pausa, velocidad global y multiplicador de CPU cuando están activos.
 
-F9 recupera aproximadamente un segundo por pulsación, con un historial de hasta
-500 frames (unos 10 segundos de tiempo emulado). Se guardan estados cada 10
-frames, por lo que el salto puede variar unas décimas; si queda menos historial,
-se vuelve al estado más antiguo disponible. El historial se mantiene en RAM,
-con unas 51 copias como máximo (aproximadamente 3 MB en 48K / 7 MB en 128K).
-Repetir F9 permite seguir retrocediendo. Si estaba pausado, permanece pausado.
+Mantener F9 rebobina continuamente a aproximadamente 4x, con bandas de tracking
+VHS y un indicador del historial restante. Soltar F9 continúa desde ese punto;
+si estaba pausado, permanece pausado, y se conserva la velocidad seleccionada.
+El audio se silencia durante el rebobinado. Al llegar al límite se espera a que
+se suelte F9; no se avanza ni se reinicia automáticamente. Perder el foco detiene
+el rebobinado. CPU > Rewind / stop ofrece la misma función como interruptor.
+Se guardan estados cada 10 frames, hasta 500 frames (unos 10 segundos emulados),
+con unas 51 copias como máximo. El efecto es solo visual y no altera las capturas.
 Al continuar se descarta el futuro anterior y se crea una nueva rama de ejecución.
 
 Los estados conservan registros, RAM y paginación, selección de pantalla, FLASH,
