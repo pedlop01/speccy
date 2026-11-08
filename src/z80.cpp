@@ -389,7 +389,7 @@ void Z80::EmulateOne() {
 			tStates += 8;
 			if (regs.B) {
 				tStates += 5;
-				regs.PC += (char)DataBus->Read(regs.PC);
+				regs.PC += (signed char)DataBus->Read(regs.PC);
 			}
 			regs.PC++;
 			break;
@@ -446,7 +446,7 @@ void Z80::EmulateOne() {
 			// jr D
 		case 0x18:
 			tStates += 12;
-			regs.PC += 1 + (char)DataBus->Read(regs.PC);
+			regs.PC += 1 + (signed char)DataBus->Read(regs.PC);
 			break;
 
 			// add hl,de
@@ -502,7 +502,7 @@ void Z80::EmulateOne() {
 			tStates += 7;
 			if (!regs.ZF) {
 				tStates += 5;
-				regs.PC += (char)DataBus->Read(regs.PC);
+				regs.PC += (signed char)DataBus->Read(regs.PC);
 			}
 			regs.PC++;
 			break;
@@ -572,7 +572,7 @@ void Z80::EmulateOne() {
 			tStates += 7;
 			if (regs.ZF) {
 				tStates += 5;
-				regs.PC += (char)DataBus->Read(regs.PC);
+				regs.PC += (signed char)DataBus->Read(regs.PC);
 			}
 			regs.PC++;
 			break;
@@ -627,7 +627,7 @@ void Z80::EmulateOne() {
 			tStates += 7;
 			if(!regs.CF) {
 				tStates += 5;
-				regs.PC += (char)DataBus->Read(regs.PC);
+				regs.PC += (signed char)DataBus->Read(regs.PC);
 			}
 			regs.PC++;
 			break;
@@ -690,7 +690,7 @@ void Z80::EmulateOne() {
 			tStates += 7;
 			if (regs.CF) {
 				tStates += 5;
-				regs.PC += (char)DataBus->Read(regs.PC);
+				regs.PC += (signed char)DataBus->Read(regs.PC);
 			}
 			regs.PC++;
 			break;
@@ -4310,7 +4310,7 @@ void Z80::EmulateOneXX() {
 		case 0x34:
 			tStates += 23;
 			{
-				unsigned short addr = regs.XX + (char)DataBus->Read(regs.PC++);
+				unsigned short addr = regs.XX + (signed char)DataBus->Read(regs.PC++);
 				unsigned char val = DataBus->Read(addr);
 				INC_R8(val);
 				DataBus->Write(addr,val);
@@ -4321,7 +4321,7 @@ void Z80::EmulateOneXX() {
 		case 0x35:
 			tStates += 23;
 			{
-				unsigned short addr = regs.XX + (char)DataBus->Read(regs.PC++);
+				unsigned short addr = regs.XX + (signed char)DataBus->Read(regs.PC++);
 				unsigned char val = DataBus->Read(addr);
 				DEC_R8(val);
 				DataBus->Write(addr,val);
@@ -4331,7 +4331,7 @@ void Z80::EmulateOneXX() {
 			// ld (xx+d),N
 		case 0x36:
 			tStates += 19;
-			DataBus->Write(regs.XX+(char)DataBus->Read(regs.PC),DataBus->Read(regs.PC+1));
+			DataBus->Write(regs.XX+(signed char)DataBus->Read(regs.PC),DataBus->Read(regs.PC+1));
 			regs.PC += 2;
 			break;
 
@@ -4356,7 +4356,7 @@ void Z80::EmulateOneXX() {
 			// ld b,(xx+d)
 		case 0x46:
 			tStates += 15;
-			regs.B = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.B = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld c,hx
@@ -4374,7 +4374,7 @@ void Z80::EmulateOneXX() {
 			// ld c,(xx+d)
 		case 0x4E:
 			tStates += 15;
-			regs.C = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.C = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld d,hx
@@ -4392,7 +4392,7 @@ void Z80::EmulateOneXX() {
 			// ld d,(xx+d)
 		case 0x56:
 			tStates += 19;
-			regs.D = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.D = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld e,hx
@@ -4410,7 +4410,7 @@ void Z80::EmulateOneXX() {
 			// ld e,(xx+d)
 		case 0x5E:
 			tStates += 19;
-			regs.E = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.E = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld hx,b
@@ -4451,7 +4451,7 @@ void Z80::EmulateOneXX() {
 			// ld h,(xx+d)
 		case 0x66:
 			tStates += 19;
-			regs.H = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.H = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld hx,a
@@ -4498,7 +4498,7 @@ void Z80::EmulateOneXX() {
 			// ld l,(xx+d)
 		case 0x6E:
 			tStates += 19;
-			regs.L = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+			regs.L = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// ld lx,a
@@ -4510,43 +4510,43 @@ void Z80::EmulateOneXX() {
 			// ld (xx+d),b
 		case 0x70:
 			tStates += 19;
-			DataBus->Write(regs.XX+(char)DataBus->Read(regs.PC++),regs.B);
+			DataBus->Write(regs.XX+(signed char)DataBus->Read(regs.PC++),regs.B);
 			break;
 
 			// ld (xx+d),c
 		case 0x71:
 			tStates += 19;
-			DataBus->Write(regs.XX+(char)DataBus->Read(regs.PC++),regs.C);
+			DataBus->Write(regs.XX+(signed char)DataBus->Read(regs.PC++),regs.C);
 			break;
 
 			// ld (xx+d),d
 		case 0x72:
 			tStates += 19;
-			DataBus->Write(regs.XX + (char)DataBus->Read(regs.PC++),regs.D);
+			DataBus->Write(regs.XX + (signed char)DataBus->Read(regs.PC++),regs.D);
 			break;
 
 			// ld (xx+d),e
 		case 0x73:
 			tStates += 19;
-			DataBus->Write(regs.XX + (char)DataBus->Read(regs.PC++),regs.E);
+			DataBus->Write(regs.XX + (signed char)DataBus->Read(regs.PC++),regs.E);
 			break;
 
 			// ld (xx+d),h
 		case 0x74:
 			tStates += 19;
-			DataBus->Write(regs.XX + (char)DataBus->Read(regs.PC++),regs.H);
+			DataBus->Write(regs.XX + (signed char)DataBus->Read(regs.PC++),regs.H);
 			break;
 
 			// ld (xx+d),l
 		case 0x75:
 			tStates += 19;
-			DataBus->Write(regs.XX + (char)DataBus->Read(regs.PC++),regs.L);
+			DataBus->Write(regs.XX + (signed char)DataBus->Read(regs.PC++),regs.L);
 			break;
 
 			// ld (xx+d),a
 		case 0x77:
 			tStates += 19;
-			DataBus->Write(regs.XX + (char)DataBus->Read(regs.PC++),regs.A);
+			DataBus->Write(regs.XX + (signed char)DataBus->Read(regs.PC++),regs.A);
 			break;
 
 			// ld a,hx
@@ -4564,7 +4564,7 @@ void Z80::EmulateOneXX() {
 			// ld a,(xx+d)
 		case 0x7E:
 			tStates += 19;
-			regs.A = DataBus->Read(regs.XX + (char)DataBus->Read(regs.PC++));
+			regs.A = DataBus->Read(regs.XX + (signed char)DataBus->Read(regs.PC++));
 			break;
 
 			// add a,hx
@@ -4583,7 +4583,7 @@ void Z80::EmulateOneXX() {
 		case 0x86:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				ADD_R8(val);
 			}
 			break;
@@ -4604,7 +4604,7 @@ void Z80::EmulateOneXX() {
 		case 0x8E:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				ADC_R8(val);
 			}
 			break;
@@ -4625,7 +4625,7 @@ void Z80::EmulateOneXX() {
 		case 0x96:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				SUB_R8(val);
 			}
 			break;
@@ -4646,7 +4646,7 @@ void Z80::EmulateOneXX() {
 		case 0x9E:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				SBC_R8(regs.A,val);
 			}
 			break;
@@ -4667,7 +4667,7 @@ void Z80::EmulateOneXX() {
 		case 0xA6:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				AND_R8(val);
 			}
 			break;
@@ -4688,7 +4688,7 @@ void Z80::EmulateOneXX() {
 		case 0xAE:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				XOR_R8(val);
 			}
 			break;
@@ -4709,7 +4709,7 @@ void Z80::EmulateOneXX() {
 		case 0xB6:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				OR_R8(val);
 			}
 			break;
@@ -4730,7 +4730,7 @@ void Z80::EmulateOneXX() {
 		case 0xBE:
 			tStates += 19;
 			{
-				unsigned char val = DataBus->Read(regs.XX+(char)DataBus->Read(regs.PC++));
+				unsigned char val = DataBus->Read(regs.XX+(signed char)DataBus->Read(regs.PC++));
 				CMP_R8(val);
 			}
 			break;
@@ -4797,7 +4797,7 @@ void Z80::EmulateOneXX() {
 
 void Z80::EmulateOneXXCB() {
 	// Fetch offset
-	char offset = DataBus->Read(regs.PC++);
+	signed char offset = DataBus->Read(regs.PC++);
 	unsigned short xxd = regs.XX + offset;
 
 	// Fetch next instruction

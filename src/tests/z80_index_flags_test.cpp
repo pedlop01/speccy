@@ -5,6 +5,23 @@
 
 int main() {
   RAM<0, 65536> ram;
+  // Z80 displacements are signed even on hosts where plain char is unsigned.
+  for (unsigned displacement = 0; displacement < 256; ++displacement) {
+    const int offset = displacement < 128 ? int(displacement) : int(displacement) - 256;
+    Z80 branch; branch.DataBus = &ram;
+    ram.Write(0, 0x18); ram.Write(1, displacement); // JR d
+    branch.EmulateOne();
+    assert(branch.regs.PC == static_cast<unsigned short>(2 + offset));
+    for (unsigned prefix : {0xDDu, 0xFDu}) {
+      Z80 indexed; indexed.DataBus = &ram;
+      indexed.regs.IX = indexed.regs.IY = 0x8000;
+      ram.Write(0, prefix); ram.Write(1, 0x7E); ram.Write(2, displacement);
+      ram.Write(0x8000 + offset, 0xA5); // LD A,(IX/IY+d)
+      indexed.EmulateOne();
+      assert(indexed.regs.A == 0xA5);
+      ram.Write(0x8000 + offset, 0);
+    }
+  }
   // DD/FD byte INC/DEC must set S,Z,H,P/V,N and preserve carry just like
   // normal 8-bit INC/DEC. Exhaust the operand and both initial flag patterns.
   for (unsigned prefix : {0xDDu, 0xFDu}) {
