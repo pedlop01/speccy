@@ -11,6 +11,7 @@ class ManicColourEnhancement {
 public:
   bool enabled = false;
   void Attach(SpectrumMachine &machine) {
+    machine.observationPC2=0x10000;
     machine.observationPC=34771; // Bitmap AND attributes have both been copied.
     machine.observationContext=this;
     machine.instructionObserver=[](void *context,SpectrumMachine &m) {

@@ -65,7 +65,7 @@ Conceptually, each adapter needs:
 
 These are design responsibilities, not a requirement to introduce a framework
 or scripting language before a second game demonstrates a shared need. The
-current machine observer supports one PC/context/callback; it is not a general
+current machine observer supports two PCs with one context/callback; it is not a general
 multi-adapter registry. The callback and its context must remain alive while
 registered. Callbacks must not retain references into temporary machine state.
 
@@ -203,3 +203,71 @@ A useful request template:
 > memory and GPU paths, and document supported scenes and fallback conditions.
 > Use existing facilities where possible; do not assume Manic Miner's memory
 > layout or introduce a general pack format without a demonstrated need.
+
+## Army Moves: opening jeep prototype
+
+- Adapter: `src/army_colour_enhancement.h`; selected by
+  `src/game_colour_enhancement.h` using exact media contents.
+- Media: `bin/army.tap`, SHA-256
+  `9cce91fa703d74f31a809218a9162b26ea0c445de382ad2308c831e4ec7500ec`.
+- 48K only. Load with `LOAD ""`, then select **3—Play**. The existing Ctrl+E /
+  View toggle enables the enhancement. The feature starts disabled.
+- Scope: opening jeep stage, original wheel frames at 0x7F0C / 0x7FFE.
+  Olive body/canvas, dark tyres, metal hubs, blue windscreen; muted bridge,
+  mountain and stone-column colours and a dark sky. Preserve original source art.
+  Enemy helicopters (six rotor/tilt drawings) have blue-grey metal, cyan glass
+  and amber markings; enemy trucks (two wheel drawings) have rust-red bodywork,
+  tan canvas and dark tyres. Other vehicle drawings, projectiles, explosions
+  and HUD retain their original colours. Helicopter/later player stages and death/transition effects fall
+  back to original video. This is not a full-game enhancement.
+- Addresses were established by instruction tracing the local tape. The masked
+  sprite header entry is 0xBB6B; FF14 is signed y, FF15 signed x in four-pixel
+  units, FF16 points to source art. Header bytes give height and doubled byte
+  width; each row stores ink bytes then mask bytes. Zero mask bits are opaque.
+- Capture at 0xCF56, after F2C7's completed screen transfer and before F2A5
+  restores the next clean background. The playfield is 240x104 at screen (8,16).
+  Clean background: 0x6B90. Composed bitmap: 0x5DC0. Snapshot that composed
+  buffer before its first sprite: the clean buffer scrolls after drawing. Attributes: 0x69F0,
+  32-column stride. Sprite source selection uses 0xA238 offsets from 0x7960.
+- Replay bounded observed sprite masks in their original order. Verify the
+  reconstructed monochrome scene equals every byte of the actual composed
+  bitmap before accepting a capture. Unrecognised/incomplete rendering falls
+  back, rather than showing a guessed reconstruction. Preserve opaque black
+  source details rather than letting the sky show through vehicles.
+- The shared read-only observer now accepts two PC boundaries, for sprite
+  observation and completed scene capture. Manic Miner still uses one. Adapter
+  selection and identification are refreshed on session changes; switching back
+  to original rendering forces a complete upload to erase enhanced pixels.
+- Test: `make -C bin army-colour-tests`, then `(cd bin && ./army-colour-tests)`.
+  Add `--video` in a graphical session to exercise GPU locks and pixel readback.
+  Exports `/tmp/army-original.png`, `/tmp/army-enhanced.png` and the enlarged
+  sprite sheet `/tmp/army-jeep-comparison.png`. Checks real
+  loading/starting, keyboard movement/jump/fire and wheel poses, ordered reconstruction, original
+  machine state, observed/unobserved execution, media selection and fallbacks.
+  The unattended opening segment includes deaths; it does not complete a level.
+
+The opening bridge uses a material palette independent of Spectrum attributes,
+including the broken ends (0x963C), trusses (0x9458) and arch (0x955A). The
+0x963C drawing depicts broken bridge girders, not palms. Column drawings at
+0x971E and 0x8E88 use one stone palette, including opaque shadow detail; their
+attribute cells must not recolour bridge pixels behind them.
+
+Enemy material maps live in `src/army_enemy_colours.h`. Helicopter source
+addresses are 0x7960, 0x7A52, 0x7B44 (level) and 0x7C36, 0x7D28, 0x7E1A
+(tilted); each pose has its own authored 40x24 material map, shared only across
+its three rotor frames. Trucks at 0x80F0 and 0x81E2 share a body/canvas/glass/tyre
+map across their two wheel drawings. Every opaque zero bit receives an explicit
+material shadow, preserving source detail without borrowing background PAPER.
+The regression composes all eight drawings over red and white attribute cells,
+checks their opaque pixels, and exports `/tmp/army-enemies-comparison.png`
+(original/coloured pairs) and `/tmp/army-enemies-gameplay.png`. Real opening
+play records the encountered enemy drawings; fixture coverage of all frames is
+not a claim that the unattended run encounters every enemy or completes a level.
+
+The opening-stage backdrop adds a static sky gradient and two distant mountain
+ranges with muted blue faces and haze. It fills only identified empty background
+and the opaque zero bits of bridge openings; original bridge ink, columns,
+vehicles and other sprite masks retain their drawing order and colours. The
+mountains remain fixed in screen space to suggest distance; there is no
+parallax animation or gameplay geometry. Regression checks cover scenery
+through broken bridge masks and deterministic output under attribute changes.

@@ -365,16 +365,16 @@ public:
     if(entry!=levels->end())for(size_t n=0;n<entry->second.size();++n)bus.Write((cpu.regs.HL+n)&65535,entry->second[n]);
     cpu.regs.PC+=2;cpu.regs.R60++;cpu.regs.R60++;cpu.tStates+=8;return true;
   }
-  // Optional host-side inspection at one instruction boundary. Not serialized;
+  // Optional host-side inspection at two instruction boundaries. Not serialized;
   // observers must not mutate emulated state and must outlive their registration.
-  unsigned observationPC = 0x10000;
+  unsigned observationPC = 0x10000, observationPC2 = 0x10000;
   void *observationContext = nullptr;
   void (*instructionObserver)(void *, SpectrumMachine &) = nullptr;
 
   // The normal frame loop and debugger share the same instruction/device path.
   // Emulated loader traps are kept active, as they are during normal execution.
   unsigned StepInstruction() {
-    if(instructionObserver && cpu.regs.PC==observationPC)
+    if(instructionObserver && (cpu.regs.PC==observationPC || cpu.regs.PC==observationPC2))
       instructionObserver(observationContext,*this);
     TryFastLoad();cpu.tStates=0;
     if(snapshotHalted){cpu.regs.R60++;cpu.tStates=4;}

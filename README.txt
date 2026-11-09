@@ -921,3 +921,24 @@ including negative bitmap pitches that memory-only tests do not exercise.
 Developer guide for extending enhancements to other games:
 GAME_ENHANCEMENT_GUIDE.md (analysis, adapter boundaries, artwork rules,
 validation and the Manic Miner worked example).
+
+Army Moves: experimental opening-stage colours
+---------------------------------------------
+With bin/army.tap loaded on a 48K machine, choose 3 (Play) and press Ctrl+E
+(or View > Experimental colour enhancement). The opening jeep gets olive
+bodywork, dark tyres, metal wheel details and a blue windscreen. The bridge,
+mountains and columns receive subdued colours using the original geometry.
+A sky gradient and two muted distant mountain ranges appear behind the scene,
+including through bridge gaps. This decorative backdrop adds no solid geometry.
+The opening enemies are coloured too: helicopters have blue-grey metal, cyan
+cockpit glass and amber markings; trucks have rust-red bodywork, tan canvas and
+dark tyres. All six helicopter rotor/tilt drawings and both truck wheel frames
+preserve their original shapes. Projectiles, explosions and unchecked actors
+keep their original colours; death effects, other vehicle drawings and later
+stages use original video. Gameplay, collisions, CPU, RAM and audio are unchanged.
+Use Ctrl+E again to restore original graphics. See GAME_ENHANCEMENT_GUIDE.md
+for exact tape identification, rendering addresses, scope and validation.
+
+  make -C bin army-colour-tests
+  (cd bin && ./army-colour-tests)
+  (cd bin && ./army-colour-tests --video)  # graphical session required

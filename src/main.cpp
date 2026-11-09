@@ -10,7 +10,7 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_native_dialog.h>
 #include "emulator.h"
-#include "colour_enhancement.h"
+#include "game_colour_enhancement.h"
 #include "tape_view.h"
 #include "screen_view.h"
 #include "playback.h"
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
   if (!al_init()) { fprintf(stderr, "Cannot initialize Allegro\n"); return 1; }
   SpectrumMachine machine;
   ULA &ula = machine.ula;
-  ManicColourEnhancement colourEnhancement;
+  GameColourEnhancement colourEnhancement;
   colourEnhancement.Attach(machine);
   al_set_org_name("gomas");
   al_set_app_name("gomas");
@@ -585,6 +585,7 @@ int main(int argc, char *argv[]) {
   while (running) {
     ALLEGRO_EVENT event;
     al_wait_for_event(events.get(), &event);
+    colourEnhancement.Prepare(machine);
     bool resetAudio = false;
     // Handle input immediately; drawing is paced independently of event traffic.
     DebugView::Action debugAction;
