@@ -10,6 +10,7 @@
 #include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_native_dialog.h>
 #include "emulator.h"
+#include "colour_enhancement.h"
 #include "tape_view.h"
 #include "screen_view.h"
 #include "playback.h"
@@ -118,6 +119,7 @@ enum MenuId {
   MENU_DISK_B_INSERT,MENU_DISK_B_EJECT,MENU_DISK_B_SAVE,MENU_DISK_B_PROTECT,MENU_DISK_SHOW,
   MENU_CATALOG=510,
   MENU_DEBUG=520,MENU_DEBUG_SHOW,MENU_DEBUG_STEP,MENU_DEBUG_FRAME,
+  MENU_COLOUR_ENHANCEMENT=539,
   MENU_SYNC_MONITOR=540,
   MENU_INPUT=550,MENU_JOYSTICK_MODE,MENU_JOY_NONE,MENU_JOY_KEMPSTON,MENU_JOY_SINCLAIR1,MENU_JOY_SINCLAIR2,
   MENU_JOY_KEYBOARD,MENU_JOY_GAMEPAD,MENU_JOY_CONTROLLER,MENU_JOY_AUTO,MENU_JOY_PAD1,MENU_JOY_PAD2,MENU_JOY_PAD3,MENU_JOY_PAD4
@@ -200,6 +202,7 @@ bool InstallMenu(ALLEGRO_DISPLAY *display) {
       {"&2x", MENU_VIEW_2X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
       {"&4x", MENU_VIEW_4X, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
       {"&Fullscreen (F11)", MENU_FULLSCREEN, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
+      {"Experimental &colour enhancement (Ctrl+E)", MENU_COLOUR_ENHANCEMENT, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
       {nullptr, static_cast<uint16_t>(-1), 0, nullptr},
       ALLEGRO_START_OF_MENU("&Filters", MENU_FILTERS),
         {"&None", MENU_FILTER_NONE, ALLEGRO_MENU_ITEM_CHECKBOX, nullptr},
@@ -291,6 +294,8 @@ int main(int argc, char *argv[]) {
   if (!al_init()) { fprintf(stderr, "Cannot initialize Allegro\n"); return 1; }
   SpectrumMachine machine;
   ULA &ula = machine.ula;
+  ManicColourEnhancement colourEnhancement;
+  colourEnhancement.Attach(machine);
   al_set_org_name("gomas");
   al_set_app_name("gomas");
   const string settingsPath = ROMSettingsPath();
@@ -436,6 +441,7 @@ int main(int argc, char *argv[]) {
       int index=id-MENU_JOY_PAD1;
       flags(id,ALLEGRO_MENU_ITEM_CHECKBOX|(controllers.controller==index?ALLEGRO_MENU_ITEM_CHECKED:0));
     }
+    flags(MENU_COLOUR_ENHANCEMENT,ALLEGRO_MENU_ITEM_CHECKBOX|(colourEnhancement.enabled?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_SYNC_MONITOR,ALLEGRO_MENU_ITEM_CHECKBOX|(syncEnabled?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_DEBUG_SHOW,ALLEGRO_MENU_ITEM_CHECKBOX|(debugView.IsOpen()?ALLEGRO_MENU_ITEM_CHECKED:0));
     flags(MENU_PAUSE, ALLEGRO_MENU_ITEM_CHECKBOX | (playback.paused ? ALLEGRO_MENU_ITEM_CHECKED : 0));
@@ -606,7 +612,9 @@ int main(int argc, char *argv[]) {
       case ALLEGRO_EVENT_DISPLAY_SWITCH_IN: windowFocused=true;break;
       case ALLEGRO_EVENT_DISPLAY_SWITCH_OUT: windowFocused=false;ReleaseInput(machine); resetAudio = playback.EndRewind(); break;
       case ALLEGRO_EVENT_KEY_DOWN:
-        if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) &&
+        if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) && event.keyboard.keycode==ALLEGRO_KEY_E) {
+          colourEnhancement.enabled=!colourEnhancement.enabled;ula.SetBitmap(bitmap.get());updateUI();
+        } else if ((event.keyboard.modifiers & ALLEGRO_KEYMOD_CTRL) &&
             (event.keyboard.keycode == ALLEGRO_KEY_S || event.keyboard.keycode == ALLEGRO_KEY_L)) {
           resetAudio = stateAction(event.keyboard.keycode == ALLEGRO_KEY_S ? MENU_SAVE_STATE : MENU_LOAD_STATE); updateUI();
         } else if (event.keyboard.keycode == ALLEGRO_KEY_F2 || event.keyboard.keycode == ALLEGRO_KEY_F3) {
@@ -643,6 +651,8 @@ int main(int argc, char *argv[]) {
         break;
       case ALLEGRO_EVENT_MENU_CLICK:
         switch (event.user.data1) {
+          case MENU_COLOUR_ENHANCEMENT:
+            colourEnhancement.enabled=!colourEnhancement.enabled;ula.SetBitmap(bitmap.get());break;
           case MENU_SYNC_MONITOR:
             syncEnabled=!syncEnabled;configureSync();ReleaseInput(machine);resetAudio=true;savePreferences();
             if(syncEnabled && !monitorSync.Configuration().active) {
@@ -900,6 +910,7 @@ int main(int argc, char *argv[]) {
     updateUI();
     al_set_target_backbuffer(display.get());
     if (!ula.Present()) { fprintf(stderr, "Cannot upload frame\n"); return 1; }
+    if (!colourEnhancement.Present(machine,bitmap.get())) { fprintf(stderr,"Cannot upload enhanced frame\n"); return 1; }
     al_set_target_backbuffer(display.get());
     screenView.Draw(bitmap.get(), al_get_display_width(display.get()), al_get_display_height(display.get()));
     if (playback.Rewinding()) {

@@ -862,3 +862,62 @@ monitor-sync-tests comprueba divisores, límite, todos los modelos, remuestreo,
 velocidades 0.25x-16x, pausa/reset, deriva, colas acotadas y esperas verticales
 que regresan antes de tiempo. tape-game-tests carga Cobra también a 48 FPS.
 La prueba de interfaz activa/desactiva la casilla y comprueba su persistencia.
+
+Experimental colour enhancement (fourth prototype)
+------------------------------------------------
+View > Experimental colour enhancement (Ctrl+E) switches between original
+video and enhanced Manic Miner graphics in 15 caverns. It is off at startup and is
+not saved in preferences. Load bin/manic.tap with the 48K ROM, start the game
+with ENTER, then enable the option. Inserted tapes still require LOAD "" as
+usual. Movement: O/P; jump: SPACE.
+
+This adapter recognises the exact bundled tape by SHA-256. Other tapes, ROM
+models, demo/title screens and screen flashes retain original video. Five
+special caverns retain original video: Eugene's Lair, both Kong caverns,
+Skylab Landing Bay and Solar Power Generator.
+
+Willy has a yellow cap, skin-tone face, cyan shirt and blue trousers.
+Horizontal and vertical guardians use four tones: a highlight, their original
+body hue, contrasting cyan/amber detail and steel-blue feet/lower detail.
+These colours follow sprite-local rows; this is a shared treatment, not
+hand-painted artwork for each enemy.
+
+Central Cavern has a decorative backdrop: faceted rock, an uneven ceiling,
+two distant tunnel mouths, timber supports and recessed rails. It is drawn
+only in empty background pixels, behind tiles, hazards, collectibles and
+sprites. It is static and has no collision geometry. The other supported
+caverns retain subtle room-dependent lighting pending their own artwork.
+Tiles retain their
+original bitmap shapes and use palettes based on their actual game roles:
+moss/earth floors, crumbling sandstone, slate walls, brass/teal conveyors and
+warm orange/pink hazards. Tile highlights and shadows stay attached to tile
+rows; no new collision geometry is introduced. Dynamic items, portal colours
+and attribute animation retain original colours. Scenery colours remain
+independent of the sprite colours sharing their cells. Game memory, physics,
+timing and audio are unchanged.
+The enhanced playfield is sampled after a completed game drawing update;
+it intentionally does not reproduce raster tearing in that playfield.
+
+Scope: coloured actors, tiles and backgrounds in the 15 standard caverns. The HUD remains original. Special
+actors and effects in the five excluded caverns need separate adapters. Saved-state thumbnails
+use original video. Enhancement is a host presentation option, not part of
+saved machine state; after a restore/toggle it waits for a completed drawing
+update. This adapter is code-based, not yet an external enhancement-pack
+format.
+
+Regression: make -C bin colour-enhancement-tests, then run
+(cd bin && ./colour-enhancement-tests). The test boots the real tape, walks and
+jumps, exercises all 20 cavern initialisation/drawing loops, compares execution
+with/without observation, checks shared-cell sprite/scenery colour separation,
+tile shading, background artwork and deterministic layer ordering,
+presentation state isolation and fallback, and writes /tmp/manic-original.png and
+/tmp/manic-enhanced.png for inspection.
+
+For GPU bitmap coverage in a graphical session, also run:
+(cd bin && ./colour-enhancement-tests --video)
+This opens a temporary window and checks readback on the actual video backend,
+including negative bitmap pitches that memory-only tests do not exercise.
+
+Developer guide for extending enhancements to other games:
+GAME_ENHANCEMENT_GUIDE.md (analysis, adapter boundaries, artwork rules,
+validation and the Manic Miner worked example).

@@ -15,7 +15,8 @@ all: gomas
 gomas: $(SOURCES) $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(SOURCES) $(LDLIBS)
 
-test: monitor-sync-tests raster-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+test: colour-enhancement-tests monitor-sync-tests raster-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	./colour-enhancement-tests
 	./monitor-sync-tests
 	./raster-tests
 	./catalog-sources-tests
@@ -77,7 +78,7 @@ tape-ui-tests: ../src/monitor_refresh.cpp ../src/tests/tape_ui_test.cpp ../src/t
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/tape_ui_test.cpp ../src/ula.cpp ../src/z80.cpp ../src/monitor_refresh.cpp $(LDLIBS) $(shell pkg-config --libs x11 xtst) -pthread
 
 clean: clean-windows
-	rm -f *.o gomas monitor-sync-tests raster-tests topcat-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
+	rm -f *.o gomas colour-enhancement-tests monitor-sync-tests raster-tests topcat-tests catalog-sources-tests joystick-tests ula-tests floating-bus-tests machine-tests tape-tests tape-game-tests tape-ui-tests rom-loader-tests rom-settings-tests machine-config-tests paging-tests video128-tests ay-tests tape128-tests compat128-tests z80-index-flags-tests capitan-tests z80-block-compare-tests bombjack-tests screen-view-tests playback-tests save-state-tests tape-zip-tests formats-tests new-media-tests catalog-tests debug-tests
 
 paging-tests: ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/paging_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
@@ -217,3 +218,6 @@ topcat-tests: ../src/tests/topcat_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADE
 
 monitor-sync-tests: ../src/tests/monitor_sync_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/monitor_sync_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
+
+colour-enhancement-tests: ../src/tests/colour_enhancement_test.cpp ../src/ula.cpp ../src/z80.cpp $(HEADERS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ ../src/tests/colour_enhancement_test.cpp ../src/ula.cpp ../src/z80.cpp $(LDLIBS)
