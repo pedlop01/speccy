@@ -942,3 +942,21 @@ for exact tape identification, rendering addresses, scope and validation.
   make -C bin army-colour-tests
   (cd bin && ./army-colour-tests)
   (cd bin && ./army-colour-tests --video)  # graphical session required
+
+Batman: experimental isometric room colours
+------------------------------------------
+The local bin/batman.tap now has optional colour support for six checked rooms
+in 48K mode: the opening hall and rooms 8940, 9A40, 8840, 9940 and 8A30. Choose keyboard controls and Play with ENTER, then dismiss
+the original equipment introduction. Press Ctrl+E or use the View menu toggle.
+Batman keeps his original artwork, with blue cape/cowl, grey suit, gold belt
+and skin tones on his existing face. Each checked room uses its actual floor
+bounds and a subdued palette, with shared stone, metal and raised-platform
+materials. Original masked drawing order preserves scenery occlusion.
+Equipment icons, the lower HUD and border retain their original colours.
+Unchecked rooms, death effects and unsupported versions use original video.
+Gameplay, RAM, CPU, collisions and audio are unchanged. See
+GAME_ENHANCEMENT_GUIDE.md for scope, exact version and rendering addresses.
+
+  make -C bin batman-colour-tests
+  (cd bin && ./batman-colour-tests)
+  (cd bin && ./batman-colour-tests --video)

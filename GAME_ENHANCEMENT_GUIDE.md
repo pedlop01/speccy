@@ -271,3 +271,153 @@ vehicles and other sprite masks retain their drawing order and colours. The
 mountains remain fixed in screen space to suggest distance; there is no
 parallax animation or gameplay geometry. Regression checks cover scenery
 through broken bridge masks and deterministic output under attribute changes.
+
+## Batman: six checked isometric rooms
+
+- Exact media: `bin/batman.tap`, SHA-256
+  `c0619e7f31047563bfb91ba504e002b1ef09c9955a1147b5bb4e10ff5951c427`.
+- 48K only. Checked rooms: 0x8A40 (opening hall), 0x8940, 0x9A40,
+  0x8840, 0x9940 and 0x8A30. The opening hall has X=32..48, Y=8..72;
+  other checked rooms use their own validated bounds and subdued palettes.
+  Load normally, choose keyboard controls and Play with ENTER, and dismiss the
+  equipment introduction. Ctrl+E uses the existing Original / Enhanced toggle.
+- Scope: Batman's eight drawings and their reflections, existing floor and wall
+  patterns, shared arches/columns, stone blocks, metal and raised platforms in
+  the checked rooms. Blue cape/cowl/gloves/boots,
+  grey suit, gold belt and skin tones on the existing exposed lower face.
+  `src/batman_materials.h` contains authored source-local material regions.
+  The sprite's original mask and ink bits, facial features and animation remain.
+- Unchecked rooms, incompatible media/model, death and invalid captures use
+  original video. Equipment icons overlap the room's screen rectangle; their
+  original pixels are explicitly excluded from the overlay, as is the lower HUD.
+  There is no new background art, furniture or gameplay geometry.
+- Addresses established by instruction tracing this local release:
+  0x8E1D dispatches a prepared, clipped and shifted masked sprite blit into the
+  six-byte-row A000 scratch buffer. Alternate BC is the destination, alternate
+  DE the ink and alternate HL the mask; B gives height and 9691 source stride.
+  The dispatch table identifies the actual copied byte width. 8CD1/8CD2 are
+  right/left bounds in two-pixel units; 8CD3/8CD4 are bottom/top bounds, with
+  screen origin (64,72). 8DAA points to the current object's record plus two.
+- 0x8D9A finishes the room region before 82EA transfers it to VRAM. Replay the
+  observed blits in their original order into a host colour buffer and a
+  monochrome check buffer; compare the latter byte-for-byte with actual A000
+  before publishing the region. Keep persistent colour pixels outside dirty
+  regions, including restoration of backgrounds after movement. Do not sort
+  actors again or put Batman unconditionally above the room's furniture.
+- Room identity at 658B; room dimensions at 6A41..6A44. Batman's two half-sprite
+  records start at 8F18/8F2A. Drawings 10..17 occupy 24x32 ink+mask pairs starting
+  at C530, 192 bytes per drawing. Option bit 1 selects its upper/lower 16 rows;
+  drawing bit 7 selects reflection. Coordinate conversion uses the real source
+  position, half selection and reflection, including clipped/shifted drawings.
+- Test: `make -C bin batman-colour-tests`, then
+  `(cd bin && ./batman-colour-tests)`; add `--video` for a temporary GPU window.
+  The regression boots the real tape, moves/turns/jumps in the opening hall,
+  checks incremental reconstruction and presentation/execution isolation,
+  preserves HUD/border pixels, and exercises both overlap orders with opaque
+  column pixels. Each of the six rooms is initialised through original code and
+  compared with unobserved execution. The original exit dispatcher is exercised
+  from 8A40 to 8940 and back. These are controlled fixtures, not a full playthrough. It exports `/tmp/batman-original.png`,
+  `/tmp/batman-enhanced.png` and `/tmp/batman-sprite-comparison.png`.
+  Fixture coverage does not imply a complete game playthrough or visual
+  acceptance. Further rooms need their own material/scene analysis before support.
+
+Room palettes and bounds live in `BatmanColourEnhancement::FindRoom`. Floor
+classification inverts the game's projection against those bounds instead of
+reusing the opening hall's diamond. It adds no geometry. Stone, metal and raised
+platform materials follow source drawing IDs and opaque masks independently of
+their screen cells. Unchecked enemies/items keep their original Spectrum
+INK/PAPER. On a room change, availability immediately rejects the previous
+room's cache, even for rooms with identical dimensions; the first new region
+starts a fresh canvas from the actual display. Room previews are exported as
+`/tmp/batman-room-XXXX-original.png` and `...-enhanced.png`.
+
+## Agent handoff: continuing this work
+
+Read this guide **and the relevant adapter/test source** before changing a game.
+The checked-in code and local media are authoritative; do not depend on a prior
+agent's conversation, temporary scripts or `/tmp` files. The game memory maps
+are version-specific research, not a portable interface shared by all games.
+
+### Where to work
+
+| File | Responsibility |
+| --- | --- |
+| `src/game_colour_enhancement.h` | Exact-content adapter selection, session refresh and original-video restoration |
+| `src/colour_enhancement.h` | Manic Miner capture and rendering |
+| `src/army_colour_enhancement.h` | Army Moves capture, ordered mask replay, scenery and backdrop |
+| `src/army_enemy_colours.h` | Authored helicopter/truck material maps |
+| `src/batman_colour_enhancement.h` | Batman's dirty-region replay, room bounds/palettes and shared scenery materials |
+| `src/batman_materials.h` | Batman's eight authored material maps |
+| `src/tests/*colour*test.cpp` | Real-media boot, fixtures, execution comparisons and reproducible previews |
+| `src/main.cpp` | Existing Ctrl+E/View toggle and presentation integration |
+| `src/emulator.h` | Generic read-only instruction observation, not game-specific rendering |
+
+### Adding another Batman room
+
+1. Start from `src/tests/batman_colour_test.cpp`. Boot the supplied tape and
+   obtain a genuine gameplay checkpoint. Inspect the target room's data and
+   original graphics before allowing its ID in `FindRoom`.
+2. The existing controlled fixture writes the room word at 658B, releases keys,
+   chooses an idle spawn inside the actual bounds, and enters original code at
+   PC 65B3 with SP FFF4. Those writes belong **only in research/tests**. Runtime
+   enhancements must observe normal play without patching the machine.
+3. Record the resulting room ID, bounds at 6A41..6A44, original floor pattern,
+   encountered source drawings and any special effects. Invalid/empty room
+   coordinates can fail to initialise correctly. Do not infer that every ID
+   adjacent numerically to a valid room is playable.
+4. Add only the checked room's bounds/palette to `FindRoom`. Reuse `Scenery`'s
+   inverse floor projection when applicable. Verify raised floors, holes and
+   unusual wall geometry before applying that model to them. Keep unsupported
+   layouts on original video rather than relaxing `Scene` checks blindly.
+5. Inspect unfamiliar source art before extending `Material`. Material colours
+   follow drawing IDs and masks, not screen positions or current attributes.
+   Preserve the existing original-colour fallback for unchecked enemies/items.
+6. Extend the room fixtures, compare observed/unobserved execution and inspect
+   original/enhanced images of the same checkpoint. Exercise real movement and
+   overlap as well as controlled room initialisation. Check leaving and returning
+   to the room; identical dimensions do not mean the same cached image is valid.
+7. Add the room to this guide's scope and report exactly what was tested. A
+   fixture entering a room is not a claim of reaching it during a playthrough.
+
+For the original exit-dispatcher fixture, PC 6603 reads the exit selection at
+9B05. The current test uses selections 2 and 4 to go from 8A40 to 8940 and back.
+This exercises the actual dispatcher after fixture setup; it is not a keyboard
+walkthrough of the doorway.
+
+### Details that are easy to miss
+
+- Batman mutates cached source drawings when reflecting them. The cache bits at
+  A840 track current reflection: byte `drawing / 8`, bit `0x80 >> (drawing & 7)`.
+  When exporting a canonical sprite sheet, undo that cached reflection before
+  applying the desired display reflection. See the atlas export in the test.
+- `Reset` must also clear capture timestamps and room identity. After restoring
+  an earlier checkpoint, an old timestamp must not repeatedly discard new layers.
+- Batman's scratch buffer holds up to 42 six-byte rows in one 256-byte page.
+  Prepared blitters advance the destination low byte by six per row; use the
+  observed dispatch width/stride and validate the replay against the real buffer.
+- The overlay excludes original equipment-icon rectangles at screen (232,136)
+  and (200,152), besides the lower HUD. Preserve those exclusions when extending
+  room support, and verify any new layout that reaches into them.
+- On fallback, the selector forces a full original ULA upload. Incremental video
+  updates alone may leave unchanged enhanced pixels on the host bitmap.
+- Avoid hashing media or copying the whole ULA state inside a pixel loop. Cache
+  identity per session and capture frame-wide properties once per update.
+
+### Reproducible verification
+
+From the repository root:
+
+```sh
+make -C bin -j2 gomas batman-colour-tests army-colour-tests colour-enhancement-tests
+(cd bin && ./batman-colour-tests)
+(cd bin && ./army-colour-tests)
+(cd bin && ./colour-enhancement-tests)
+# Requires a graphical session; verifies real video bitmap uploads/readback:
+(cd bin && ./batman-colour-tests --video)
+```
+
+Use the other adapters' `--video` runs when changing their presentation paths.
+Run `make -C bin test` when shared machine/CPU/ULA changes warrant the full suite.
+The tests regenerate the documented per-game previews; `/tmp` artifacts are
+outputs, never required inputs. Inspect them visually before declaring an art
+change ready. Keep changes uncommitted until the user requests a commit.
