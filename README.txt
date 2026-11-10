@@ -862,3 +862,8 @@ monitor-sync-tests comprueba divisores, límite, todos los modelos, remuestreo,
 velocidades 0.25x-16x, pausa/reset, deriva, colas acotadas y esperas verticales
 que regresan antes de tiempo. tape-game-tests carga Cobra también a 48 FPS.
 La prueba de interfaz activa/desactiva la casilla y comprueba su persistencia.
+
+Standalone Batman Python prototype
+---------------------------------
+A playable first-room experiment lives in prototypes/batman/. See
+prototypes/batman/README.md for preparation, launch instructions and scope.

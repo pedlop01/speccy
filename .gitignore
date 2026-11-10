@@ -44,3 +44,9 @@ raster-tests
 topcat-tests
 
 monitor-sync-tests
+
+# Local Batman prototype assets and preparation outputs.
+/prototypes/batman/assets/
+/prototypes/batman/.assets-*/
+/prototypes/batman/.build/
+/prototypes/batman/.venv/
