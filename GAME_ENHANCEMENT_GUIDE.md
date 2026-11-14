@@ -193,6 +193,11 @@ GPU pixels. It exports previews under `/tmp/manic-*.png`. This is **not** a full
 playthrough, comprehensive coverage of every lifecycle event, or proof that all
 visual edge cases are solved. Extend coverage when a change exposes a gap.
 
+For a native Game Boy adaptation, read
+[MANIC_MINER_GAMEBOY_HANDOFF.md](MANIC_MINER_GAMEBOY_HANDOFF.md). It covers source
+extraction, Game Boy constraints, unresolved gameplay research and a first-room
+implementation plan; the colour adapter itself does not implement game logic.
+
 ## Starting a future task
 
 A useful request template:
@@ -348,6 +353,9 @@ are version-specific research, not a portable interface shared by all games.
 | `src/army_enemy_colours.h` | Authored helicopter/truck material maps |
 | `src/batman_colour_enhancement.h` | Batman's dirty-region replay, room bounds/palettes and shared scenery materials |
 | `src/batman_materials.h` | Batman's eight authored material maps |
+| `src/rick_colour_enhancement.h` | Rick Dangerous II player masks, all-actor background protection, Hyde Park scene guards and scenery capture |
+| `src/rick_materials.h` | Rick's fourteen authored pose-local material maps |
+| `src/rick_scenery.h` | Authored palettes for identified solid and background tiles across Hyde Park |
 | `src/tests/*colour*test.cpp` | Real-media boot, fixtures, execution comparisons and reproducible previews |
 | `src/main.cpp` | Existing Ctrl+E/View toggle and presentation integration |
 | `src/emulator.h` | Generic read-only instruction observation, not game-specific rendering |
@@ -421,3 +429,182 @@ Run `make -C bin test` when shared machine/CPU/ULA changes warrant the full suit
 The tests regenerate the documented per-game previews; `/tmp` artifacts are
 outputs, never required inputs. Inspect them visually before declaring an art
 change ready. Keep changes uncommitted until the user requests a commit.
+
+## Rick Dangerous II: Hyde Park player and scenery enhancement
+
+- Adapter: `src/rick_colour_enhancement.h`; material maps:
+  `src/rick_materials.h`. Selected by exact tape contents, not filename.
+- Local `bin/rick2.tap`, SHA-256
+  `4592e610385098122800c50651af7bff82b605a945ba1e185601a984f8896be8`.
+  48K only. Load with `LOAD ""`, press a key at the loading picture, then
+  **1 Keyboard**, **0 Start Game**, **1 Hyde Park London**. Ctrl+E or the
+  existing View menu toggles the enhancement; it starts disabled.
+- Scope is **Rick in all eight populated Hyde Park rooms**, IDs 0..7, with
+  64 checked viewport positions in total. Level 7EF1=1; room is 9B93 and scroll
+  is 88CF, in eight-tile/64-pixel increments. Maximum scroll offsets by room:
+  0,112,112,0,104,104,8,8. The room's actual maximum at 88D2 must match.
+  Death flag 9B9C and bike state 8A24 must be zero; player active 9BAB must be
+  one. Other levels, bike and death effects retain original video. This is not
+  whole-game support or a claim of completing Hyde Park.
+- Fourteen checked drawings: C26D..C7ED spaced 128 bytes apart (standing,
+  five walking drawings, two crouch/crawl drawings, jump, raygun, punch and
+  detonator action), plus C8ED/C96D for the two rear-facing climbing poses.
+  C86D and C9ED/CA6D are excluded effects, not extra walking/climbing poses.
+  Blond hair, warm face/hands, red jacket, blue trousers,
+  brown boots/belt and a steel raygun. The head boundary uses blond hair above
+  skin below, with the original dark eye details preserved; no cyan face stripe.
+  Pose-local authored material maps colour only the original source silhouette. Opaque zero bits keep explicit dark
+  outlines/details rather than borrowing the underlying cell's PAPER colour.
+  Neither source pixels nor facial features are redrawn. Other actors, objects,
+  unchecked hazards, border and HUD retain their original colours. Identified
+  scenery is coloured in all eight rooms and all 64 scrolling viewports.
+
+### Hyde Park scenery
+
+`src/rick_scenery.h` assigns materials to exact tile IDs throughout level 1:
+174 is the original diagonal exterior hatching (subdued blue); 175..180 are
+steel roof/wall sections; 27..30 and 245..246 are bronze cross-braced supports
+and capitals; 181..183 are muted grass edges; 184..186 are earthy root/soil
+textures. Interior panels (35..48) use muted plum/steel; brickwork (73..77) uses
+blue-grey with dark mortar; vents (78..83), doors (84..93) and the framed wall
+display (61..72) have complementary metal tones. Safe pipe sections
+(118..125,128..131,134..135,138..139,142..143) use pale oxidised metal; ladder
+rungs (160..161) use warm brass. Identified patterned platforms, bracing and
+grilles (49..60,102..117,150..151,156..159,195..197,231..234,255) use steel;
+platform end caps (164..169) use warm bronze. The palette is shared by tile
+identity across rooms and scroll positions. Heated pipe/ladder variants and
+other unchecked tiles/effects keep their original colours. Both original INK
+and PAPER receive explicit colours, preserving the original 8x8 pixel shapes.
+
+Outdoor backgrounds keep their **original artwork and empty pixels**. No
+procedural sky, roofline, hedges or tree crowns are drawn. `OutdoorDetail`
+identifies the existing artwork in rooms 0/3 and room 2's outdoor return at
+scroll 112 below screen Y=72. Existing tree/foliage tiles 228..230 get green INK,
+small background structures 187/188 get warm stone INK, and fine texture tiles
+243/244/249 get muted grey-green INK. Their zero bits receive no overlay, so
+original PAPER shows through every gap. Empty tile 0 is never coloured, in any
+room. Exterior tile 174 retains its original diagonal pattern with the subdued
+blue palette. Existing building walls, brickwork, doors and platforms retain
+all previously checked material palettes. Actor masks and completed-screen
+validation protect sprites and original effects throughout.
+
+Capture at 7D91 accepts identified solid and non-solid tiles. Accumulate an
+opaque mask for **every** draw at 7329, including uncoloured/unknown actors and
+both source INK and opaque zero bits. Routine 85FA draws 9BB4 **before** player
+9BAB, then 9BBD and its object lists; do not clear the mask when Rick is drawn.
+Clear it after each completed upload and on scene/generation/rewind changes.
+Malformed source geometry disables scenery for that capture. Foreground tiles
+(A800+ID bit 7) still suppress actor masks, matching the original blitter.
+
+Source bytes at A900+ID*8 must match the completed Spectrum bitmap at every
+pixel not covered by an actor. Any unexplained differing bit rejects the whole
+tile. Covered pixels never receive scenery colour, even when their original
+bits happen to equal the background. This preserves complete actor silhouettes
+without toggling whole background cells as actors move. Unrecognised tiles,
+including objects and unchecked hazards, stay original. Fine exterior texture
+is recoloured only in the explicitly identified open-park areas.
+The scenery buffer is separate from player pixels, is refreshed on each
+successful capture and uses the same scene/generation/frame validity checks.
+Presentation restores original ULA video, applies scenery, then player pixels.
+
+Tests check per-pixel scenery materials in all eight rooms and all 64 views,
+with full bitmap readback on memory and GPU bitmaps. Fixtures draw actors both
+before and after Rick over real non-solid brickwork and original foliage, using both reflections
+and PAPER colours. They check exact exclusion of INK and opaque zero bits,
+visible uncovered background, and whole-tile fallback on an unexplained changed
+finished-screen bit. These fixtures initialise rooms through original code;
+they are not a full level playthrough.
+
+### Renderer and room layout
+
+Addresses and layout were established by disassembling and tracing this exact
+local tape, not by borrowing the first Rick Dangerous game's memory map:
+
+- PC 7329 enters the ordered actor blitter. IX points to an actor record:
+  +1 X in pixels, +2/+3 world Y little endian, +4/+5 source pointer,
+  +6 bit 7 horizontal reflection. Player record is 9BAB.
+- Source header is vertical offset, row count, then six bytes per row.
+  In column order 0,1,2, INK is at row offsets 2,1,0 and MASK at 3,5,4.
+  Output is `(background & mask) | ink`. A set mask bit is transparent only
+  when its INK bit is zero. Source-local reflection flips the full 24 pixels.
+  The crouching drawings have offset 5 and height 16; standing drawings have
+  offset 0 and height 21. Do not stretch a standing material map over a crouch.
+- Screen Y is world Y minus 64. The playable viewport starts at screen Y=8;
+  screen row 0 is the original HUD. Tile IDs at 6B00 use a 32-column world
+  grid. A800+tileID bit 7 marks foreground tiles whose actor uploads are
+  suppressed by the original renderer. These tiles must also suppress player colour.
+- PC 7D91 is immediately after the completed 76D4 screen transfer in the normal
+  gameplay loop. Pending player colour pixels are masked away by later actors,
+  preserving their actual drawing order. Every remaining player pixel's INK bit
+  is checked against the completed Spectrum bitmap before a capture is accepted.
+  Failed or incomplete captures use original video.
+- Only identified player/scenery pixels are uploaded. Restore the full original ULA image before
+  each sparse colour overlay: unchanged black/white bits can otherwise retain
+  coloured trails. Use signed GPU pitch arithmetic. The common selector also
+  restores original video on fallback. Scene, frame age, generation and rewind
+  checks prevent use of an old viewport's pixels. Both pending and published
+  captures carry level/room/scroll identity: changing to another room with the
+  same dimensions still invalidates the old canvas immediately. Backward frame
+  changes clear pending pixels/timestamps even without reattaching the adapter.
+- The original scroll routines at 78A5 (down) / 7905 (up) rebuild the visible
+  tile grid at 6B00, adjust 88CF by +/-8, and call 9E31 to adjust actor Y by
+  -/+64. Actor Y remains relative to this tile grid, so screen Y stays Y-64;
+  do not subtract the cumulative scroll a second time.
+- Original room entry at 8A6D receives A=room ID, C=scroll, E=player X and
+  HL=player Y. The room table at Word(C202), eight bytes per room, supplies
+  background data, maximum scroll (byte 3), exits and object lists. Initialising
+  these registers belongs only in tests/research, never in the runtime adapter.
+  In this local release rooms 8..16 are empty placeholders: do not infer that
+  all room table entries describe playable rooms.
+- The original exit dispatcher at 8993 reads direction 88D3 and the current
+  room's exit records. The regression uses right=2 from room 0 into room 2 at
+  scroll 112, then left=1 back into room 0 at scroll 0. It executes original
+  destination selection; fixture positioning is not a keyboard walkthrough.
+
+Controls from the original manual: **O** jump/up, **K** crouch/down,
+**Z/X** left/right and **Space/Enter** fire. Fire modifies directional actions.
+Reference: [original Spectrum manual](https://www.gamesdatabase.org/Media/SYSTEM/Sinclair_ZX_Spectrum/Manual/formated/Rick_Dangerous_II_-_1990_-_MicroStyle.htm).
+Runtime addresses and source formats are verified against the local tape.
+
+Build and verify from the repository root:
+
+```sh
+make -C bin -j2 gomas rick-colour-tests
+(cd bin && ./rick-colour-tests)
+(cd bin && ./rick-colour-tests --video) # graphical session required
+```
+
+The test boots the real tape, enters Hyde Park, walks, jumps, crouches and
+reverses direction. It checks execution with/without observation, original
+RAM/registers/ULA/audio preservation, all fourteen source drawings at all eight
+pixel alignments, both reflections and two PAPER colours using the actual
+original blitter/upload routines. Readback verifies the overlay and every
+unchanged HUD/background/border pixel. Controlled foreground-tile and later-actor
+fixtures check exact occlusion masks; a poisoned host-image fixture checks full
+background restoration. It checks scene/death/media/reset/toggle
+fallbacks and selector changes. Each of the eight rooms is entered through
+original code and run for 60 frames with/without observation. Every one of the
+64 viewport positions is initialised through original entry and checked using
+the real blitter/upload with climbing poses, including full GPU readback. These
+viewport fixtures prove rendering, not survival at arbitrary spawn locations.
+Keyboard O at the real room-1 ladder (fixture entry X=40,Y=184,scroll=0)
+exercises both climbing drawings through original movement logic. Additional
+fixtures exercise the original exit dispatcher, scroll routines in both
+directions, original death/respawn and backward state restoration without
+reattaching the observer. These are bounded gameplay and fixture checks, not a
+complete playthrough or validation of all special effects.
+
+Reproducible previews:
+`/tmp/rick-original.png`, `/tmp/rick-enhanced.png`, and
+`/tmp/rick-player-comparison.png` (fourteen original/coloured pairs, normal then
+reflected). Per-room previews are `/tmp/rick-room-N-original.png` and
+`/tmp/rick-room-N-enhanced.png`, where N=0..7. Inspect the atlas and real gameplay
+when refining material regions.
+All-view scenery previews are `/tmp/rick-viewport-N-S-enhanced.png`, with room N
+and scroll S from its checked 8-tile increments. These use a controlled climbing
+source-mask fixture in the real viewport, not keyboard traversal of the level.
+
+Rick's real keyboard-climbing previews are `/tmp/rick-climbing-original.png`
+and `/tmp/rick-climbing-enhanced.png`. Do not confuse the gold vertical room-1
+scenery at other positions with a usable ladder spawn: the climbable test enters
+at X=40,Y=184 and then presses O, without writing the climbing state flag.

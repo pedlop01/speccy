@@ -1,0 +1,113 @@
+{
+  "bounds": [
+    32,
+    8,
+    48,
+    72
+  ],
+  "format": 1,
+  "objects": [
+    {
+      "drawing": 10,
+      "name": "object-41538",
+      "options": 0,
+      "x": 52,
+      "y": 36,
+      "z": 192
+    },
+    {
+      "drawing": 11,
+      "name": "object-41556",
+      "options": 0,
+      "x": 52,
+      "y": 44,
+      "z": 192
+    },
+    {
+      "drawing": 10,
+      "name": "object-41574",
+      "options": 0,
+      "x": 36,
+      "y": 4,
+      "z": 192
+    },
+    {
+      "drawing": 11,
+      "name": "object-41592",
+      "options": 0,
+      "x": 44,
+      "y": 4,
+      "z": 192
+    },
+    {
+      "drawing": 95,
+      "name": "object-41610",
+      "options": 0,
+      "x": 44,
+      "y": 60,
+      "z": 150
+    },
+    {
+      "drawing": 95,
+      "name": "object-41646",
+      "options": 0,
+      "x": 36,
+      "y": 60,
+      "z": 150
+    },
+    {
+      "drawing": 95,
+      "name": "object-41682",
+      "options": 0,
+      "x": 36,
+      "y": 60,
+      "z": 150
+    },
+    {
+      "drawing": 95,
+      "name": "object-41718",
+      "options": 0,
+      "x": 28,
+      "y": 60,
+      "z": 150
+    },
+    {
+      "drawing": 95,
+      "name": "object-41736",
+      "options": 0,
+      "x": 28,
+      "y": 60,
+      "z": 144
+    },
+    {
+      "drawing": 95,
+      "name": "object-41754",
+      "options": 0,
+      "x": 28,
+      "y": 60,
+      "z": 156
+    },
+    {
+      "drawing": 95,
+      "name": "object-41772",
+      "options": 0,
+      "x": 36,
+      "y": 60,
+      "z": 156
+    },
+    {
+      "drawing": 95,
+      "name": "object-41790",
+      "options": 0,
+      "x": 44,
+      "y": 60,
+      "z": 156
+    }
+  ],
+  "room": "8a40",
+  "spawn": [
+    40,
+    64
+  ],
+  "tape_sha256": "c0619e7f31047563bfb91ba504e002b1ef09c9955a1147b5bb4e10ff5951c427"
+}

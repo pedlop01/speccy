@@ -871,6 +871,9 @@ not saved in preferences. Load bin/manic.tap with the 48K ROM, start the game
 with ENTER, then enable the option. Inserted tapes still require LOAD "" as
 usual. Movement: O/P; jump: SPACE.
 
+Native Game Boy development handoff: MANIC_MINER_GAMEBOY_HANDOFF.md.
+Includes the source data map, extraction bootstrap and playable-first-room plan.
+
 This adapter recognises the exact bundled tape by SHA-256. Other tapes, ROM
 models, demo/title screens and screen flashes retain original video. Five
 special caverns retain original video: Eugene's Lair, both Kong caverns,
@@ -960,3 +963,26 @@ GAME_ENHANCEMENT_GUIDE.md for scope, exact version and rendering addresses.
   make -C bin batman-colour-tests
   (cd bin && ./batman-colour-tests)
   (cd bin && ./batman-colour-tests --video)
+
+Rick Dangerous II: experimental Hyde Park colours
+----------------------------------------------------------
+Load the local bin/rick2.tap at 48K. Press a key on the loading picture, then
+1 (Keyboard), 0 (Start Game), 1 (Hyde Park London). Ctrl+E or View > Experimental
+colour enhancement colours Rick's original sprites: blond hair, warm skin,
+red jacket, blue trousers and brown boots. All eight Hyde Park rooms also have
+coloured scenery: steel walls/platforms, bronze supports, blue-grey brickwork,
+muted panels, pipes, brass ladders, grass/soil and subdued exterior hatching.
+Original outdoor trees are coloured green and small background structures use
+warm stone tones. Empty backgrounds and gaps keep their original pixels;
+there is no added landscape. Buildings retain the material colours above.
+Other actors, objects, unchecked hazards/effects and HUD retain original colours.
+Rick stays coloured through Hyde Park's eight rooms and their scrolling
+viewports, including the two climbing poses. Death effects use original video;
+colouring returns after respawn. Later levels and bike effects remain original.
+Controls: O jump, K crouch, Z/X left/right, Space/Enter fire.
+See GAME_ENHANCEMENT_GUIDE.md for the exact tape identity, source masks,
+material maps, renderer boundaries and limitations.
+
+  make -C bin -j2 gomas rick-colour-tests
+  (cd bin && ./rick-colour-tests)
+  (cd bin && ./rick-colour-tests --video) # graphical session required
